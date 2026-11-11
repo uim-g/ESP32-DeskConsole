@@ -2,6 +2,7 @@
 #include "NunitoFonts.h"
 #include <WiFi.h>
 #include <new>
+#include <esp_ota_ops.h>
 #include <time.h>
 
 namespace {
@@ -15,6 +16,13 @@ constexpr int fireworkX = 40, fireworkY = 66, fireworkW = 240, fireworkH = 82;
 
 void smallIcon(Adafruit_GFX& gfx, int x, int y, char kind, uint16_t color) {
   switch (kind) {
+    case 'b':  // 蓝牙标志
+      gfx.drawFastVLine(x, y - 8, 17, color);
+      gfx.drawLine(x, y - 8, x + 5, y - 4, color);
+      gfx.drawLine(x + 5, y - 4, x - 5, y + 5, color);
+      gfx.drawLine(x - 5, y - 5, x + 5, y + 4, color);
+      gfx.drawLine(x + 5, y + 4, x, y + 8, color);
+      break;
     case 'w':  // Wi-Fi: 三道同心圆弧
       for (int r : {5, 8, 11}) {
         for (int dx = -r * 3 / 4; dx <= r * 3 / 4; ++dx) {
@@ -149,7 +157,9 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   for (auto& text : cache) text = "";
   lastLights = -1;
   lastSelection = -1;
+  launcherTop = 0;
   panelsReady = false;
+  for (auto& bar : deviceBars) bar = -1;
   lastWeatherCode = -100;
   for (auto& code : forecastIcons) code = -100;
   for (auto& label : tabs) label = nullptr;
@@ -162,6 +172,7 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
       field(9, 71, 6, 180, 30, "APPS", 1, highlight);
     } else {
       const char icon = strcmp(title, "Wi-Fi") == 0 ? 'w' :
+                        strcmp(title, "Bluetooth") == 0 ? 'b' :
                         strncmp(title, "Weather", 7) == 0 ? 'c' :
                         strcmp(title, "F1 REACTION") == 0 ? 'f' :
                         strcmp(title, "F1 Statistics") == 0 ? 's' : 'm';
@@ -259,12 +270,16 @@ void Interface::animateTabs(bool entering, uint8_t mask) {
   }
 }
 
-void Interface::launcher(uint8_t selected) {
+void Interface::launcher(uint8_t selected, const char* const (&labels)[5]) {
   constexpr int cardX = 46, firstY = 49, width = 228, height = 36, pitch = 43;
-  static const char* labels[] = {"F1 Reaction", "Weather", "Wi-Fi", "Device"};
+  constexpr int viewportEnd = firstY + 4 * pitch;
+  constexpr int count = 5;
   if (lastSelection == selected) return;
+  int nextTop = launcherTop;
+  if (selected < nextTop) nextTop = selected;
+  if (selected >= nextTop + 4) nextTop = selected - 3;
 
-  GFXcanvas16 frame(width, height);
+  GFXcanvas16 frame(width, pitch);
   GFXcanvas1 shape(width, height);
   GFXcanvas1 ink(width, height);
   if (!frame.getBuffer() || !shape.getBuffer() || !ink.getBuffer()) return;
@@ -273,8 +288,13 @@ void Interface::launcher(uint8_t selected) {
   ink.setTextWrap(false);
   ink.setTextColor(1);
 
-  auto paint = [&](int row, int highlightY) {
-    const int y = firstY + row * pitch;
+  auto paint = [&](int logicalRow, int highlightY, int scroll) {
+    const int y = firstY + logicalRow * pitch;
+    const int screenY = y - scroll;
+    const int top = max(screenY, firstY);
+    const int end = min(screenY + pitch, viewportEnd);
+    if (top >= end) return;
+    const int row = (logicalRow + count) % count;
     ink.fillScreen(0);
     constexpr int x = 21, cy = 18;
     if (row == 0) {
@@ -297,6 +317,8 @@ void Interface::launcher(uint8_t selected) {
         }
       }
       ink.fillCircle(x, dotY, 2, 1);
+    } else if (row == 3) {
+      smallIcon(ink, x, cy, 'b', 1);
     } else {
       ink.drawRect(x - 6, cy - 6, 13, 13, 1);
       for (int n : {-4, 0, 4}) {
@@ -310,37 +332,48 @@ void Interface::launcher(uint8_t selected) {
 
     // 高亮在整条列表上移动，卡片形状充当遮罩。字和图标用同一个遮罩反色。
     uint16_t* pixels = frame.getBuffer();
-    for (int py = 0; py < height; ++py) {
-      // 用循环列表中的相对坐标取样，让移动的高亮也保留圆角。
-      constexpr int cycle = 4 * pitch;
-      const int highlightRow = (y + py - highlightY + cycle) % cycle;
+    for (int py = 0; py < pitch; ++py) {
+      const int highlightRow = y + py - highlightY;
       for (int px = 0; px < width; ++px) {
-        const bool lit = highlightRow < height && shape.getPixel(px, highlightRow);
-        pixels[py * width + px] = !shape.getPixel(px, py) ? background :
+        const bool lit = highlightRow >= 0 && highlightRow < height && shape.getPixel(px, highlightRow);
+        pixels[py * width + px] = py >= height || !shape.getPixel(px, py) ? background :
             ink.getPixel(px, py) ? (lit ? ILI9341_BLACK : ILI9341_WHITE) :
             lit ? highlight : 0x2167;
       }
     }
-    screen.drawRGBBitmap(cardX, y, pixels, width, height);
+    // 逐行裁掉视口以外的部分，标题和两侧按键不参与滚动。
+    screen.drawRGBBitmap(cardX, top, pixels + (top - screenY) * width, width, end - top);
   };
 
   if (lastSelection < 0) {
-    for (int row = 0; row < 4; ++row) paint(row, firstY + selected * pitch);
+    for (int row = 0; row < count; ++row) paint(row, firstY + selected * pitch, nextTop * pitch);
   } else {
     const int from = firstY + lastSelection * pitch;
-    int distance = static_cast<int>(selected) - lastSelection;
-    if (distance == 3) distance = -1;
-    if (distance == -3) distance = 1;
-    constexpr int steps = 9;
+    const bool wrapDown = lastSelection == count - 1 && selected == 0;
+    const bool wrapUp = lastSelection == 0 && selected == count - 1;
+    const int cycle = wrapDown ? count : wrapUp ? -count : 0;
+    const int distance = static_cast<int>(selected) + cycle - lastSelection;
+    const int scrollTarget = nextTop + cycle;
+    const bool scrolling = scrollTarget != launcherTop;
+    const int steps = cycle ? 8 : scrolling ? 5 : 9;
     for (int step = 1; step <= steps; ++step) {
       const float t = static_cast<float>(step) / steps;
       const float eased = t * t * (3.0f - 2.0f * t);
       const int pos = from + lroundf(distance * pitch * eased);
-      paint(lastSelection, pos);
-      paint(selected, pos);
+      const int scroll = lroundf((launcherTop + (scrollTarget - launcherTop) * eased) * pitch);
+      if (scrolling) {
+        // 跨首尾时借用相邻一轮的卡片，保持滚动方向与按键一致。
+        const int start = wrapUp ? -count : 0;
+        const int end = wrapDown ? 2 * count : count;
+        for (int row = start; row < end; ++row) paint(row, pos, scroll);
+      } else {
+        paint(lastSelection, pos, scroll);
+        paint(selected, pos, scroll);
+      }
     }
   }
   lastSelection = selected;
+  launcherTop = nextTop;
 }
 
 void Interface::field(uint8_t slot, int x, int y, int w, int h, String value,
@@ -622,12 +655,89 @@ void Interface::network() {
   panelsReady = true;
 }
 
+void Interface::bluetooth(const BluetoothSnapshot& scan, int first, bool namedOnly) {
+  using State = BluetoothSnapshot::State;
+  // 只在扫描状态或滚动位置改变时重画内容，保留标题和侧边键。
+  screen.fillRect(32, 42, 256, 192, background);
+  for (int slot = 0; slot <= 10; ++slot) cache[slot] = "";
+  if (scan.state != State::Ready || scan.count == 0) {
+    const char* message = scan.state == State::Scanning ? "Scanning nearby devices..." :
+                          scan.state == State::Failed ? "Scan failed. Try SCAN again." :
+                          scan.state == State::Ready ?
+                              (namedOnly ? "No named BLE devices found" : "No BLE broadcasts found") :
+                              "Press SCAN to start";
+    field(0, 36, 91, 248, 34, message, 0, highlight, true);
+    field(9, 38, 214, 244, 19, namedOnly ? "Named only  /  Hold SCAN for all" :
+          "All devices  /  Hold SCAN to filter", 3, highlight, true);
+    return;
+  }
+  for (int row = 0; row < bluetoothRows && first + row < scan.count; ++row) {
+    const auto& device = scan.devices[first + row];
+    const int y = 43 + row * 56;
+    const int slot = row * 3;
+    card(38, y, 244, 53);
+    field(slot, 46, y + 3, 151, 20, device.name, 0, ILI9341_WHITE, false, true);
+    field(slot + 1, 199, y + 3, 74, 20, String(device.rssi) + " dBm", 3, highlight, true, true);
+    field(slot + 2, 46, y + 23, 224, 15, device.address, 3, muted, false, true);
+    field(10, 46, y + 37, 224, 13, device.service, 3, muted, false, true);
+    cache[10] = "";  // 每行共用 UUID 字段编号，因为整组结果一起绘制。
+  }
+  const int pages = (scan.count + bluetoothRows - 1) / bluetoothRows;
+  field(9, 38, 214, 244, 19,
+        String(first / bluetoothRows + 1) + "/" + pages + "  |  " +
+        scan.count + (namedOnly ? " named  /  Hold SCAN" : " shown  /  Hold SCAN"), 3, highlight, true);
+}
+
+void Interface::memoryCard(uint8_t index, int y, const char* label, size_t total, size_t free) {
+  constexpr int x = 40, width = 240, trackX = 52, trackWidth = 216;
+  if (!panelsReady) card(x, y, width, 37);
+  const size_t used = total - min(free, total);
+  const int filled = total ? static_cast<int>((static_cast<uint64_t>(used) * trackWidth + total / 2) / total) : 0;
+  const uint16_t color = index == 0 ? 0x7DEB : index == 1 ? 0x65FF : sunColor;
+  constexpr float bytesPerMiB = 1024.0f * 1024.0f;
+  String value = "Unavailable";
+  if (total) {
+    value = index == 2 ? String(used / bytesPerMiB, 2) + " / " + String(total / bytesPerMiB, 2) + " MiB" :
+                         String(used / 1024) + " / " + String(total / 1024) + " KiB";
+  }
+  field(2 + index * 2, 51, y + 3, 58, 20, label, 3, color, false, true);
+  field(3 + index * 2, 111, y + 3, 156, 20, value, 0, ILI9341_WHITE, false, true);
+  if (deviceBars[index] != filled) {
+    deviceBars[index] = filled;
+    screen.fillRoundRect(trackX, y + 26, trackWidth, 6, 3, cardOutline);
+    if (filled) screen.fillRoundRect(trackX, y + 26, filled, 6, min(filled / 2, 3), color);
+  }
+}
+
 void Interface::device() {
-  field(0, 40, 39, 240, 22, ESP.getChipModel(), 0, highlight, true);
-  metric(1, 40, 67, 116, 49, 't', "Chip temp", temperature(temperatureRead()));
-  metric(2, 164, 67, 116, 49, 'p', "Uptime", String(millis() / 1000) + " s");
-  metric(3, 40, 122, 116, 49, 'm', "Free heap", String(ESP.getFreeHeap() / 1024) + " KiB");
-  metric(4, 164, 122, 116, 49, 'm', "Free PSRAM", String(ESP.getFreePsram() / 1024) + " KiB");
-  metric(5, 40, 177, 240, 49, 'm', "Flash", String(ESP.getFlashChipSize() / (1024 * 1024)) + " MiB");
+  field(8, 198, 10, 88, 24, Config::firmwareVersion, 3, muted, true);
+  constexpr uint16_t cool = 0x7DEB, warm = 0xFDC0, hot = 0xFA69;
+  constexpr float warmAt = 40.0f, hotAt = 50.0f;
+  const float chip = temperatureRead();
+  const bool valid = isfinite(chip);
+  const uint16_t tint = !valid ? muted : chip >= hotAt ? hot : chip >= warmAt ? warm : cool;
+  const int level = valid ? constrain(static_cast<int>((chip - 20.0f) * 26 / 40.0f), 0, 26) : 0;
+  const String reading = valid ? temperature(chip) : String("--");
+  if (!panelsReady) card(40, 43, 240, 58);
+  // 这些阈值只控制界面颜色，温度计刻度用于直观显示芯片读数。
+  if (cache[0] != reading) {
+    screen.fillRect(50, 48, 33, 47, cardColor);
+    screen.drawRoundRect(61, 51, 11, 34, 5, muted);
+    if (level > 0) screen.fillRect(64, 82 - level, 5, level, tint);
+    screen.fillCircle(66, 86, 8, tint);
+    field(0, 89, 65, 177, 29, reading, 1, tint, false, true);
+  }
+  field(1, 89, 49, 177, 15, "CHIP TEMPERATURE", 3, muted, false, true);
+
+  memoryCard(0, 104, "HEAP", ESP.getHeapSize(), ESP.getFreeHeap());
+  memoryCard(1, 144, "PSRAM", ESP.getPsramSize(), ESP.getFreePsram());
+  // 固件镜像大小和正在运行的 APP 分区容量在本次开机期间固定。
+  static const auto* app = esp_ota_get_running_partition();
+  static const size_t appCapacity = app ? app->size : 0;
+  static const size_t imageSize = appCapacity ? ESP.getSketchSize() : 0;
+  memoryCard(2, 184, "Firmware", imageSize ? appCapacity : 0,
+             appCapacity - min(appCapacity, imageSize));
+  field(10, 40, 223, 240, 16, String("Up ") + millis() / 1000 + " s  /  Flash " +
+        ESP.getFlashChipSize() / (1024 * 1024) + " MiB", 3, muted, true);
   panelsReady = true;
 }

@@ -1,5 +1,12 @@
 # Release history / 版本记录
 
+## v1.3.0
+
+- Add on-demand BLE scanning, RSSI sorting, three-result pages, and unnamed-device filtering. 新增 BLE 扫描、信号排序、整页翻动和无名称过滤。
+- Add circular App menu scrolling and long-press navigation. App 菜单双向循环滚动，支持长按连翻。
+- Add device usage meters, firmware version, and a color-coded thermometer. 设备页显示内存和固件用量、版本号和彩色温度计。
+- Extend idle light sleep to three minutes. 闲置轻度休眠延长到三分钟。
+
 ## v1.2.0
 
 - 60-second idle light sleep with four-button wake. 60 秒无操作后轻睡，四个按键均可唤醒。
