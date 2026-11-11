@@ -18,6 +18,10 @@ Buttons::Key repeatKey = Buttons::Key::None;
 uint32_t repeatAt = 0, fieldPressedAt = 0;
 bool fieldPending = false, fieldReset = false;
 uint32_t lastRefresh = 0;
+constexpr uint32_t idleSleepMs = 60000;
+constexpr uint32_t wakeReleaseMs = 35;
+uint32_t lastInput = 0, lastWakeLow = 0;
+bool wakeConfigured = false, discardWakePress = false;
 
 Buttons buttons;
 Game game;
@@ -121,6 +125,7 @@ void handle(Buttons::Key key, uint32_t pressedUs) {
     if (key == Key::Down) {
       game.press(pressedUs);
       draw();
+      if (game.newRecord) ui.startFireworks();
     } else if (key == Key::Action && game.canChangeMode()) {
       constexpr uint8_t upperRightTab = 1U << 2;
       game.debug = !game.debug;
@@ -196,6 +201,9 @@ void setup() {
   Serial.begin(115200);
   Serial.println("[BOOT] DeskConsole starting");
   buttons.begin();
+  wakeConfigured = buttons.enableWakeup();
+  Serial.println(wakeConfigured ? "[POWER] Light sleep after 60 s idle" :
+                                 "[POWER] GPIO wake setup failed; sleep disabled");
   game.begin();
   ui.begin();
   WiFi.mode(WIFI_STA);
@@ -206,6 +214,7 @@ void setup() {
   Serial.println("[TIME] NTP configured for MYT (UTC+8)");
   weather.begin();
   open(View::Home);
+  lastInput = millis();
 }
 
 void reportConnectivity() {
@@ -227,10 +236,48 @@ void reportConnectivity() {
   }
 }
 
+void sleepIfIdle() {
+  if (!wakeConfigured || millis() - lastInput < idleSleepMs || buttons.anyPressed()) return;
+  if (view == View::F1 && !game.canChangeMode()) return;
+
+  Serial.println("[POWER] Idle timeout; entering light sleep");
+  // 主动轻睡前停止 Wi-Fi，醒来后以原配置重连。RAM 中的天气和页面仍然可用。
+  if (!WiFi.mode(WIFI_OFF)) {
+    Serial.println("[POWER] Could not stop Wi-Fi; sleep skipped");
+    lastInput = millis();
+    return;
+  }
+  ui.setDisplayOn(false);
+  // 如果按键恰好在准备阶段按下，直接走恢复流程，避免吞掉一次唤醒。
+  const esp_err_t result = buttons.anyPressed() ? ESP_OK : esp_light_sleep_start();
+  ui.setDisplayOn(true);
+  WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);
+  WiFi.begin(Config::ssid, Config::password);
+  lastInput = lastRefresh = lastWakeLow = millis();
+  discardWakePress = true;
+  repeatKey = Buttons::Key::None;
+  fieldPending = fieldReset = false;
+  Serial.printf("[POWER] Active again; sleep status=%d, Wi-Fi reconnecting\n", result);
+  draw();
+}
+
 void loop() {
+  if (discardWakePress) {
+    // 要求所有键稳定松开，唤醒的那一次按压不传给当前页面。
+    if (buttons.anyPressed()) lastWakeLow = millis();
+    if (millis() - lastWakeLow >= wakeReleaseMs) {
+      buttons.begin();
+      lastInput = millis();
+      discardWakePress = false;
+    }
+    delay(1);
+    return;
+  }
   uint32_t pressedUs = 0;
   const auto key = buttons.poll(pressedUs);
   if (key != Buttons::Key::None) {
+    lastInput = millis();
     constexpr const char* names[] = {"LEFT_TOP", "LEFT_BOTTOM", "RIGHT_TOP", "RIGHT_BOTTOM"};
     Serial.printf("[%lu ms] [KEY] %s\n", static_cast<unsigned long>(millis()),
                   names[static_cast<uint8_t>(key)]);
@@ -252,11 +299,13 @@ void loop() {
       lastRefresh = millis();
       draw();
     }
+    ui.updateFireworks(game);
   } else if (view != View::Launcher && millis() - lastRefresh >= 1000) {
     lastRefresh = millis();
     draw();
   }
   // F1 计时优先，网络诊断放在其他页面进行。
   if (view != View::F1) reportConnectivity();
+  sleepIfIdle();
   delay(1);
 }

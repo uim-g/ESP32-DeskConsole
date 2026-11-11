@@ -1,5 +1,11 @@
 # Release history / 版本记录
 
+## v1.2.0
+
+- 60-second idle light sleep with four-button wake. 60 秒无操作后轻睡，四个按键均可唤醒。
+- F1 fireworks for a new personal best. F1 刷新个人最快原始成绩时播放烟花。
+- Sunrise and sunset on the current weather page, data time on the forecast page, and a clearer Free PSRAM label. 调整天气页信息位置和剩余 PSRAM 标注。
+
 ## v1.1.0
 
 - Nunito typography, animated rounded launcher highlights, and clipped edge labels. Nunito 字体、圆角高亮缓动和侧边标签动画。

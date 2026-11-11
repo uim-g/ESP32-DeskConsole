@@ -21,7 +21,7 @@ The nine panels illustrate Home, Apps, F1, Statistics, Calibration, Weather Now,
 
 - **Home** shows time, date, current conditions and temperature. Press the upper-left button to open Apps.
 - **Apps** uses the right buttons to move the selection and the lower-left button to open it. The rounded highlight eases between cards and inverts the text and icon it passes over. The card boundaries clip the moving highlight.
-- **Weather** uses either right button to toggle between current conditions and the three-day forecast. Current conditions include humidity, wind, pressure and rain. The forecast includes highs, lows, rain probability, sunrise and sunset.
+- **Weather** uses either right button to toggle between current conditions and the three-day forecast. Current conditions include humidity, wind, pressure, rain, sunrise and sunset. The forecast shows daily highs, lows, rain probability, and the Open-Meteo data time.
 - **Wi-Fi** shows status, SSID, IP, RSSI and NTP readiness. Press the lower-left button to request reconnection.
 - **Device** shows chip temperature, uptime, free heap, free PSRAM and flash capacity. Chip temperature measures the ESP32-S3 itself.
 - Page transitions slide out the old side labels, replace the page, then slide in the new labels. Label animation writes only the edge regions. The interface uses Nunito. Its license is included in [Nunito-OFL.txt](DeskConsole/Nunito-OFL.txt).
@@ -33,6 +33,12 @@ The nine panels illustrate Home, Apps, F1, Statistics, Calibration, Weather Now,
 - In Debug, the result includes **RAW** and **CAL**. **SET** (upper right) opens calibration. Tap **FIELD** to select a parameter or hold it for about 800 ms to restore 1.00 and 0 ms. The right buttons adjust the multiplier by 0.01 or the offset by 1 ms. Holding either adjustment button repeats after about 420 ms. **SAVE** writes the settings to flash and returns.
 - Calibration uses `CAL = max(0, RAW × multiplier + offset)`, with both times and the offset expressed in milliseconds. The multiplier range is 0.50–1.50 and the offset range is −500 to +500 ms. Adjusting calibration does not rewrite saved raw times.
 - Completed reactions, false starts and timeouts count toward the total. Exiting mid-round does not.
+
+## Idle light sleep and new records
+
+After 60 seconds without a button press, DeskConsole turns off the ILI9341 display output, stops Wi-Fi, and enters light sleep. Active F1 rounds stay awake. Press any button to wake to the same page, then release it before pressing again to perform an action. Wi-Fi reconnects and cached weather stays available. The backlight remains powered when LED is wired directly to 3V3.
+
+F1 plays a brief fireworks animation when a valid raw reaction time beats the saved best. The first valid result establishes the baseline. Clearing statistics also resets that baseline.
 
 ## Serial Monitor
 

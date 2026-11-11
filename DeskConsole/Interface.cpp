@@ -1,6 +1,7 @@
 #include "Interface.h"
 #include "NunitoFonts.h"
 #include <WiFi.h>
+#include <new>
 #include <time.h>
 
 namespace {
@@ -10,6 +11,7 @@ constexpr uint16_t cardOutline = 0x3A4E;
 constexpr char degree = '\x01';
 constexpr uint16_t sunColor = 0xFDC0;
 constexpr uint16_t rainColor = 0x54FF;
+constexpr int fireworkX = 40, fireworkY = 66, fireworkW = 240, fireworkH = 82;
 
 void smallIcon(Adafruit_GFX& gfx, int x, int y, char kind, uint16_t color) {
   switch (kind) {
@@ -134,7 +136,13 @@ void Interface::begin() {
   screen.setTextWrap(false);
 }
 
+void Interface::setDisplayOn(bool on) {
+  // ILI9341 保留显存。LED 背光脚独立供电，不受这条命令控制。
+  screen.sendCommand(on ? ILI9341_DISPON : ILI9341_DISPOFF);
+}
+
 void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
+  fireworks.reset();
   // 真正切页才清屏。换页后所有绘制缓存需要重新建立。
   background = base;
   highlight = color;
@@ -401,6 +409,7 @@ void Interface::home(const WeatherData& data) {
 
 void Interface::game(const Game& game) {
   using State = Game::State;
+  if (fireworks && game.state != State::Result) stopFireworks();
   if (lastLights != game.lights) {
     for (int i = 0; i < 5; ++i) {
       const int x = 42 + i * 48;
@@ -440,6 +449,62 @@ void Interface::game(const Game& game) {
   field(2, 38, 183, 244, 22, corrected, 0, highlight, true);
   field(3, 38, 207, 244, 19, hint, 4, muted, true);
   field(4, 38, 226, 244, 14, game.saved() ? "" : "Flash save unavailable", 3, muted, true);
+}
+
+void Interface::startFireworks() {
+  fireworks.reset(new (std::nothrow) GFXcanvas16(fireworkW, fireworkH));
+  if (!fireworks || !fireworks->getBuffer()) {
+    fireworks.reset();
+    return;
+  }
+  fireworkStarted = millis();
+  lastFireworkFrame = fireworkStarted - 40;
+}
+
+void Interface::stopFireworks() {
+  fireworks.reset();
+  screen.fillRect(fireworkX, fireworkY, fireworkW, fireworkH, background);
+  lastLights = -1;
+}
+
+void Interface::updateFireworks(const Game& game) {
+  if (!fireworks) return;
+  const uint32_t now = millis();
+  const uint32_t elapsed = now - fireworkStarted;
+  if (elapsed >= 1350) {
+    stopFireworks();
+    this->game(game);
+    return;
+  }
+  if (now - lastFireworkFrame < 40) return;
+  lastFireworkFrame = now;
+
+  // 只合成灯箱区域。三个烟花错峰展开，粒子减速并向下坠落。
+  auto& frame = *fireworks;
+  frame.fillScreen(background);
+  constexpr int centers[] = {47, 120, 193};
+  constexpr uint16_t colors[] = {ILI9341_YELLOW, 0xF94E, 0x65FF};
+  for (int burst = 0; burst < 3; ++burst) {
+    const int age = static_cast<int>(elapsed) - burst * 165;
+    if (age < 0 || age > 850) continue;
+    const float t = age / 850.0f;
+    const float radius = 37.0f * t * (2.0f - t);
+    for (int ray = 0; ray < 12; ++ray) {
+      const float angle = ray * 0.523599f + burst * 0.24f;
+      const float dx = cosf(angle), dy = sinf(angle);
+      const int x = centers[burst] + lroundf(dx * radius);
+      const int y = 33 + lroundf(dy * radius + 13 * t * t);
+      frame.drawLine(x, y, x - lroundf(dx * 5), y - lroundf(dy * 5), colors[burst]);
+      if (t < 0.62f) frame.fillCircle(x, y, 2, ILI9341_WHITE);
+    }
+  }
+  if (elapsed >= 490) {
+    frame.setFont(&NunitoSmall);
+    frame.setTextColor(ILI9341_YELLOW);
+    frame.setCursor(76, 76);
+    frame.print("NEW BEST");
+  }
+  screen.drawRGBBitmap(fireworkX, fireworkY, frame.getBuffer(), fireworkW, fireworkH);
 }
 
 void Interface::gameMode(bool debug) {
@@ -522,7 +587,8 @@ void Interface::weather(const WeatherData& data, bool forecast) {
             number(data.high[i]) + "/" + number(data.low[i]) + degree + "C   Rain " + number(data.chance[i]) + "%",
             0, ILI9341_WHITE, false, true);
     }
-    field(6, 39, 188, 242, 20, String("Sunrise ") + data.sunrise + "  /  Sunset " + data.sunset, 0, ILI9341_WHITE, true);
+    field(8, 40, 217, 240, 18, String("Open-Meteo ") + data.updated + (data.stale ? "  (cached)" : ""),
+          0, muted, true);
   } else {
     if (!panelsReady) card(40, 45, 240, 65);
     if (lastWeatherCode != data.code) {
@@ -537,8 +603,10 @@ void Interface::weather(const WeatherData& data, bool forecast) {
     metric(3, 164, 116, 116, 45, 'v', "Wind", number(data.wind) + " km/h");
     metric(4, 40, 166, 116, 45, 'p', "Pressure", number(data.pressure) + " hPa");
     metric(5, 164, 166, 116, 45, 'h', "Rain", number(data.rain, 1) + " mm");
+    // 日出、日落取当天预报的数据，但在当前天气页展示。
+    field(6, 39, 214, 242, 22, String("Sunrise ") + data.sunrise + "  /  Sunset " + data.sunset,
+          4, muted, true);
   }
-  field(8, 40, 217, 240, 18, String("Open-Meteo ") + data.updated + (data.stale ? "  (cached)" : ""), 0, muted, true);
   panelsReady = true;
 }
 
@@ -559,7 +627,7 @@ void Interface::device() {
   metric(1, 40, 67, 116, 49, 't', "Chip temp", temperature(temperatureRead()));
   metric(2, 164, 67, 116, 49, 'p', "Uptime", String(millis() / 1000) + " s");
   metric(3, 40, 122, 116, 49, 'm', "Free heap", String(ESP.getFreeHeap() / 1024) + " KiB");
-  metric(4, 164, 122, 116, 49, 'm', "PSRAM", String(ESP.getFreePsram() / 1024) + " KiB");
+  metric(4, 164, 122, 116, 49, 'm', "Free PSRAM", String(ESP.getFreePsram() / 1024) + " KiB");
   metric(5, 40, 177, 240, 49, 'm', "Flash", String(ESP.getFlashChipSize() / (1024 * 1024)) + " MiB");
   panelsReady = true;
 }

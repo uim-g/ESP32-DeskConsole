@@ -1,5 +1,7 @@
 #pragma once
 #include <Arduino.h>
+#include <driver/gpio.h>
+#include <esp_sleep.h>
 
 // GPIO4–7 使用内部上拉，按钮另一端接地。低电平表示按下。
 class Buttons {
@@ -14,6 +16,23 @@ class Buttons {
   }
 
   bool playHeld() const { return digitalRead(keys[3].pin) == LOW; }
+
+  bool anyPressed() const {
+    for (const auto& key : keys) {
+      if (digitalRead(key.pin) == LOW) return true;
+    }
+    return false;
+  }
+
+  bool enableWakeup() const {
+    // 四个键按下均为低电平。轻睡 GPIO 唤醒按电平触发。
+    for (const auto& key : keys) {
+      if (gpio_wakeup_enable(static_cast<gpio_num_t>(key.pin), GPIO_INTR_LOW_LEVEL) != ESP_OK) {
+        return false;
+      }
+    }
+    return esp_sleep_enable_gpio_wakeup() == ESP_OK;
+  }
   bool held(Key key) const {
     // 连调读取的是消抖后的持续状态，普通页面仍使用单次按下事件。
     return key != Key::None && keys[static_cast<uint8_t>(key)].stable == LOW;

@@ -32,6 +32,7 @@ class Game {
     state = State::Idle;
     lights = 0;
     resultUs = 0;
+    newRecord = false;
   }
 
   void press(uint32_t pressedUs) {
@@ -100,6 +101,7 @@ class Game {
   State state = State::Idle;
   uint8_t lights = 0;
   uint32_t resultUs = 0;
+  bool newRecord = false;
   uint32_t best() const { return stats.bestUs; }
   uint32_t total() const { return stats.total; }
   bool saved() const { return storageReady && lastSaveOK; }
@@ -158,6 +160,9 @@ class Game {
   void finish(State outcome) {
     state = outcome;
     lights = 0;
+    // 第一笔有效成绩建立基准，之后只有严格更快才算破纪录。
+    newRecord = outcome == State::Result && resultUs > 0 &&
+                stats.bestUs > 0 && resultUs < stats.bestUs;
     lastOutcome = outcome;
     lastUs = outcome == State::Result ? resultUs : 0;
     if (stats.total != UINT32_MAX) ++stats.total;
