@@ -16,7 +16,7 @@ void copyTime(char (&target)[6], const char* timestamp) {
 // 启动 FreeRTOS 任务，让 HTTPS 请求和 JSON 解析与按键扫描分开运行。
 void Weather::begin() {
   if (xTaskCreate(worker, "weather", 8192, this, 1, nullptr) != pdPASS) {
-    Serial.println("Could not start weather task");
+    Serial.println("[WEATHER] Could not start background task");
   }
 }
 
@@ -32,15 +32,27 @@ WeatherData Weather::snapshot() {
 // 联网后抓取。成功每 15 分钟再抓，失败约 30 秒后重试，并保留上次数据。
 void Weather::worker(void* context) {
   auto& self = *static_cast<Weather*>(context);
+  bool waitingReported = false;
   for (;;) {
     bool ok = false;
     if (WiFi.status() == WL_CONNECTED) {
+      waitingReported = false;
+      Serial.println("[WEATHER] Requesting current conditions and 3-day forecast");
       WeatherData result;
       ok = fetch(result);
       portENTER_CRITICAL(&self.lock);
       if (ok) self.cached = result;
       self.cached.stale = !ok;
       portEXIT_CRITICAL(&self.lock);
+      if (ok) {
+        Serial.printf("[WEATHER] Updated %s MYT; temp=%.1f C code=%d; next in 15 min\n",
+                      result.updated, result.temp, result.code);
+      } else {
+        Serial.println("[WEATHER] Keeping cached data; retry in 30 s");
+      }
+    } else if (!waitingReported) {
+      waitingReported = true;
+      Serial.println("[WEATHER] Waiting for Wi-Fi");
     }
     vTaskDelay(pdMS_TO_TICKS(ok ? 900000 : 30000));
   }
@@ -67,7 +79,10 @@ bool Weather::fetch(WeatherData& result) {
   http.setConnectTimeout(4000);
   http.setTimeout(4000);
   http.useHTTP10(true);
-  if (!http.begin(client, url)) return false;
+  if (!http.begin(client, url)) {
+    Serial.println("[WEATHER] Could not initialize HTTPS request");
+    return false;
+  }
 
   const int status = http.GET();
   // 只接受 HTTP 成功且包含 current 和 daily 的响应。
@@ -77,7 +92,7 @@ bool Weather::fetch(WeatherData& result) {
                   doc["current"].is<JsonObject>() && doc["daily"].is<JsonObject>();
   http.end();
   if (!ok) {
-    Serial.printf("Weather request or parsing failed, HTTP %d\n", status);
+    Serial.printf("[WEATHER] Request or JSON parsing failed, HTTP %d\n", status);
     return false;
   }
 

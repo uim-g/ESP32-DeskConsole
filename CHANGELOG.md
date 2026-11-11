@@ -1,5 +1,12 @@
 # Release history / 版本记录
 
+## v1.1.0
+
+- Nunito typography, animated rounded launcher highlights, and clipped edge labels. Nunito 字体、圆角高亮缓动和侧边标签动画。
+- Weather, Wi-Fi, and Device pages use icon cards. 天气、Wi-Fi 和设备页改用图标卡片。
+- F1 RAW/CAL timing, persistent calibration, statistics reset, and local mode updates. F1 增加原始和修正成绩、补偿设置、统计归零及模式局部刷新。
+- Event-based serial diagnostics, UI concept sheet, and expanded bilingual setup instructions. 事件式串口日志、UI 示意图和详细双语文档。
+
 ## v1.0.0
 
 - Home screen with local time, date, and current weather. 桌面显示本地时间、日期和当前天气。

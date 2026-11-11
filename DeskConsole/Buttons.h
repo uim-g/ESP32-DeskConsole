@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
 
+// GPIO4–7 使用内部上拉，按钮另一端接地。低电平表示按下。
 class Buttons {
  public:
   enum class Key : uint8_t { Back, Action, Up, Down, None };
@@ -13,6 +14,10 @@ class Buttons {
   }
 
   bool playHeld() const { return digitalRead(keys[3].pin) == LOW; }
+  bool held(Key key) const {
+    // 连调读取的是消抖后的持续状态，普通页面仍使用单次按下事件。
+    return key != Key::None && keys[static_cast<uint8_t>(key)].stable == LOW;
+  }
 
   void consumeHeldPlay() {
     // 这次低电平已经判作抢跑，松手后才接受下一次按下。
@@ -31,6 +36,7 @@ class Buttons {
         key.changed = now;
       }
       if (key.raw != key.stable && now - key.changed >= 30000UL) {
+        // 电平连续稳定 30 ms 才更新按键状态，松手本身不产生按下事件。
         key.stable = key.raw;
         if (key.stable == LOW && event == Key::None) {
           event = static_cast<Key>(i);
