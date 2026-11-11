@@ -3,6 +3,7 @@
 #include "Bluetooth.h"
 #include "Game.h"
 #include "Interface.h"
+#include "StatusLed.h"
 #include "Weather.h"
 #include <WiFi.h>
 #include <time.h>
@@ -36,6 +37,19 @@ Game game;
 Interface ui;
 Weather weather;
 BluetoothScanner bluetooth;
+StatusLed statusLed;
+
+// 灯只在计时之外反馈，避免亮光提前提示起跑。
+void showF1Led() {
+  using State = Game::State;
+  using Cue = StatusLed::Cue;
+  switch (game.state) {
+    case State::Result: statusLed.play(game.newRecord ? Cue::Record : Cue::Result); break;
+    case State::FalseStart: statusLed.play(Cue::FalseStart); break;
+    case State::Timeout: statusLed.play(Cue::Timeout); break;
+    default: statusLed.stop(); break;
+  }
+}
 
 void adjustCalibration(Buttons::Key key) {
   game.adjustCalibration(editOffset, key == Buttons::Key::Up ? 1 : -1);
@@ -66,6 +80,7 @@ void draw() {
 }
 
 void open(View next) {
+  if (view == View::F1 && next != View::F1) statusLed.stop();
   if (next != view) {
     navRepeatKey = Buttons::Key::None;
     scanPending = false;
@@ -125,6 +140,7 @@ void handle(Buttons::Key key, uint32_t pressedUs) {
         return;
       }
       Serial.println("[CAL] Saved to flash");
+      statusLed.play(StatusLed::Cue::Saved);
     }
     if (view == View::F1) game.reset();
     confirmClear = false;
@@ -147,6 +163,7 @@ void handle(Buttons::Key key, uint32_t pressedUs) {
       game.press(pressedUs);
       draw();
       if (game.newRecord) ui.startFireworks();
+      showF1Led();
     } else if (key == Key::Action && game.canChangeMode()) {
       constexpr uint8_t upperRightTab = 1U << 2;
       game.debug = !game.debug;
@@ -162,7 +179,10 @@ void handle(Buttons::Key key, uint32_t pressedUs) {
       open(game.debug ? View::Calibration : View::Stats);
     }
   } else if (view == View::Stats && key == Key::Action) {
-    if (confirmClear) game.clearStats();
+    if (confirmClear) {
+      game.clearStats();
+      if (game.saved()) statusLed.play(StatusLed::Cue::Saved);
+    }
     else Serial.println("[F1] Press ZERO again to confirm");
     confirmClear = !confirmClear;
     draw();
@@ -182,7 +202,9 @@ void handle(Buttons::Key key, uint32_t pressedUs) {
     forecast = !forecast;
     open(View::Weather);
   } else if (view == View::Network && key == Key::Action) {
-    Serial.printf("[WIFI] Manual reconnect: %s\n", WiFi.reconnect() ? "requested" : "failed");
+    const bool requested = WiFi.reconnect();
+    Serial.printf("[WIFI] Manual reconnect: %s\n", requested ? "requested" : "failed");
+    if (requested) statusLed.play(StatusLed::Cue::Scan);
     draw();
   } else if (view == View::Bluetooth) {
     if (key == Key::Action && !bluetooth.busy()) {
@@ -213,7 +235,7 @@ void updateBluetoothScanKey() {
     Serial.printf("[BLE] Named-only filter: %s\n", namedBluetoothOnly ? "on" : "off");
   }
   firstBluetooth = 0;
-  bluetooth.start(namedBluetoothOnly);
+  if (bluetooth.start(namedBluetoothOnly)) statusLed.play(StatusLed::Cue::Scan);
   draw();
 }
 
@@ -288,6 +310,7 @@ void setup() {
   Serial.println("[TIME] NTP configured for MYT (UTC+8)");
   weather.begin();
   open(View::Home);
+  statusLed.begin();
   lastInput = millis();
 }
 
@@ -300,6 +323,7 @@ void reportConnectivity() {
     lastStatus = status;
     if (status == WL_CONNECTED) {
       Serial.printf("[WIFI] Connected; signal=%ld dBm\n", static_cast<long>(WiFi.RSSI()));
+      statusLed.play(StatusLed::Cue::Connected);
     } else {
       Serial.printf("[WIFI] Connection status=%d\n", status);
     }
@@ -323,6 +347,7 @@ void sleepIfIdle() {
     return;
   }
   ui.setDisplayOn(false);
+  statusLed.stop();
   // 如果按键恰好在准备阶段按下，直接走恢复流程，避免吞掉一次唤醒。
   const esp_err_t result = buttons.anyPressed() ? ESP_OK : esp_light_sleep_start();
   ui.setDisplayOn(true);
@@ -369,7 +394,11 @@ void loop() {
   updateNavigationKeys();
   if (view == View::Bluetooth) {
     updateBluetoothScanKey();
-    if (bluetoothState == BluetoothSnapshot::State::Scanning && !bluetooth.busy()) draw();
+    if (bluetoothState == BluetoothSnapshot::State::Scanning && !bluetooth.busy()) {
+      draw();
+      statusLed.play(bluetoothState == BluetoothSnapshot::State::Ready ?
+                     StatusLed::Cue::Connected : StatusLed::Cue::Timeout);
+    }
   } else if (view == View::Calibration) {
     updateCalibrationKeys();
   } else if (view == View::F1) {
@@ -382,6 +411,7 @@ void loop() {
       draw();
       // 五盏屏幕灯画暗后才记录起跑时刻。屏幕自身的延迟仍会影响成绩。
       game.presented(micros());
+      if (game.canChangeMode()) showF1Led();
     } else if (game.debug && game.state == Game::State::Go && millis() - lastRefresh >= 100) {
       lastRefresh = millis();
       draw();
@@ -393,6 +423,7 @@ void loop() {
   }
   // F1 计时优先，网络诊断放在其他页面进行。
   if (view != View::F1) reportConnectivity();
+  statusLed.update();
   sleepIfIdle();
   delay(1);
 }

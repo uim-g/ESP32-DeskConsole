@@ -1,5 +1,10 @@
 # Release history / 版本记录
 
+## v1.4.0
+
+- Add GPIO48 onboard RGB cues for F1, Wi-Fi, BLE, and flash saves. 加入 GPIO48 板载 RGB 状态反馈。
+- Include the Wokwi wiring reference and the display ground correction in both READMEs. 双语 README 加入 Wokwi 接线图和屏幕 GND 补接说明。
+
 ## v1.3.1
 
 - Replace side-button outlines with a subtle theme-tinted fill and keep white labels and icons. 侧边按键提示改为低对比度主题色填充，文字和图标保持白色。

@@ -73,3 +73,13 @@ Each button connects its GPIO to common GND when pressed. The firmware enables i
 F1 timing uses the TFT lights-out signal and includes hardware-dependent display and input latency. The prototype weather client skips HTTPS certificate verification. This release snapshot has not been recompiled or hardware-tested during packaging.
 
 See [release history](CHANGELOG.md).
+
+## Wiring diagram
+
+![DeskConsole Wokwi wiring reference](docs/wokwi-wiring.png)
+
+**Ground correction.** In this reference image, display pin 2 (GND), immediately below the red VCC lead, is missing its wire. Connect it to ESP32-S3 GND or the button ground rail. The table above gives the complete connections.
+
+## Onboard RGB status LED
+
+This build uses the onboard addressable LED on GPIO48, with each color channel capped at 8. Blue indicates startup, a reconnect request or a scan start. Green indicates Wi-Fi connected, BLE scan completed or a valid F1 time. Cyan confirms a saved calibration or cleared statistics. False starts flash red, timeouts and failed scans use amber, and a new F1 record cycles colors with the fireworks. The LED turns off during F1 countdown and reaction timing and before light sleep.
