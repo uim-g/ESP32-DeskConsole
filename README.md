@@ -83,3 +83,7 @@ See [release history](CHANGELOG.md).
 ## Onboard RGB status LED
 
 This build uses the onboard addressable LED on GPIO48, with each color channel capped at 8. Blue indicates startup, a reconnect request or a scan start. Green indicates Wi-Fi connected, BLE scan completed or a valid F1 time. Cyan confirms a saved calibration or cleared statistics. False starts flash red, timeouts and failed scans use amber, and a new F1 record cycles colors with the fireworks. The LED turns off during F1 countdown and reaction timing and before light sleep.
+
+## License
+
+The original DeskConsole source code is available under the [MIT License](LICENSE). Nunito font assets remain under the [SIL Open Font License 1.1](DeskConsole/Nunito-OFL.txt). Third-party libraries and weather data are subject to their respective terms.
