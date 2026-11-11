@@ -1,5 +1,9 @@
 # Release history / 版本记录
 
+## v1.3.1
+
+- Replace side-button outlines with a subtle theme-tinted fill and keep white labels and icons. 侧边按键提示改为低对比度主题色填充，文字和图标保持白色。
+
 ## v1.3.0
 
 - Add on-demand BLE scanning, RSSI sorting, three-result pages, and unnamed-device filtering. 新增 BLE 扫描、信号排序、整页翻动和无名称过滤。

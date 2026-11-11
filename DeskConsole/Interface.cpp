@@ -194,6 +194,12 @@ void Interface::animateTabs(bool entering, uint8_t mask) {
   if (!any) return;
 
   constexpr int width = 24, body = 21, maxHeight = 64;
+  // 将约 16% 的主题色混入页面背景，让填充只隐约可见。
+  const uint16_t red = (5 * ((background >> 11) & 31) + ((highlight >> 11) & 31) + 3) / 6;
+  const uint16_t green = (5 * ((background >> 5) & 63) + ((highlight >> 5) & 63) + 3) / 6;
+  const uint16_t blue = (5 * (background & 31) + (highlight & 31) + 3) / 6;
+  const uint16_t fill = (red << 11) | (green << 5) | blue;
+  constexpr uint16_t ink = ILI9341_WHITE;
   GFXcanvas16 patch(width, maxHeight);
   GFXcanvas1 letters(48, 14);
   if (!patch.getBuffer() || !letters.getBuffer()) return;
@@ -225,22 +231,22 @@ void Interface::animateTabs(bool entering, uint8_t mask) {
       const int center = h / 2;
       patch.fillScreen(background);
       if (offset < body) {
-        patch.drawRoundRect(right ? x : x - 7, 0, body + 7, h, 7, highlight);
+        patch.fillRoundRect(right ? x : x - 7, 0, body + 7, h, 7, fill);
         if (arrow) {
           const int direction = label[0] == '^' ? -1 : 1;
-          patch.drawLine(cx - 5, center - direction * 3, cx, center + direction * 3, ILI9341_WHITE);
-          patch.drawLine(cx, center + direction * 3, cx + 5, center - direction * 3, ILI9341_WHITE);
+          patch.drawLine(cx - 5, center - direction * 3, cx, center + direction * 3, ink);
+          patch.drawLine(cx, center + direction * 3, cx + 5, center - direction * 3, ink);
         } else if (minus) {
-          patch.drawFastHLine(cx - 4, center, 9, ILI9341_WHITE);
+          patch.drawFastHLine(cx - 4, center, 9, ink);
         } else {
           if (apps) {
             for (int dy : {-4, 1}) {
-              for (int dx : {-4, 1}) patch.drawRect(cx + dx, 9 + dy, 3, 3, highlight);
+              for (int dx : {-4, 1}) patch.drawRect(cx + dx, 9 + dy, 3, 3, ink);
             }
           } else if (back) {
-            patch.drawFastHLine(cx - 4, 9, 9, highlight);
-            patch.drawLine(cx - 4, 9, cx, 6, highlight);
-            patch.drawLine(cx - 4, 9, cx, 12, highlight);
+            patch.drawFastHLine(cx - 4, 9, 9, ink);
+            patch.drawLine(cx - 4, 9, cx, 6, ink);
+            patch.drawLine(cx - 4, 9, cx, 12, ink);
           }
           letters.fillScreen(0);
           letters.setCursor(-textX, -textY);
@@ -251,7 +257,7 @@ void Interface::animateTabs(bool entering, uint8_t mask) {
               if (letters.getPixel(u, v)) {
                 patch.drawPixel(cx + (right ? textHeight / 2 - v : v - textHeight / 2),
                                 middle + (right ? u - length / 2 : length / 2 - u),
-                                ILI9341_WHITE);
+                                ink);
               }
             }
           }
