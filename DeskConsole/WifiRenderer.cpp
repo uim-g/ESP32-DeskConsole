@@ -18,12 +18,26 @@ void text(Adafruit_GFX& gfx, String value, const GFXfont* font,
 }
 constexpr int rowHeight = 44, rowPitch = 51, rowWidth = 236;
 constexpr int wheelPitch = 76;
+constexpr int listX = 42, listY = 46, switchX = 182, switchY = 11;
+constexpr int knobOff = 12, knobOn = 32;
 }
 
 void Interface::wifiList(const WifiRow* rows, int count, int selected, const String& footer) {
   if (wifiListAnimation.active() && selected != wifiSelected) {
     wifiListAnimation.stop();
     renderWifiList(1.0f);
+  }
+  const int radio = count ? rows[0].radio : -1;
+  if (radio != wifiSwitchTarget) {
+    wifiSwitchAnimation.stop();
+    if (radio >= 0) {
+      if (wifiSwitchTarget < 0) wifiSwitchKnob = radio ? knobOn : knobOff;
+      else {
+        wifiSwitchFrom = wifiSwitchKnob;
+        wifiSwitchAnimation.start(millis(), 132, 8);
+      }
+    }
+    wifiSwitchTarget = radio;
   }
   for (int i = 0; i < count; ++i) wifiRows[i] = rows[i];
   wifiRowCount = count;
@@ -42,7 +56,7 @@ void Interface::wifiList(const WifiRow* rows, int count, int selected, const Str
 }
 
 void Interface::renderWifiList(float progress) {
-  constexpr int x = 42, firstY = 46;
+  constexpr int x = listX, firstY = listY;
   const int marker = lroundf((wifiPrevious + (wifiSelected - wifiPrevious) * smoothStep(progress)) * rowPitch);
   for (int row = 0; row < 3; ++row) {
     const int y = firstY + row * rowPitch;
@@ -70,10 +84,7 @@ void Interface::renderWifiList(float progress) {
            active ? ILI9341_BLACK : ILI9341_WHITE);
       text(screen, item.detail, &NunitoHint, x + 9, y + 24, item.radio >= 0 ? 171 : 218, 15,
            active ? ILI9341_BLACK : muted);
-      if (item.radio >= 0) {
-        screen.fillRoundRect(x + 182, y + 11, 44, 22, 11, item.radio ? 0x3D6C : 0x528A);
-        screen.fillCircle(x + 182 + (item.radio ? 32 : 12), y + 22, 8, ILI9341_WHITE);
-      }
+      if (item.radio >= 0) paintWifiSwitch(screen, x + switchX, y + switchY);
       cache[row] = key;
       continue;
     }
@@ -98,13 +109,34 @@ void Interface::renderWifiList(float progress) {
         else if (frame.getPixel(px, py) == background) frame.drawPixel(px, py, cardColor);
       }
     }
-    if (item.radio >= 0) {
-      frame.fillRoundRect(182, 11, 44, 22, 11, item.radio ? 0x3D6C : 0x528A);
-      frame.fillCircle(182 + (item.radio ? 32 : 12), 22, 8, ILI9341_WHITE);
-    }
+    if (item.radio >= 0) paintWifiSwitch(frame, switchX, switchY);
     screen.drawRGBBitmap(x, y, frame.getBuffer(), rowWidth, rowHeight);
     cache[row] = key;
   }
+}
+
+void Interface::paintWifiSwitch(Adafruit_GFX& gfx, int x, int y) const {
+  constexpr uint16_t offColor = 0x528A, onColor = 0x3D6C;
+  const int weight = wifiSwitchKnob - knobOff;
+  const int span = knobOn - knobOff;
+  const auto channel = [&](int shift, int mask) {
+    const int from = (offColor >> shift) & mask;
+    const int to = (onColor >> shift) & mask;
+    return (from * (span - weight) + to * weight + span / 2) / span;
+  };
+  const uint16_t track = (channel(11, 31) << 11) | (channel(5, 63) << 5) | channel(0, 31);
+  gfx.fillRoundRect(x, y, 44, 22, 11, track);
+  gfx.fillCircle(x + wifiSwitchKnob, y + 11, 8, ILI9341_WHITE);
+}
+
+void Interface::renderWifiSwitch(float progress) {
+  if (wifiSwitchTarget < 0) return;
+  const int target = wifiSwitchTarget ? knobOn : knobOff;
+  const int position = wifiSwitchFrom + lroundf((target - wifiSwitchFrom) * smoothStep(progress));
+  if (position == wifiSwitchKnob) return;
+  wifiSwitchKnob = position;
+  // 拨钮和轨道共用固定矩形，动画帧无需重绘卡片。
+  paintWifiSwitch(screen, listX + switchX, listY + switchY);
 }
 
 void Interface::wifiMessage(const String& title, const String& detail, const String& footer) {

@@ -89,6 +89,8 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   wifiListAnimation.stop();
   wifiGroupAnimation.stop();
   wifiWheelAnimation.stop();
+  wifiSwitchAnimation.stop();
+  wifiSwitchTarget = -1;
   wifiPrevious = wifiSelected = wifiPreviousGroup = wifiGroup = -1;
   for (auto& token : wifiWheel) token = "";
   replacementLabel = nullptr;
@@ -181,6 +183,7 @@ void Interface::advanceAnimations(uint32_t now) {
   if ((step = wifiListAnimation.frame(now)) >= 0) renderWifiList(wifiListAnimation.progress(step));
   if ((step = wifiGroupAnimation.frame(now)) >= 0) renderWifiGroups(wifiGroupAnimation.progress(step));
   if ((step = wifiWheelAnimation.frame(now)) >= 0) renderWifiWheel(wifiWheelAnimation.progress(step));
+  if ((step = wifiSwitchAnimation.frame(now)) >= 0) renderWifiSwitch(wifiSwitchAnimation.progress(step));
 }
 
 void Interface::renderTabs(int offset, uint8_t mask) {
