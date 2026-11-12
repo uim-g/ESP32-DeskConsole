@@ -226,26 +226,39 @@ void Interface::device(const Platform::Device& data) {
   memoryCard(0, 104, "HEAP", data.heap.total, data.heap.free);
   memoryCard(1, 144, "PSRAM", data.psram.total, data.psram.free);
   memoryCard(2, 184, "Firmware", data.application.total, data.application.free);
-  field(9, 54, 223, 32, 16, "Up", 3, muted);
-  field(10, 150, 223, 116, 16,
-        String("s  /  Flash ") + data.flash / (1024 * 1024) + " MiB", 3, muted);
-
-  // 固定每个数字的位置，位数增加和秒数进位都只重绘变化的格子。
-  char digits[sizeof(uptimeDigits)];
-  snprintf(digits, sizeof(digits), "%7lu", static_cast<unsigned long>(data.uptimeSeconds));
-  constexpr int cellWidth = 9, firstDigit = 86, baseline = 235;
+  char digits[sizeof(uptimeDigits)] = {};
+  snprintf(digits, sizeof(digits), "%lu", static_cast<unsigned long>(data.uptimeSeconds));
+  constexpr int cellWidth = 9, labelX = 54, baseline = 235;
+  const auto glyphFor = [](char c) -> const GFXglyph& {
+    return NunitoTab.glyph[c - NunitoTab.first];
+  };
+  const int firstDigit = labelX + glyphFor('U').xAdvance + glyphFor('p').xAdvance + glyphFor(' ').xAdvance;
   screen.setFont(&NunitoTab);
   screen.setTextColor(muted);
-  const bool firstDraw = uptimeDigits[0] == '\0';
-  for (size_t i = 0; i < sizeof(digits) - 1; ++i) {
-    if (!firstDraw && uptimeDigits[i] == digits[i]) continue;
+  if (!panelsReady) {
+    screen.setCursor(labelX, baseline);
+    screen.print("Up");
+  }
+
+  const size_t previousLength = strlen(uptimeDigits);
+  const size_t length = strlen(digits);
+  const int suffixX = firstDigit + static_cast<int>(length) * cellWidth;
+  const String suffix = String(" s  /  Flash ") + data.flash / (1024 * 1024) + " MiB";
+  if (previousLength != length || cache[10] != suffix) {
+    // 位数变化时移动单位和容量文字，普通秒更新只重绘对应数字。
+    const int clearX = firstDigit + static_cast<int>(min(previousLength, length)) * cellWidth;
+    screen.fillRect(clearX, 223, 280 - clearX, 16, background);
+    screen.setCursor(suffixX, baseline);
+    screen.print(suffix);
+    cache[10] = suffix;
+  }
+  for (size_t i = 0; i < length; ++i) {
+    if (i < previousLength && uptimeDigits[i] == digits[i]) continue;
     const int x = firstDigit + static_cast<int>(i) * cellWidth;
+    const auto& glyph = glyphFor(digits[i]);
     screen.fillRect(x, 223, cellWidth, 16, background);
-    if (digits[i] != ' ') {
-      const auto& glyph = NunitoTab.glyph[digits[i] - NunitoTab.first];
-      screen.setCursor(x + (cellWidth - glyph.width) / 2 - glyph.xOffset, baseline);
-      screen.write(static_cast<uint8_t>(digits[i]));
-    }
+    screen.setCursor(x + (cellWidth - glyph.width) / 2 - glyph.xOffset, baseline);
+    screen.write(static_cast<uint8_t>(digits[i]));
   }
   memcpy(uptimeDigits, digits, sizeof(digits));
   panelsReady = true;

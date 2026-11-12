@@ -12,20 +12,18 @@ DeskConsole 使用 ESP32-S3、320×240 ILI9341 SPI 屏幕和四个实体按键�
 
 切页时，侧边可用按键的标签会滑出和滑入。各 App 使用各自的主题色。
 
-## v2.0.0 更新
+## v2.1.0 更新
 
-- 各页面管理自己的状态、按键和绘制。主程序负责切页、调度和休眠。
-- ESP32-S3 固件与网页模拟器共用按时间推进的动画代码。F1 在提交熄灯画面后开始反应计时。
-- 升级后可继续读取开发板上已有的 F1 成绩、校准和设置。网页存档按版本网址分别保存。
+- App 菜单滚动条提示当前可见范围，选中框恢复 v1.5.0 网页版的动画节奏。
+- Device 页运行时长采用紧凑排版，位数相同时只重绘变化的数字。
 
-[查看 v2.0.0 发布说明](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.0.0)。
-
+[查看 v2.1.0 发布说明](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.1.0)。
 
 ## 网页模拟器
 
-[打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v2.0.0 的全部八个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
+[打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v2.1.0 的全部九个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
 
-[在线试玩最新版（v2.0.0）](https://uim-g.github.io/ESP32-DeskConsole/v2.0.0/)
+[在线试玩最新版（v2.1.0）](https://uim-g.github.io/ESP32-DeskConsole/v2.1.0/)
 
 [![DeskConsole 七个 v1.x 网页版本的实测截图总览](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 

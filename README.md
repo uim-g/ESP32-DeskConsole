@@ -12,20 +12,18 @@ DeskConsole is a desktop console for the ESP32-S3 and a 320×240 ILI9341 SPI dis
 
 Page changes animate the active button labels at the screen edges. Each app has its own accent color.
 
-## What's new in v2.0.0
+## What's new in v2.1.0
 
-- Pages own their state, input handling, and rendering. The main app coordinates navigation, scheduling, and sleep.
-- The ESP32-S3 firmware and browser simulator share the same elapsed-time animation code. F1 submits the lights-out frame before starting the reaction timer.
-- Existing on-device F1 scores, calibration, and settings can be read after upgrading. Browser saves are scoped to each version URL.
+- The Apps scrollbar shows which rows are visible, and the highlight uses the v1.5.0 browser animation cadence.
+- Device uptime uses compact spacing and redraws only the digits that change while the number has the same length.
 
-[Read the v2.0.0 release notes](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.0.0).
-
+[Read the v2.1.0 release notes](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.1.0).
 
 ## Browser simulators
 
-[Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all eight versions from v1.0.0 through v2.0.0. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
+[Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all nine versions from v1.0.0 through v2.1.0. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
 
-[Play the latest browser version (v2.0.0)](https://uim-g.github.io/ESP32-DeskConsole/v2.0.0/)
+[Play the latest browser version (v2.1.0)](https://uim-g.github.io/ESP32-DeskConsole/v2.1.0/)
 
 [![Live browser screenshots of the seven DeskConsole v1.x versions](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 

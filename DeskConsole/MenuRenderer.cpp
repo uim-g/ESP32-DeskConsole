@@ -18,7 +18,11 @@ void Interface::launcher(uint8_t selected, const char* const labels[], int count
                       (lastSelection == 0 && selected == count - 1);
     const bool scroll = selected < launcherTop || selected >= launcherTop + 4;
     const uint8_t steps = wrap ? 8 : scroll ? 5 : 9;
-    launcherAnimation.start(millis(), 144, steps);
+    // v1.5.0 先画第一步，再按帧间隔推进，滚动帧较少时也更快收尾。
+    constexpr uint16_t frameMs = 16;
+    const uint32_t now = millis();
+    launcherAnimation.start(now - frameMs, steps * frameMs, steps);
+    renderLauncher(launcherAnimation.progress(launcherAnimation.frame(now)));
   }
 }
 
@@ -101,6 +105,7 @@ void Interface::renderLauncher(float progress) {
     screen.drawRGBBitmap(cardX, top, pixels + (top - screenY) * width, width, end - top);
   };
 
+  const float eased = smoothStep(progress);
   if (lastSelection < 0) {
     for (int row = 0; row < count; ++row) paint(row, firstY + selected * pitch, nextTop * pitch);
   } else {
@@ -111,7 +116,6 @@ void Interface::renderLauncher(float progress) {
     const int distance = static_cast<int>(selected) + cycle - lastSelection;
     const int scrollTarget = nextTop + cycle;
     const bool scrolling = scrollTarget != launcherTop;
-    const float eased = smoothStep(progress);
     const int pos = from + lroundf(distance * pitch * eased);
     const int scroll = lroundf((launcherTop + (scrollTarget - launcherTop) * eased) * pitch);
     if (scrolling) {
@@ -122,6 +126,19 @@ void Interface::renderLauncher(float progress) {
     } else {
       paint(lastSelection, pos, scroll);
       paint(selected, pos, scroll);
+    }
+  }
+  constexpr int visibleRows = 4;
+  if (count > visibleRows) {
+    constexpr int barX = 282, barWidth = 4, radius = 2;
+    constexpr int trackHeight = (visibleRows - 1) * pitch + height;
+    const int thumbHeight = trackHeight * visibleRows / count;
+    const float visibleTop = lastSelection < 0 ? nextTop : launcherTop + (nextTop - launcherTop) * eased;
+    const int thumbY = firstY + lroundf(visibleTop * (trackHeight - thumbHeight) / (count - visibleRows));
+    if (thumbY != launcherThumbY) {
+      screen.fillRoundRect(barX, firstY, barWidth, trackHeight, radius, 0x3A4E);
+      screen.fillRoundRect(barX, thumbY, barWidth, thumbHeight, radius, highlight);
+      launcherThumbY = thumbY;
     }
   }
   if (progress >= 1.0f) {

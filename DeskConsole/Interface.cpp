@@ -94,6 +94,7 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   lastLights = -1;
   lastSelection = -1;
   launcherTop = 0;
+  launcherThumbY = -1;
   for (auto& value : settingSwitches) value = -1;
   lastSettingRow = lastBrightness = lastSleepMinutes = -1;
   panelsReady = false;

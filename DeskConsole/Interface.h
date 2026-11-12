@@ -72,6 +72,7 @@ class Interface {
   uint32_t lastFireworkFrame = 0;
   int lastSelection = -1;
   int launcherTop = 0;
+  int launcherThumbY = -1;
   int settingSwitches[2] = {-1, -1};
   int lastSettingRow = -1;
   int lastBrightness = -1;

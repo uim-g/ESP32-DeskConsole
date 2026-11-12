@@ -4,6 +4,12 @@ Screenshots below were captured from the corresponding [live browser simulator](
 
 下方截图均取自对应版本的[在线网页模拟器](https://uim-g.github.io/ESP32-DeskConsole/)。
 
+## v2.1.0
+
+- Show a viewport scrollbar in Apps. Its thumb moves with the list, including wraparound. App 菜单增加可见范围滚动条，随列表滚动和首尾循环移动。
+- Restore the v1.5.0 browser launcher highlight cadence. 恢复 v1.5.0 网页版的选中框动画节奏。
+- Tighten the Device uptime layout and retain digit-only refresh between changes in digit count. Device 页运行时长紧凑排版，位数相同时只重绘变化的数字。
+
 ## v2.0.0
 
 - Separate page state, input handling, and rendering from app scheduling. 将页面状态、按键处理和绘制从主程序调度中拆出。
