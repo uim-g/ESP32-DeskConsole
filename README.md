@@ -12,9 +12,11 @@ DeskConsole is a desktop console for the ESP32-S3 and a 320×240 ILI9341 SPI dis
 
 Page changes animate the active button labels at the screen edges. Each app has its own accent color.
 
-## Browser simulator (v1.0.0)
+## Browser simulators
 
-[Play DeskConsole v1.0.0 online](https://uim-g.github.io/ESP32-DeskConsole/)
+[Choose a firmware version online](
+
+https://uim-g.github.io/ESP32-DeskConsole/
 
 [Download the v1.0.0 simulator](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v1.0.0/DeskConsole-Web-v1.0.0.zip), extract it, and open `index.html` in a browser. The [simulator source](web/v1.0.0/) follows the [v1.0.0 firmware](https://github.com/uim-g/ESP32-DeskConsole/tree/v1.0.0).
 
