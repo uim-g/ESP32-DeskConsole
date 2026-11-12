@@ -14,9 +14,9 @@ DeskConsole 使用 ESP32-S3、320×240 ILI9341 SPI 屏幕和四个实体按键�
 
 ## 网页模拟器
 
-[打开在线版本选择页](
+[打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v1.5.0 的全部七个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
 
-https://uim-g.github.io/ESP32-DeskConsole/
+[在线试玩 DeskConsole v1.0.0](https://uim-g.github.io/ESP32-DeskConsole/v1.0.0/)
 
 [下载 v1.0.0 网页模拟器](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v1.0.0/DeskConsole-Web-v1.0.0.zip)，解压后在浏览器中打开 `index.html`。[模拟器源码](web/v1.0.0/) 对应 [v1.0.0 固件](https://github.com/uim-g/ESP32-DeskConsole/tree/v1.0.0)。
 
