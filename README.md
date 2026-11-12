@@ -73,10 +73,12 @@ Use **115200 baud**. For native USB, enable **USB CDC On Boot** and re-upload if
 
 | ILI9341 | ESP32-S3 |
 |---|---|
-| VCC and LED with J1 bridged | 3V3 |
+| VCC | 3V3 (with J1 bridged on the display module shown) |
 | GND | GND |
 | CS, RESET, DC | GPIO10, GPIO8, GPIO9 |
 | MOSI, SCK | GPIO11, GPIO12 |
+| LED (backlight) | 3V3 |
+| SDO (MISO) | Leave disconnected |
 
 Each button connects its GPIO to common GND when pressed. The firmware enables internal pull-ups.
 
@@ -95,7 +97,7 @@ See [release history](CHANGELOG.md).
 
 ![DeskConsole Wokwi wiring reference](docs/wokwi-wiring.png)
 
-**Ground correction.** In this reference image, display pin 2 (GND), immediately below the red VCC lead, is missing its wire. Connect it to ESP32-S3 GND or the button ground rail. The table above gives the complete connections.
+The black wire immediately below the red VCC lead connects TFT GND to the same breadboard ground rail as the four buttons and ESP32-S3 GND. The diagram shows the display pins from VCC through SDO (MISO). On a module with extra touch pins, follow the printed labels and leave the touch pins disconnected for this build.
 
 ## Onboard RGB status LED
 

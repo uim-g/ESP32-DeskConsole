@@ -73,10 +73,12 @@ Settings 位于 App 列表中 Device 后面。右侧键选择项目，EDIT 切�
 
 | ILI9341 | ESP32-S3 |
 |---|---|
-| VCC 和 LED，J1 已短接 | 3V3 |
+| VCC | 3V3（图中对应的屏幕模块需短接 J1） |
 | GND | GND |
 | CS、RESET、DC | GPIO10、GPIO8、GPIO9 |
 | MOSI、SCK | GPIO11、GPIO12 |
+| LED（背光） | 3V3 |
+| SDO（MISO） | 留空 |
 
 每个按钮接相应 GPIO 和公共 GND。程序启用内部上拉。
 
@@ -95,7 +97,7 @@ F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气客
 
 ![DeskConsole Wokwi 接线参考图](docs/wokwi-wiring.png)
 
-**地线补接。** 参考图中，红色 VCC 线正下方的屏幕第 2 脚 GND 缺一根线。请把它接到 ESP32-S3 的 GND，或已经接地的按键公共地排。完整连接以上方接线表为准。
+红色 VCC 线下方的黑线把屏幕 GND 接到公共地排，与四个按键及 ESP32-S3 共地。图中画的是 VCC 到 SDO（MISO）这组屏幕引脚。若实物还有触摸排针，请按模块丝印接线，触摸引脚留空。
 
 ## 板载 RGB 状态灯
 
