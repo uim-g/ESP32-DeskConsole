@@ -12,6 +12,12 @@ DeskConsole 使用 ESP32-S3、320×240 ILI9341 SPI 屏幕和四个实体按键�
 
 切页时，侧边可用按键的标签会滑出和滑入。各 App 使用各自的主题色。
 
+## 网页模拟器（v1.0.0）
+
+[下载 v1.0.0 网页模拟器](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v1.0.0/DeskConsole-Web-v1.0.0.zip)，解压后在浏览器中打开 `index.html`。[模拟器源码](web/v1.0.0/) 对应 [v1.0.0 固件](https://github.com/uim-g/ESP32-DeskConsole/tree/v1.0.0)。
+
+点击两侧的四个按钮，或使用 **Q**、**A**、**↑** 和 **↓**。F1 中用 **↓** 开始和起跑。成绩保存在浏览器中。实时天气需要联网访问 Open-Meteo，Wi-Fi 和设备读数为模拟值。
+
 ## 界面预览
 
 ![DeskConsole v1.1.0 界面示意图](docs/ui-v1.1.0.png)
