@@ -92,6 +92,9 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   wifiWheelAnimation.stop();
   wifiSwitchAnimation.stop();
   wifiSwitchTarget = -1;
+  wifiConnectionBadge = weatherView = -1;
+  wifiRowCount = 0;
+  for (auto& name : scrollingNames) name.value = "";
   wifiPrevious = wifiSelected = wifiPreviousGroup = wifiGroup = -1;
   for (auto& token : wifiWheel) token = "";
   replacementLabel = nullptr;
@@ -127,6 +130,7 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
                         strcmp(title, "F1 Statistics") == 0 ? 's' : 'm';
       smallIcon(screen, 54, 22, icon, highlight);
       field(9, 72, 7, 208, 29, title, 1, highlight);
+      if (strcmp(title, "Weather /") == 0) weatherSubtitleX = screen.getCursorX() + 5;
     }
   } else {
     screen.drawFastHLine(84, 160, 152, muted);
@@ -186,6 +190,11 @@ void Interface::advanceAnimations(uint32_t now) {
   if ((step = wifiGroupAnimation.frame(now)) >= 0) renderWifiGroups(wifiGroupAnimation.progress(step));
   if ((step = wifiWheelAnimation.frame(now)) >= 0) renderWifiWheel(wifiWheelAnimation.progress(step));
   if ((step = wifiSwitchAnimation.frame(now)) >= 0) renderWifiSwitch(wifiSwitchAnimation.progress(step));
+  if (now - nameFrameAt >= 45) {
+    nameFrameAt = now;
+    renderScrollingNames(now);
+    if (wifiRowCount && !wifiListAnimation.active()) renderWifiList(1.0f, true);
+  }
 }
 
 void Interface::renderTabs(int offset, uint8_t mask) {

@@ -21,6 +21,7 @@ struct NearbyWifi {
 
 class WifiNetworks {
  public:
+  static constexpr int maxSaved = 8;
   enum class Scan { Idle, Running, Ready, Failed };
   enum class Join { Idle, Running, Connected, SaveFailed, Failed };
   void begin();
@@ -42,7 +43,7 @@ class WifiNetworks {
   bool busy() const { return scanning == Scan::Running || joining == Join::Running; }
 
  private:
-  static constexpr int maxSaved = 8, maxNearby = 16;
+  static constexpr int maxNearby = 16;
   struct SavedData {
     uint8_t version = 1;
     uint8_t count = 0;

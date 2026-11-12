@@ -40,6 +40,7 @@ class Interface {
   void calibration(const Game& game, bool editOffset, bool saveFailed);
   void weather(const WeatherData& data, bool forecast);
   struct WifiRow { String name, detail; int radio = -1; };
+  void wifiStatus(bool enabled, bool connected);
   void wifiList(const WifiRow* rows, int count, int selected, const String& footer);
   void wifiMessage(const String& title, const String& detail, const String& footer);
   void wifiPassword(const String& ssid, const String& value, size_t length, int group,
@@ -54,7 +55,23 @@ class Interface {
   void renderTabs(int offset, uint8_t mask);
   void renderLauncher(float progress);
   void renderSettings(float progress);
-  void renderWifiList(float progress);
+  void renderWifiList(float progress, bool namesOnly = false);
+  static int nameOffset(int width, int viewport, uint32_t elapsed);
+  static void paintName(Adafruit_GFX& gfx, const String& value, int x, int y,
+                        int w, int h, int offset, uint16_t color);
+  void scrollingName(int slot, int x, int y, int w, int h, const String& value,
+                     uint16_t fill, bool centered = false);
+  void renderScrollingNames(uint32_t now);
+  struct ScrollingName {
+    String value;
+    int x = 0, y = 0, w = 0, h = 0, width = 0, offset = -1;
+    uint16_t fill = 0;
+    uint32_t started = 0;
+    bool centered = false;
+  };
+  ScrollingName scrollingNames[3];
+  uint32_t wifiNamesStarted = 0, nameFrameAt = 0;
+  int wifiConnectionBadge = -1, weatherView = -1, weatherSubtitleX = 0;
   void renderWifiGroups(float progress);
   void renderWifiWheel(float progress);
   void renderWifiSwitch(float progress);
@@ -62,6 +79,7 @@ class Interface {
   FrameTimeline wifiListAnimation, wifiGroupAnimation, wifiWheelAnimation, wifiSwitchAnimation;
   int wifiSwitchTarget = -1, wifiSwitchFrom = 12, wifiSwitchKnob = 12;
   WifiRow wifiRows[3];
+  int wifiNameWidths[3] = {}, wifiNameOffsets[3] = {};
   int wifiRowCount = 0, wifiPrevious = -1, wifiSelected = -1;
   int wifiPreviousGroup = -1, wifiGroup = -1, wifiWheelDirection = 0;
   String wifiPreviousWheel[3], wifiWheel[3];
@@ -95,7 +113,7 @@ class Interface {
   int lastBrightness = -1;
   int lastSleepMinutes = -1;
   bool panelsReady = false;
-  char uptimeDigits[8] = {};
+  char uptimeDigits[11] = {};
   int deviceBars[3] = {-1, -1, -1};
   int lastWeatherCode = -100;
   int forecastIcons[3] = {-100, -100, -100};

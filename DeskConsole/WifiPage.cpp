@@ -157,11 +157,12 @@ void NetworkPage::draw() {
   switch (screen) {
     case Screen::Overview: {
       const auto data = Platform::network();
+      ctx.ui.wifiStatus(wifi.enabled(), data.connected);
       Interface::WifiRow rows[] = {
         {!wifi.enabled() ? String("Wi-Fi off") :
-         data.connected ? String("Connected: ") + label(data.ssid.c_str()) : String("Wi-Fi on"),
+         data.connected ? label(data.ssid.c_str()) : String("Wi-Fi on"),
          data.connected ? data.address + " / " + data.signal + " dBm" :
-                          String(wifi.enabled() ? "Disconnected" : "SELECT to turn on"), wifi.enabled() ? 1 : 0},
+                          String(wifi.enabled() ? "SELECT to turn off" : "SELECT to turn on"), wifi.enabled() ? 1 : 0},
         {"Scan nearby", "Find 2.4 GHz networks"},
         {"Saved networks", String(wifi.savedCount()) + " saved"}
       };
@@ -184,7 +185,10 @@ void NetworkPage::draw() {
                          label(ssid),
                          state == WifiNetworks::Join::Failed && passwordRequired ? "OK enters password again" :
                          state == WifiNetworks::Join::Failed ? "OK retries  /  BACK returns" :
-                         state == WifiNetworks::Join::SaveFailed ? "Check storage or forget an entry" : "Network saved");
+                         state == WifiNetworks::Join::SaveFailed ?
+                             (wifi.savedCount() == WifiNetworks::maxSaved &&
+                              wifi.find(ssid, passwordRequired) < 0 ? "List full. Forget a saved network." :
+                                                                     "Could not write saved network") : "Network saved");
       break;
     }
   }

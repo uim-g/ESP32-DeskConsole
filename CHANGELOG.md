@@ -4,6 +4,13 @@ Screenshots below were captured from the corresponding [live browser simulator](
 
 下方截图均取自对应版本的[在线网页模拟器](https://uim-g.github.io/ESP32-DeskConsole/)。
 
+## v2.2.1
+
+- Weather switches between Now and Forecast without redrawing the title, icon or side controls. 天气切换实况和预报时保留标题、图标和侧键，只刷新副标题与内容。
+- Show Wi-Fi status beside the title and scroll long Wi-Fi and Bluetooth names inside their own fields. Wi-Fi 状态移到标题栏，过长的 Wi-Fi 和蓝牙名称在各自区域内循环滚动。
+- Explain when a connection succeeds but all eight saved Wi-Fi slots are full. 已保存的八条 Wi-Fi 记录都占满时，提示先删除旧记录，保留当前连接。
+- Center the Device uptime and Flash footer while keeping digit-only updates during ordinary ticks. 设备页底部居中，秒数位数不变时只更新变化的数字。
+
 ## v2.2.0
 
 - Add Wi-Fi scanning, on-device password entry and saved network management. 增加 Wi-Fi 扫描、设备端密码输入和已保存网络管理。

@@ -24,17 +24,13 @@ void LauncherPage::input(Key key, uint32_t) {
 
 void WeatherPage::enter() {
   RefreshPage::enter();
-  changingForecast = false;
+  forecast = false;
 }
-void WeatherPage::leave() {
-  if (!changingForecast) forecast = false;
-}
-// 方向键切换当前天气与预报，通过同一路由切换标题和内容。
+// 同一页面内切换天气视图，只更新副标题和内容区域。
 void WeatherPage::input(Key key, uint32_t us) {
   if (vertical(key)) {
     forecast = !forecast;
-    changingForecast = true;
-    ctx.nav.open(View::Weather);
+    draw();
   } else Page::input(key, us);
 }
 

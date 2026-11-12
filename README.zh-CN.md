@@ -16,13 +16,13 @@ DeskConsole 使用 ESP32-S3、320×240 ILI9341 SPI 屏幕和四个实体按键�
 
 切页时，侧边可用按键的标签会滑出和滑入。各 App 使用各自的主题色。
 
-## v2.2.0 更新
+## v2.2.1 更新
 
-- 支持扫描附近的 2.4 GHz Wi-Fi，在设备上输入密码，并管理已保存的网络。
-- Wi-Fi 页面可以开关无线功能。Wi-Fi 和设置的开关滑动时，拨钮左侧实时显示绿色，右侧显示灰色。
-- Wi-Fi 列表选中框和密码候选字符加入非线性动画，固件源码补充了中文注释。
+- 天气实况和预报切换时，只更新副标题和内容。
+- Wi-Fi 状态显示在标题栏，过长的 Wi-Fi 和蓝牙名称在各自区域内滚动。
+- 已保存 Wi-Fi 列表满时，连接结果页会说明新网络未保存的原因。设备页底部居中，平时只更新变化的秒数数字。
 
-[查看 v2.2.0 发布说明](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.0)。
+[查看 v2.2.1 发布说明](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.1)。
 
 ## 安装
 
@@ -30,10 +30,10 @@ DeskConsole 使用 ESP32-S3、320×240 ILI9341 SPI 屏幕和四个实体按键�
 
 1. 在 Arduino IDE 2 中安装 **esp32 by Espressif Systems**，选择 **ESP32S3 Dev Module** 和开发板串口。N16R8 的 Flash Size 设为 16 MB，选择带 3 MiB APP 槽的分区方案（如 16M Flash，3MB APP/9.9MB FATFS）。若要使用板载 8 MiB PSRAM，可启用 OPI PSRAM。BLE 使用 ESP32 核心自带库。
 2. 安装 **Adafruit ILI9341** 及其依赖，以及 **ArduinoJson 7**。
-3. 到 [v2.2.0 发布页](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.0) 下载 **Source code (zip)**，解压后打开 `DeskConsole/DeskConsole.ino`。
+3. 到 [v2.2.1 发布页](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.1) 下载 **Source code (zip)**，解压后打开 `DeskConsole/DeskConsole.ino`。
 4. 拔掉 USB 后按下表接线，再接回 USB、选择串口并上传。屏幕进入桌面后，按左上键打开应用菜单，再选择 Wi-Fi 联网。
 
-Wi-Fi 支持 2.4 GHz 开放网络和个人网络，最多保存八个网络。无线功能开启时，开机会尝试最近连接成功的已保存网络。连接失败时，可以重新扫描或手动选择其他已保存网络。暂不支持 WPA-Enterprise 校园网。密码保存在 NVS，项目未配置加密存储。
+Wi-Fi 支持 2.4 GHz 开放网络和个人网络，最多保存八个网络。无线功能开启时，开机会尝试最近连接成功的已保存网络。连接失败时，可以重新扫描或手动选择其他已保存网络。八条记录存满后，新网络仍能连接。删除一条旧记录并重新连接后，才能保存新网络。暂不支持 WPA-Enterprise 校园网。密码保存在 NVS，项目未配置加密存储。
 
 | ILI9341 | ESP32-S3 |
 |---|---|
@@ -53,7 +53,7 @@ Wi-Fi 支持 2.4 GHz 开放网络和个人网络，最多保存八个网络。�
 | 右上 GPIO6 | 向上 | 统计 |
 | 右下 GPIO7 | 向下 | 开始／反应／清除本局 |
 
-F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气客户端目前跳过 HTTPS 证书校验。v2.2.0 固件已在 ESP32-S3 N16R8 原型上实测。
+F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气客户端目前跳过 HTTPS 证书校验。v2.2.0 固件已在 ESP32-S3 N16R8 原型上实测，v2.2.1 已通过网页版模拟测试。
 
 参见[版本记录](CHANGELOG.md)。
 
@@ -65,9 +65,9 @@ F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气客
 
 ## 网页模拟器
 
-[打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v2.2.0 的全部十个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
+[打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v2.2.1 的全部十一个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
 
-[在线试玩最新版（v2.2.0）](https://uim-g.github.io/ESP32-DeskConsole/v2.2.0/)
+[在线试玩最新版（v2.2.1）](https://uim-g.github.io/ESP32-DeskConsole/v2.2.1/)
 
 [![DeskConsole 七个 v1.x 网页版本的实测截图总览](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 

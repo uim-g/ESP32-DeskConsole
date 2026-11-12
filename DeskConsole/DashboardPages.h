@@ -28,17 +28,15 @@ class WeatherPage : public RefreshPage {
  public:
   WeatherPage(PageContext& context, Weather& service) : RefreshPage(context), weather(service) {}
   PageStyle style() const override {
-    return {forecast ? "Weather / Forecast" : "Weather / Now", 0x08A7, 0x65FF, {"BACK",nullptr,"^","v"}};
+    return {"Weather /", 0x08A7, 0x65FF, {"BACK",nullptr,"^","v"}};
   }
   void enter() override;
-  void leave() override;
   void draw() override { ctx.ui.weather(weather.snapshot(), forecast); }
   void input(Key key, uint32_t us) override;
   bool repeats() const override { return true; }
  private:
   Weather& weather;
   bool forecast = false;
-  bool changingForecast = false;
 };
 
 class DevicePage : public RefreshPage {

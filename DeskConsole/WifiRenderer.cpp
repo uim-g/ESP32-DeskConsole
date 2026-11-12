@@ -20,6 +20,84 @@ constexpr int rowHeight = 44, rowPitch = 51, rowWidth = 236;
 constexpr int wheelPitch = 76;
 constexpr int listX = 42, listY = 46, switchX = 182, switchY = 11;
 constexpr int knobOff = 12, knobOn = 32;
+
+int measureName(Adafruit_GFX& gfx, const String& value) {
+  gfx.setFont(&NunitoSmall);
+  int16_t dx, dy;
+  uint16_t w, h;
+  gfx.getTextBounds(value.c_str(), 0, 0, &dx, &dy, &w, &h);
+  return w;
+}
+}
+
+// 名称先停留，再匀速滚动；尾部留白后接上下一轮。
+int Interface::nameOffset(int width, int viewport, uint32_t elapsed) {
+  if (width <= viewport) return 0;
+  constexpr uint32_t pause = 900, msPerPixel = 45;
+  const uint32_t travel = (width + 24) * msPerPixel;
+  const uint32_t phase = elapsed % (pause + travel);
+  return phase < pause ? 0 : (phase - pause) / msPerPixel;
+}
+
+// 通过画布裁切文字，避免覆盖相邻字段、开关或边缘按键。
+void Interface::paintName(Adafruit_GFX& gfx, const String& value, int x, int y,
+                          int w, int h, int offset, uint16_t color) {
+  const int width = measureName(gfx, value);
+  if (width <= w) {
+    text(gfx, value, &NunitoSmall, x, y, w, h, color);
+    return;
+  }
+  GFXcanvas1 strip(w, h);
+  if (!strip.getBuffer()) {
+    text(gfx, value, &NunitoSmall, x, y, w, h, color);
+    return;
+  }
+  strip.setTextWrap(false);
+  strip.fillScreen(0);
+  text(strip, value, &NunitoSmall, -offset, 0, width, h, 1);
+  text(strip, value, &NunitoSmall, width + 24 - offset, 0, width, h, 1);
+  gfx.drawBitmap(x, y, strip.getBuffer(), w, h, color);
+}
+
+void Interface::scrollingName(int slot, int x, int y, int w, int h, const String& value,
+                              uint16_t fill, bool centered) {
+  auto& name = scrollingNames[slot];
+  if (name.value == value) return;
+  name = {value, x, y, w, h, measureName(screen, value), -1, fill, millis(), centered};
+  if (!value.length()) screen.fillRect(x, y, w, h, fill);
+  renderScrollingNames(name.started);
+}
+
+void Interface::renderScrollingNames(uint32_t now) {
+  for (auto& name : scrollingNames) {
+    if (!name.value.length()) continue;
+    const int offset = nameOffset(name.width, name.w, now - name.started);
+    if (name.offset == offset) continue;
+    name.offset = offset;
+    GFXcanvas16 strip(name.w, name.h);
+    if (!strip.getBuffer()) {
+      screen.fillRect(name.x, name.y, name.w, name.h, name.fill);
+      text(screen, name.value, &NunitoSmall, name.x, name.y, name.w, name.h,
+           ILI9341_WHITE, name.centered);
+      continue;
+    }
+    strip.setTextWrap(false);
+    strip.fillScreen(name.fill);
+    if (name.centered && name.width <= name.w)
+      text(strip, name.value, &NunitoSmall, 0, 0, name.w, name.h, ILI9341_WHITE, true);
+    else paintName(strip, name.value, 0, 0, name.w, name.h, offset, ILI9341_WHITE);
+    screen.drawRGBBitmap(name.x, name.y, strip.getBuffer(), name.w, name.h);
+  }
+}
+
+void Interface::wifiStatus(bool enabled, bool connected) {
+  const int state = !enabled ? 0 : connected ? 2 : 1;
+  if (state == wifiConnectionBadge) return;
+  wifiConnectionBadge = state;
+  const uint16_t tint = state == 2 ? 0x7DEB : muted;
+  screen.fillRoundRect(174, 9, 106, 24, 9, state == 2 ? 0x1248 : cardColor);
+  text(screen, state == 2 ? "Connected" : state == 1 ? "Disconnected" : "Off",
+       &NunitoHint, 178, 9, 98, 24, tint, true);
 }
 
 // 保存本次绘制快照，并在选择变动时启动高亮动画。时间轴由主循环统一推进。
@@ -40,7 +118,14 @@ void Interface::wifiList(const WifiRow* rows, int count, int selected, const Str
     }
     wifiSwitchTarget = radio;
   }
-  for (int i = 0; i < count; ++i) wifiRows[i] = rows[i];
+  if (wifiRowCount != count) wifiNamesStarted = millis();
+  for (int i = 0; i < count; ++i) {
+    if (wifiRows[i].name != rows[i].name || wifiRowCount != count) {
+      wifiNameWidths[i] = measureName(screen, rows[i].name);
+      wifiNamesStarted = millis();
+    }
+    wifiRows[i] = rows[i];
+  }
   wifiRowCount = count;
   if (wifiSelected != selected) {
     wifiPrevious = wifiSelected < 0 ? selected : wifiSelected;
@@ -57,7 +142,7 @@ void Interface::wifiList(const WifiRow* rows, int count, int selected, const Str
 }
 
 // 把高亮遮罩与圆角卡片遮罩相交，再根据像素位置决定文字颜色。缓存命中的卡片跳过传输。
-void Interface::renderWifiList(float progress) {
+void Interface::renderWifiList(float progress, bool namesOnly) {
   constexpr int x = listX, firstY = listY;
   const int marker = lroundf((wifiPrevious + (wifiSelected - wifiPrevious) * smoothStep(progress)) * rowPitch);
   for (int row = 0; row < 3; ++row) {
@@ -72,8 +157,23 @@ void Interface::renderWifiList(float progress) {
     const auto& item = wifiRows[row];
     const int offset = marker - row * rowPitch;
     const int visibleOffset = abs(offset) < rowHeight ? offset : rowHeight;
+    const int textWidth = item.radio >= 0 ? 171 : 218;
+    const int scroll = nameOffset(wifiNameWidths[row], textWidth, millis() - wifiNamesStarted);
+    if (namesOnly) {
+      if (wifiNameOffsets[row] == scroll) continue;
+      const bool active = row == wifiSelected;
+      GFXcanvas16 strip(textWidth, 21);
+      if (!strip.getBuffer()) continue;
+      strip.setTextWrap(false);
+      strip.fillScreen(active ? highlight : cardColor);
+      paintName(strip, item.name, 0, 0, textWidth, 21, scroll, active ? ILI9341_BLACK : ILI9341_WHITE);
+      screen.drawRGBBitmap(x + 9, y + 3, strip.getBuffer(), textWidth, 21);
+      wifiNameOffsets[row] = scroll;
+      continue;
+    }
     const String key = String(visibleOffset) + "/" + item.radio + ":" + item.name + '\n' + item.detail;
-    if (cache[row] == key) continue;
+    if (cache[row] == key && wifiNameOffsets[row] == scroll) continue;
+    wifiNameOffsets[row] = scroll;
 
     GFXcanvas16 frame(rowWidth, rowHeight);
     GFXcanvas1 shape(rowWidth, rowHeight);
@@ -82,8 +182,8 @@ void Interface::renderWifiList(float progress) {
     if (!frame.getBuffer() || !shape.getBuffer() || !lit.getBuffer() || !ink.getBuffer()) {
       const bool active = row == wifiSelected;
       screen.fillRoundRect(x, y, rowWidth, rowHeight, 7, active ? highlight : cardColor);
-      text(screen, item.name, &NunitoSmall, x + 9, y + 3, item.radio >= 0 ? 171 : 218, 21,
-           active ? ILI9341_BLACK : ILI9341_WHITE);
+      paintName(screen, item.name, x + 9, y + 3, textWidth, 21, scroll,
+                active ? ILI9341_BLACK : ILI9341_WHITE);
       text(screen, item.detail, &NunitoHint, x + 9, y + 24, item.radio >= 0 ? 171 : 218, 15,
            active ? ILI9341_BLACK : muted);
       if (item.radio >= 0) paintSwitch(screen, x + switchX, y + switchY, 22, wifiSwitchKnob, 8);
@@ -96,8 +196,7 @@ void Interface::renderWifiList(float progress) {
     ink.setTextWrap(false);
     shape.fillRoundRect(0, 0, rowWidth, rowHeight, 7, 1);
     if (visibleOffset != rowHeight) lit.fillRoundRect(0, visibleOffset, rowWidth, rowHeight, 7, 1);
-    const int textWidth = item.radio >= 0 ? 171 : 218;
-    text(ink, item.name, &NunitoSmall, 9, 3, textWidth, 21, 1);
+    paintName(ink, item.name, 9, 3, textWidth, 21, scroll, 1);
     text(ink, item.detail, &NunitoHint, 9, 24, textWidth, 15, 1);
     frame.fillScreen(background);
     frame.drawRoundRect(0, 0, rowWidth, rowHeight, 7, cardOutline);
@@ -130,7 +229,7 @@ void Interface::renderWifiSwitch(float progress) {
 
 void Interface::wifiMessage(const String& title, const String& detail, const String& footer) {
   field(0, 35, 77, 250, 37, title, 1, highlight, true);
-  field(1, 36, 121, 248, 31, detail, 0, ILI9341_WHITE, true);
+  scrollingName(0, 36, 121, 248, 31, detail, background, true);
   field(6, 38, 199, 244, 28, footer, 4, muted, true);
 }
 
@@ -141,7 +240,7 @@ void Interface::wifiPassword(const String& ssid, const String& value, size_t len
     card(40, 69, 240, 43);
     panelsReady = true;
   }
-  field(0, 39, 40, 242, 25, ssid, 0, ILI9341_WHITE, true);
+  scrollingName(0, 39, 40, 242, 25, ssid, background, true);
   field(1, 49, 73, 222, 23, value.length() ? value : String("Enter password"), 0,
         value.length() ? ILI9341_WHITE : muted, false, true);
   field(2, 49, 96, 222, 12, String(length) + " chars", 4, muted, false, true);

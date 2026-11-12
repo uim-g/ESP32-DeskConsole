@@ -97,6 +97,17 @@ void Interface::metric(uint8_t slot, int x, int y, int w, int h,
 
 // 按当前天气或预报组织卡片数据。未取得结果时显示等待，刷新失败时可以继续显示缓存。
 void Interface::weather(const WeatherData& data, bool forecast) {
+  const int view = forecast ? 1 : 0;
+  if (weatherView != view) {
+    if (weatherView >= 0) screen.fillRect(32, 42, 256, 198, background);
+    weatherView = view;
+    for (int i = 0; i <= 8; ++i) cache[i] = "";
+    lastWeatherCode = -100;
+    for (auto& code : forecastIcons) code = -100;
+    panelsReady = false;
+    field(10, weatherSubtitleX, 7, 280 - weatherSubtitleX, 29,
+          forecast ? "Forecast" : "Now", 1, highlight);
+  }
   if (!data.available) {
     field(0, 42, 53, 236, 33, "Fetching weather...", 1, muted, true);
     return;
@@ -146,6 +157,7 @@ void Interface::bluetooth(const BluetoothSnapshot& scan, int first, bool namedOn
   // 只在扫描状态或滚动位置改变时重画内容，保留标题和侧边键。
   screen.fillRect(32, 42, 256, 192, background);
   for (int slot = 0; slot <= 10; ++slot) cache[slot] = "";
+  for (auto& name : scrollingNames) name.value = "";
   if (scan.state != State::Ready || scan.count == 0) {
     const char* message = scan.state == State::Scanning ? "Scanning nearby devices..." :
                           scan.state == State::Failed ? "Scan failed. Try SCAN again." :
@@ -162,7 +174,7 @@ void Interface::bluetooth(const BluetoothSnapshot& scan, int first, bool namedOn
     const int y = 43 + row * 56;
     const int slot = row * 3;
     card(38, y, 244, 53);
-    field(slot, 46, y + 3, 151, 20, device.name, 0, ILI9341_WHITE, false, true);
+    scrollingName(row, 46, y + 3, 151, 20, device.name, cardColor);
     field(slot + 1, 199, y + 3, 74, 20, String(device.rssi) + " dBm", 3, highlight, true, true);
     field(slot + 2, 46, y + 23, 224, 15, device.address, 3, muted, false, true);
     field(10, 46, y + 37, 224, 13, device.service, 3, muted, false, true);
@@ -221,32 +233,33 @@ void Interface::device(const Platform::Device& data) {
   memoryCard(2, 184, "Firmware", data.application.total, data.application.free);
   char digits[sizeof(uptimeDigits)] = {};
   snprintf(digits, sizeof(digits), "%lu", static_cast<unsigned long>(data.uptimeSeconds));
-  constexpr int cellWidth = 9, labelX = 54, baseline = 235;
+  constexpr int cellWidth = 9, baseline = 235;
   const auto glyphFor = [](char c) -> const GFXglyph& {
     return NunitoTab.glyph[c - NunitoTab.first];
   };
-  const int firstDigit = labelX + glyphFor('U').xAdvance + glyphFor('p').xAdvance + glyphFor(' ').xAdvance;
-  screen.setFont(&NunitoTab);
-  screen.setTextColor(muted);
-  if (!panelsReady) {
-    screen.setCursor(labelX, baseline);
-    screen.print("Up");
-  }
-
+  const int prefixWidth = glyphFor('U').xAdvance + glyphFor('p').xAdvance + glyphFor(' ').xAdvance;
   const size_t previousLength = strlen(uptimeDigits);
   const size_t length = strlen(digits);
-  const int suffixX = firstDigit + static_cast<int>(length) * cellWidth;
   const String suffix = String(" s  /  Flash ") + data.flash / (1024 * 1024) + " MiB";
-  if (previousLength != length || cache[10] != suffix) {
-    // 位数变化时移动单位和容量文字，普通秒更新只重绘对应数字。
-    const int clearX = firstDigit + static_cast<int>(min(previousLength, length)) * cellWidth;
-    screen.fillRect(clearX, 223, 280 - clearX, 16, background);
-    screen.setCursor(suffixX, baseline);
+  int suffixWidth = 0;
+  for (const char* c = suffix.c_str(); *c; ++c) suffixWidth += glyphFor(*c).xAdvance;
+  const int digitsWidth = static_cast<int>(length) * cellWidth;
+  const int labelX = (320 - prefixWidth - digitsWidth - suffixWidth) / 2;
+  const int firstDigit = labelX + prefixWidth;
+  const bool layoutChanged = previousLength != length || cache[10] != suffix;
+  screen.setFont(&NunitoTab);
+  screen.setTextColor(muted);
+  if (layoutChanged) {
+    // 位数变化时重新居中；普通秒更新只重绘变化的数字格。
+    screen.fillRect(40, 223, 240, 17, background);
+    screen.setCursor(labelX, baseline);
+    screen.print("Up");
+    screen.setCursor(firstDigit + digitsWidth, baseline);
     screen.print(suffix);
     cache[10] = suffix;
   }
   for (size_t i = 0; i < length; ++i) {
-    if (i < previousLength && uptimeDigits[i] == digits[i]) continue;
+    if (!layoutChanged && uptimeDigits[i] == digits[i]) continue;
     const int x = firstDigit + static_cast<int>(i) * cellWidth;
     const auto& glyph = glyphFor(digits[i]);
     screen.fillRect(x, 223, cellWidth, 16, background);
