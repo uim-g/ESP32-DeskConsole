@@ -6,6 +6,11 @@
 #include <time.h>
 
 namespace {
+// 直接读取当前时间。NTP 尚未校时时立即返回，让绘图保持无等待。
+bool readClock(tm& local) {
+  const time_t now = time(nullptr);
+  return now >= 1577836800 && localtime_r(&now, &local) != nullptr;
+}
 constexpr uint16_t muted = 0xA69A;
 constexpr uint16_t cardColor = 0x1928;
 constexpr uint16_t cardOutline = 0x3A4E;
@@ -16,6 +21,15 @@ constexpr int fireworkX = 40, fireworkY = 66, fireworkW = 240, fireworkH = 82;
 
 void smallIcon(Adafruit_GFX& gfx, int x, int y, char kind, uint16_t color) {
   switch (kind) {
+    case 'g':  // 齿轮
+      gfx.drawCircle(x, y, 6, color);
+      gfx.drawCircle(x, y, 2, color);
+      for (int d : {-1, 1}) {
+        gfx.drawFastHLine(x + d * 6 - 1, y, 3, color);
+        gfx.drawFastVLine(x, y + d * 6 - 1, 3, color);
+        for (int dy : {-1, 1}) gfx.drawPixel(x + d * 5, y + dy * 5, color);
+      }
+      break;
     case 'b':  // 蓝牙标志
       gfx.drawFastVLine(x, y - 8, 17, color);
       gfx.drawLine(x, y - 8, x + 5, y - 4, color);
@@ -158,6 +172,8 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   lastLights = -1;
   lastSelection = -1;
   launcherTop = 0;
+  for (auto& value : settingSwitches) value = -1;
+  lastSettingRow = lastBrightness = lastSleepMinutes = -1;
   panelsReady = false;
   for (auto& bar : deviceBars) bar = -1;
   lastWeatherCode = -100;
@@ -173,6 +189,7 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
     } else {
       const char icon = strcmp(title, "Wi-Fi") == 0 ? 'w' :
                         strcmp(title, "Bluetooth") == 0 ? 'b' :
+                        strcmp(title, "Settings") == 0 ? 'g' :
                         strncmp(title, "Weather", 7) == 0 ? 'c' :
                         strcmp(title, "F1 REACTION") == 0 ? 'f' :
                         strcmp(title, "F1 Statistics") == 0 ? 's' : 'm';
@@ -276,10 +293,9 @@ void Interface::animateTabs(bool entering, uint8_t mask) {
   }
 }
 
-void Interface::launcher(uint8_t selected, const char* const (&labels)[5]) {
+void Interface::launcher(uint8_t selected, const char* const labels[], int count) {
   constexpr int cardX = 46, firstY = 49, width = 228, height = 36, pitch = 43;
   constexpr int viewportEnd = firstY + 4 * pitch;
-  constexpr int count = 5;
   if (lastSelection == selected) return;
   int nextTop = launcherTop;
   if (selected < nextTop) nextTop = selected;
@@ -325,6 +341,8 @@ void Interface::launcher(uint8_t selected, const char* const (&labels)[5]) {
       ink.fillCircle(x, dotY, 2, 1);
     } else if (row == 3) {
       smallIcon(ink, x, cy, 'b', 1);
+    } else if (row == 5) {
+      smallIcon(ink, x, cy, 'g', 1);
     } else {
       ink.drawRect(x - 6, cy - 6, 13, 13, 1);
       for (int n : {-4, 0, 4}) {
@@ -382,6 +400,143 @@ void Interface::launcher(uint8_t selected, const char* const (&labels)[5]) {
   launcherTop = nextTop;
 }
 
+void Interface::settings(const Settings& values, uint8_t selected, bool editing, bool saveFailed) {
+  constexpr int x = 37, firstY = 44, pitch = 39, width = 246, height = 37;
+  constexpr uint16_t selection = 0x2A69;
+  const char* labels[] = {"Auto sleep", "Sleep after", "RGB status LED", "RGB brightness"};
+  const bool available[] = {true, values.autoSleep != 0, true, values.rgbEnabled != 0};
+  GFXcanvas16 strip(width, pitch);
+  strip.setTextWrap(false);
+
+  auto paint = [&](int row, int highlightY, int knob) {
+    const int y = firstY + row * pitch;
+    if (strip.getBuffer()) {
+      strip.fillScreen(background);
+      // 分隔线先画，滑动的高亮经过时会覆盖它。
+      strip.drawFastHLine(5, 37, 235, 0x2946);
+      strip.fillRoundRect(0, highlightY - y, width, height, 7, selection);
+    }
+    Adafruit_GFX& gfx = strip.getBuffer() ? static_cast<Adafruit_GFX&>(strip) : screen;
+    const int ox = strip.getBuffer() ? 0 : x;
+    const int oy = strip.getBuffer() ? 0 : y;
+    if (!strip.getBuffer()) {
+      screen.fillRect(x, y, width, height, background);
+      screen.drawFastHLine(42, y + 37, 235, 0x2946);
+      if (row == selected) screen.fillRoundRect(x, y, width, height, 7, selection);
+    }
+    gfx.setFont(&NunitoSmall);
+    gfx.setTextColor(available[row] ? ILI9341_WHITE : muted);
+    gfx.setCursor(ox + 10, oy + 24);
+    gfx.print(labels[row]);
+    if (row % 2 == 0) {
+      gfx.fillRoundRect(ox + 192, oy + 6, 44, 24, 12, knob >= 22 ? 0x3D6C : 0x528A);
+      gfx.fillCircle(ox + 192 + knob, oy + 18, 9, ILI9341_WHITE);
+    } else {
+      gfx.setTextColor(!available[row] ? muted : editing && row == selected ? highlight : ILI9341_WHITE);
+      gfx.setCursor(ox + 170, oy + 24);
+      if (row == 1) gfx.printf("%u min", static_cast<unsigned>(values.sleepMinutes()));
+      else gfx.print(values.brightness);
+      if (available[row]) {
+        gfx.drawLine(ox + 228, oy + 13, ox + 233, oy + 18, highlight);
+        gfx.drawLine(ox + 233, oy + 18, ox + 228, oy + 23, highlight);
+      }
+    }
+    if (strip.getBuffer()) screen.drawRGBBitmap(x, y, strip.getBuffer(), width, pitch);
+  };
+
+  const int knobs[] = {values.autoSleep ? 32 : 12, values.rgbEnabled ? 32 : 12};
+  const int targetY = firstY + selected * pitch;
+  if (strip.getBuffer() && lastSettingRow >= 0 && lastSettingRow != selected) {
+    const int direction = selected == 0 && lastSettingRow == 3 ? 1 :
+                          selected == 3 && lastSettingRow == 0 ? -1 : selected - lastSettingRow;
+    constexpr int cycle = 4 * pitch;
+    for (int frame = 1; frame <= 6; ++frame) {
+      const float t = frame / 6.0f;
+      const int pos = firstY + lastSettingRow * pitch +
+                      lroundf(direction * pitch * t * t * (3.0f - 2.0f * t));
+      for (int row : {lastSettingRow, static_cast<int>(selected)}) {
+        const int y = firstY + row * pitch;
+        const int relative = (pos - y + cycle + cycle / 2) % cycle - cycle / 2;
+        paint(row, y + relative, knobs[row / 2]);
+      }
+    }
+  }
+
+  const bool rollingSleep = selected == 1;
+  const int previousValue = rollingSleep ? lastSleepMinutes : lastBrightness;
+  const int currentValue = rollingSleep ? values.sleepMinutes() : values.brightness;
+  const bool roll = editing && (rollingSleep || selected == 3) && previousValue >= 1 &&
+                    previousValue != currentValue && strip.getBuffer();
+  for (int row = 0; row < 4; ++row) {
+    if (roll) break;  // 连调时只写数值窗口，保留整行其余内容。
+    const int knob = knobs[row / 2];
+    const int previous = settingSwitches[row / 2];
+    if (row % 2 == 0 && previous >= 0 && previous != knob) {
+      // 开关滑动期间只传输拨钮区域。
+      GFXcanvas16 toggle(44, 24);
+      if (toggle.getBuffer()) {
+        paint(row, targetY, previous);
+        for (int step = 1; step <= 6; ++step) {
+          const float t = step / 6.0f;
+          const int current = previous + lroundf((knob - previous) * t * t * (3.0f - 2.0f * t));
+          toggle.fillScreen(row == selected ? selection : background);
+          toggle.fillRoundRect(0, 0, 44, 24, 12, current >= 22 ? 0x3D6C : 0x528A);
+          toggle.fillCircle(current, 12, 9, ILI9341_WHITE);
+          screen.drawRGBBitmap(229, firstY + row * pitch + 6, toggle.getBuffer(), 44, 24);
+          if (step < 6) delay(14);
+        }
+      } else {
+        paint(row, targetY, knob);
+      }
+    } else {
+      paint(row, targetY, knob);
+    }
+    if (row % 2 == 0) settingSwitches[row / 2] = knob;
+  }
+
+  if (roll) {
+    // 数字画布独立裁剪，旧数字退出时变淡，新数字从另一端进入。
+    GFXcanvas16 digits(56, 31);
+    if (digits.getBuffer()) {
+      digits.setFont(&NunitoSmall);
+      digits.setTextWrap(false);
+      const int direction = currentValue < previousValue ? 1 : -1;
+      auto tint = [&](int alpha) {
+        const int inverse = 8 - alpha;
+        const int r = (((highlight >> 11) & 31) * alpha + ((selection >> 11) & 31) * inverse) / 8;
+        const int g = (((highlight >> 5) & 63) * alpha + ((selection >> 5) & 63) * inverse) / 8;
+        const int b = ((highlight & 31) * alpha + (selection & 31) * inverse) / 8;
+        return static_cast<uint16_t>((r << 11) | (g << 5) | b);
+      };
+      for (int step = 1; step <= 8; ++step) {
+        const float t = step / 8.0f;
+        const float eased = t * t * (3.0f - 2.0f * t);
+        const int offset = lroundf(27 * eased);
+        const int alpha = lroundf(8 * eased);
+        digits.fillScreen(selection);
+        digits.setTextColor(tint(8 - alpha));
+        digits.setCursor(0, 21 - direction * offset);
+        digits.print(previousValue);
+        if (rollingSleep) digits.print(" min");
+        digits.setTextColor(tint(alpha));
+        digits.setCursor(0, 21 + direction * (27 - offset));
+        digits.print(currentValue);
+        if (rollingSleep) digits.print(" min");
+        screen.drawRGBBitmap(207, firstY + selected * pitch + 3, digits.getBuffer(), 56, 31);
+        if (step < 8) delay(10);
+      }
+    } else {
+      paint(selected, targetY, knobs[selected / 2]);
+    }
+  }
+  lastSettingRow = selected;
+  lastBrightness = values.brightness;
+  lastSleepMinutes = values.sleepMinutes();
+  field(0, 39, 207, 242, 24, saveFailed ? "Save failed; try again" :
+        editing ? "EDIT confirms / BACK cancels" : "Changes saved automatically",
+        4, saveFailed ? ILI9341_RED : muted, true);
+}
+
 void Interface::field(uint8_t slot, int x, int y, int w, int h, String value,
                       uint8_t size, uint16_t color, bool centered, bool onCard) {
   // 动态字段只能写在两侧按键标签之间。
@@ -426,7 +581,7 @@ void Interface::home(const WeatherData& data) {
   tm local;
   char clock[9] = "--:--:--";
   char date[28] = "Waiting for time";
-  if (getLocalTime(&local, 10)) {
+  if (readClock(local)) {
     strftime(clock, sizeof(clock), "%H:%M:%S", &local);
     strftime(date, sizeof(date), "%a, %d %b %Y", &local);
   }
@@ -657,7 +812,7 @@ void Interface::network() {
   metric(2, 40, 132, 240, 44, 'm', "IP address", connected ? WiFi.localIP().toString() : String("--"));
   metric(3, 40, 182, 116, 45, 's', "Signal", connected ? String(WiFi.RSSI()) + " dBm" : String("--"));
   tm local;
-  metric(4, 164, 182, 116, 45, 'p', "Clock", getLocalTime(&local, 10) ? "NTP ready" : "Waiting");
+  metric(4, 164, 182, 116, 45, 'p', "Clock", readClock(local) ? "NTP ready" : "Waiting");
   panelsReady = true;
 }
 

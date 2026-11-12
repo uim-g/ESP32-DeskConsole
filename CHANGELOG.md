@@ -1,5 +1,11 @@
 # Release history / 版本记录
 
+## v1.5.0
+
+- Add persistent Settings for auto sleep, idle duration, RGB enable, and brightness. 新增可记忆的自动休眠、时长、RGB 开关和亮度设置。
+- Animate selection, toggle knobs, and rolling setting values. 设置选中框、拨钮和数值加入缓动动画。
+- Draw Home before wireless setup, avoid clock polling waits, and report boot timing. 提前显示桌面，移除时钟绘制等待，增加启动耗时日志。
+
 ## v1.4.0
 
 - Add GPIO48 onboard RGB cues for F1, Wi-Fi, BLE, and flash saves. 加入 GPIO48 板载 RGB 状态反馈。

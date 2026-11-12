@@ -39,9 +39,18 @@ The v1.1.0 concept sheet illustrates Home, Apps, F1, Statistics, Calibration, We
 
 ## Idle light sleep and new records
 
-After three minutes without a button press, DeskConsole turns off the ILI9341 display output, stops Wi-Fi, and enters light sleep. Active F1 rounds stay awake. Press any button to wake to the same page, then release it before pressing again to perform an action. Wi-Fi reconnects and cached weather stays available. The backlight remains powered when LED is wired directly to 3V3.
+With Auto sleep enabled, after the configured idle interval (three minutes by default), DeskConsole turns off the ILI9341 display output, stops Wi-Fi, and enters light sleep. Active F1 rounds stay awake. Press any button to wake to the same page, then release it before pressing again to perform an action. Wi-Fi reconnects and cached weather stays available. The backlight remains powered when LED is wired directly to 3V3.
 
 F1 plays a brief fireworks animation when a valid raw reaction time beats the saved best. The first valid result establishes the baseline. Clearing statistics also resets that baseline.
+
+## Settings
+
+Open Settings after Device in the App list. Use the right buttons to select a row and EDIT to toggle it or enter value editing. While editing, Up increases and Down decreases. EDIT saves the value, and BACK cancels the edit. Confirmed changes are stored in flash and restored on startup.
+
+- Auto sleep is on by default. Choose 1, 3, 5, or 10 minutes, with 3 minutes as the default.
+- The onboard RGB status LED is on by default. Turn it off or adjust brightness from 1 to 8.
+
+Settings selection and value changes use eased animations. Startup now draws Home before wireless setup, and the clock fields do not wait for NTP when drawing. The cause of lag on the first automatic boot after upload has not been confirmed.
 
 ## Serial Monitor
 
@@ -82,7 +91,7 @@ See [release history](CHANGELOG.md).
 
 ## Onboard RGB status LED
 
-This build uses the onboard addressable LED on GPIO48, with each color channel capped at 8. Blue indicates startup, a reconnect request or a scan start. Green indicates Wi-Fi connected, BLE scan completed or a valid F1 time. Cyan confirms a saved calibration or cleared statistics. False starts flash red, timeouts and failed scans use amber, and a new F1 record cycles colors with the fireworks. The LED turns off during F1 countdown and reaction timing and before light sleep.
+This build uses the onboard addressable LED on GPIO48, with each color channel adjustable up to 8 in Settings. Blue indicates startup, a reconnect request or a scan start. Green indicates Wi-Fi connected, BLE scan completed or a valid F1 time. Cyan confirms a saved calibration or cleared statistics. False starts flash red, timeouts and failed scans use amber, and a new F1 record cycles colors with the fireworks. The LED turns off during F1 countdown and reaction timing and before light sleep.
 
 ## License
 

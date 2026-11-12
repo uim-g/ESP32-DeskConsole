@@ -3,6 +3,7 @@
 #include "Game.h"
 #include "Weather.h"
 #include "Bluetooth.h"
+#include "Settings.h"
 #include <Adafruit_ILI9341.h>
 #include <SPI.h>
 #include <memory>
@@ -18,7 +19,8 @@ class Interface {
   void tab(bool right, bool lower, const char* label);
   void animateTabs(bool entering, uint8_t mask = 0x0F);
   void gameMode(bool debug);
-  void launcher(uint8_t selected, const char* const (&labels)[5]);
+  void launcher(uint8_t selected, const char* const labels[], int count);
+  void settings(const Settings& values, uint8_t selected, bool editing, bool saveFailed);
   void bluetooth(const BluetoothSnapshot& scan, int first, bool namedOnly);
   void field(uint8_t slot, int x, int y, int w, int h, String value,
              uint8_t size = 0, uint16_t color = ILI9341_WHITE, bool centered = false,
@@ -48,6 +50,10 @@ class Interface {
   uint32_t lastFireworkFrame = 0;
   int lastSelection = -1;
   int launcherTop = 0;
+  int settingSwitches[2] = {-1, -1};
+  int lastSettingRow = -1;
+  int lastBrightness = -1;
+  int lastSleepMinutes = -1;
   bool panelsReady = false;
   int deviceBars[3] = {-1, -1, -1};
   int lastWeatherCode = -100;

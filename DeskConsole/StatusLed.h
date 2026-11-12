@@ -7,12 +7,20 @@ class StatusLed {
  public:
   enum class Cue { Boot, Connected, Scan, Saved, Result, FalseStart, Timeout, Record };
 
+  void configure(bool on, uint8_t level) {
+    enabled = on;
+    brightness = level;
+    if (!enabled) stop();
+    else update();
+  }
+
   void begin() {
     rgbLedWrite(Config::rgbPin, 0, 0, 0);
     play(Cue::Boot);
   }
 
   void play(Cue next) {
+    if (!enabled) return;
     cue = next;
     started = millis();
     active = true;
@@ -26,7 +34,7 @@ class StatusLed {
 
   void update() {
     if (!active) return;
-    constexpr uint8_t b = Config::rgbBrightness;
+    const uint8_t b = brightness;
     const uint32_t ms = millis() - started;
     switch (cue) {
       case Cue::Boot:
@@ -49,8 +57,9 @@ class StatusLed {
       case Cue::Record: {
         if (ms >= 1300) break;
         const uint8_t step = (ms / 130) % 5;
-        constexpr uint8_t colors[][3] = {
-          {b, 0, 0}, {b, b / 2, 0}, {0, b, 0}, {0, b / 2, b}, {b / 2, 0, b}
+        const uint8_t half = b / 2;
+        const uint8_t colors[][3] = {
+          {b, 0, 0}, {b, half, 0}, {0, b, 0}, {0, half, b}, {half, 0, b}
         };
         return write(colors[step][0], colors[step][1], colors[step][2]);
       }
@@ -70,5 +79,7 @@ class StatusLed {
   Cue cue = Cue::Boot;
   uint32_t started = 0;
   bool active = false;
+  bool enabled = true;
+  uint8_t brightness = Config::rgbBrightness;
   uint8_t red = 0, green = 0, blue = 0;
 };

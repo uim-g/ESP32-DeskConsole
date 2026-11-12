@@ -6,12 +6,13 @@
 #include "StatusLed.h"
 #include "Weather.h"
 #include <WiFi.h>
+#include <esp_system.h>
 #include <time.h>
 
 // 页面路由独立于绘图。相同的实体键根据当前页面执行不同操作。
-enum class View { Home, Launcher, F1, Weather, Network, Bluetooth, Device, Stats, Calibration };
-constexpr View apps[] = {View::F1, View::Weather, View::Network, View::Bluetooth, View::Device};
-constexpr const char* appNames[] = {"F1 Reaction", "Weather", "Wi-Fi", "Bluetooth", "Device"};
+enum class View { Home, Launcher, F1, Weather, Network, Bluetooth, Device, Settings, Stats, Calibration };
+constexpr View apps[] = {View::F1, View::Weather, View::Network, View::Bluetooth, View::Device, View::Settings};
+constexpr const char* appNames[] = {"F1 Reaction", "Weather", "Wi-Fi", "Bluetooth", "Device", "Settings"};
 constexpr int appCount = sizeof(apps) / sizeof(apps[0]);
 View view = View::Home;
 uint8_t selection = 0;
@@ -21,7 +22,6 @@ Buttons::Key repeatKey = Buttons::Key::None;
 uint32_t repeatAt = 0, fieldPressedAt = 0;
 bool fieldPending = false, fieldReset = false;
 uint32_t lastRefresh = 0;
-constexpr uint32_t idleSleepMs = 3 * 60 * 1000UL;
 constexpr uint32_t wakeReleaseMs = 35;
 uint32_t lastInput = 0, lastWakeLow = 0;
 bool wakeConfigured = false, discardWakePress = false;
@@ -38,6 +38,28 @@ Interface ui;
 Weather weather;
 BluetoothScanner bluetooth;
 StatusLed statusLed;
+SettingsStore settingsStore;
+Settings settingsDraft;
+uint8_t settingRow = 0;
+bool editingSettings = false, settingsSaveFailed = false;
+
+uint32_t idleSleepMs() {
+  return settingsStore.current.sleepMinutes() * 60 * 1000UL;
+}
+
+bool saveSettings(const Settings& next) {
+  settingsSaveFailed = !settingsStore.save(next);
+  if (settingsSaveFailed) {
+    Serial.println("[SETTINGS] Flash save failed");
+    return false;
+  }
+  statusLed.configure(next.rgbEnabled, next.brightness);
+  statusLed.play(StatusLed::Cue::Saved);
+  Serial.printf("[SETTINGS] Saved: sleep=%u, after=%u min, RGB=%u, brightness=%u\n",
+                static_cast<unsigned>(next.autoSleep), static_cast<unsigned>(next.sleepMinutes()),
+                static_cast<unsigned>(next.rgbEnabled), static_cast<unsigned>(next.brightness));
+  return true;
+}
 
 // 灯只在计时之外反馈，避免亮光提前提示起跑。
 void showF1Led() {
@@ -63,7 +85,7 @@ void adjustCalibration(Buttons::Key key) {
 void draw() {
   switch (view) {
     case View::Home: ui.home(weather.snapshot()); break;
-    case View::Launcher: ui.launcher(selection, appNames); break;
+    case View::Launcher: ui.launcher(selection, appNames, appCount); break;
     case View::F1: ui.game(game); break;
     case View::Weather: ui.weather(weather.snapshot(), forecast); break;
     case View::Network: ui.network(); break;
@@ -74,6 +96,10 @@ void draw() {
       break;
     }
     case View::Device: ui.device(); break;
+    case View::Settings:
+      ui.settings(editingSettings ? settingsDraft : settingsStore.current,
+                  settingRow, editingSettings, settingsSaveFailed);
+      break;
     case View::Stats: ui.stats(game, confirmClear); break;
     case View::Calibration: ui.calibration(game, editOffset, saveFailed); break;
   }
@@ -101,6 +127,7 @@ void open(View next) {
     case View::Network: title = "Wi-Fi"; break;
     case View::Bluetooth: title = "Bluetooth"; base = 0x0868; color = 0x75BF; break;
     case View::Device: title = "Device"; base = 0x18E3; color = 0xB6B1; break;
+    case View::Settings: title = "Settings"; base = 0x10A4; color = 0x97D4; break;
     case View::Stats: title = "F1 Statistics"; base = ILI9341_BLACK; color = 0xFB0C; break;
     case View::Calibration: title = "F1 Calibration"; base = ILI9341_BLACK; color = 0xFB0C; break;
   }
@@ -108,13 +135,14 @@ void open(View next) {
   ui.beginPage(title, base, color);
   draw();
   ui.tab(false, false, view == View::Home ? "APPS" : view == View::Calibration ? "SAVE" : "BACK");
-  if (view == View::Launcher || view == View::Weather || view == View::Bluetooth) {
+  if (view == View::Launcher || view == View::Weather || view == View::Bluetooth || view == View::Settings) {
     ui.tab(true, false, "^");
     ui.tab(true, true, "v");
   }
   if (view == View::Launcher) ui.tab(false, true, "OPEN");
   if (view == View::Network) ui.tab(false, true, "RETRY");
   if (view == View::Bluetooth) ui.tab(false, true, "SCAN");
+  if (view == View::Settings) ui.tab(false, true, "EDIT");
   if (view == View::F1) {
     ui.tab(false, true, "MODE");
     ui.tab(true, false, game.debug ? "SET" : "STATS");
@@ -132,6 +160,11 @@ void open(View next) {
 void handle(Buttons::Key key, uint32_t pressedUs) {
   using Key = Buttons::Key;
   if (key == Key::Back) {
+    if (view == View::Settings && editingSettings) {
+      editingSettings = settingsSaveFailed = false;
+      draw();
+      return;
+    }
     if (view == View::Calibration && calibrationDirty) {
       if (!game.saveCalibration()) {
         Serial.println("[CAL] Flash save failed");
@@ -152,12 +185,40 @@ void handle(Buttons::Key key, uint32_t pressedUs) {
     if (key == Key::Action) {
       Serial.printf("[APPS] Open: %s\n", appNames[selection]);
       forecast = false;
+      if (apps[selection] == View::Settings) {
+        settingRow = 0;
+        editingSettings = settingsSaveFailed = false;
+      }
       open(apps[selection]);
     } else if (key == Key::Up || key == Key::Down) {
       selection = (selection + (key == Key::Up ? appCount - 1 : 1)) % appCount;
       Serial.printf("[APPS] Selected: %s\n", appNames[selection]);
       draw();
     }
+  } else if (view == View::Settings) {
+    if (key == Key::Action) {
+      if (editingSettings) {
+        if (saveSettings(settingsDraft)) editingSettings = false;
+      } else {
+        Settings next = settingsStore.current;
+        if (settingRow == 0 || settingRow == 2) {
+          if (settingRow == 0) next.autoSleep = !next.autoSleep;
+          else next.rgbEnabled = !next.rgbEnabled;
+          saveSettings(next);
+        } else {
+          if ((settingRow == 1 && !next.autoSleep) || (settingRow == 3 && !next.rgbEnabled)) return;
+          settingsDraft = next;
+          editingSettings = true;
+          settingsSaveFailed = false;
+        }
+      }
+    } else if (key == Key::Up || key == Key::Down) {
+      const int step = key == Key::Up ? -1 : 1;
+      if (!editingSettings) settingRow = (settingRow + step + 4) % 4;
+      else if (settingRow == 1) settingsDraft.sleepIndex = constrain(settingsDraft.sleepIndex - step, 0, 3);
+      else settingsDraft.brightness = constrain(settingsDraft.brightness - step, 1, 8);
+    }
+    draw();
   } else if (view == View::F1) {
     if (key == Key::Down) {
       game.press(pressedUs);
@@ -240,7 +301,7 @@ void updateBluetoothScanKey() {
 }
 
 bool repeatsNavigation() {
-  return view == View::Launcher || view == View::Weather || view == View::Bluetooth;
+  return view == View::Launcher || view == View::Weather || view == View::Bluetooth || view == View::Settings;
 }
 
 void updateNavigationKeys() {
@@ -291,17 +352,25 @@ void updateCalibrationKeys() {
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("[BOOT] DeskConsole starting");
+  Serial.printf("[BOOT] DeskConsole starting; reset reason=%d\n", static_cast<int>(esp_reset_reason()));
   buttons.begin();
+  settingsStore.begin();
+  statusLed.configure(settingsStore.current.rgbEnabled, settingsStore.current.brightness);
   wakeConfigured = buttons.enableWakeup();
-  if (wakeConfigured) {
+  if (wakeConfigured && settingsStore.current.autoSleep) {
     Serial.printf("[POWER] Light sleep after %lu s idle\n",
-                  static_cast<unsigned long>(idleSleepMs / 1000));
+                  static_cast<unsigned long>(idleSleepMs() / 1000));
+  } else if (wakeConfigured) {
+    Serial.println("[POWER] Auto sleep disabled in Settings");
   } else {
     Serial.println("[POWER] GPIO wake setup failed; sleep disabled");
   }
   game.begin();
   ui.begin();
+  // 先显示桌面，避免无线初始化拖延第一帧。
+  open(View::Home);
+  statusLed.begin();
+  const uint32_t networkStarted = millis();
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
   Serial.println("[WIFI] Connecting in station mode");
@@ -309,8 +378,9 @@ void setup() {
   configTzTime("MYT-8", "pool.ntp.org", "time.google.com");
   Serial.println("[TIME] NTP configured for MYT (UTC+8)");
   weather.begin();
-  open(View::Home);
-  statusLed.begin();
+  Serial.printf("[BOOT] Network setup returned in %lu ms; loop ready at %lu ms\n",
+                static_cast<unsigned long>(millis() - networkStarted),
+                static_cast<unsigned long>(millis()));
   lastInput = millis();
 }
 
@@ -335,7 +405,8 @@ void reportConnectivity() {
 }
 
 void sleepIfIdle() {
-  if (!wakeConfigured || millis() - lastInput < idleSleepMs || buttons.anyPressed()) return;
+  if (!wakeConfigured || !settingsStore.current.autoSleep ||
+      millis() - lastInput < idleSleepMs() || buttons.anyPressed()) return;
   if (view == View::F1 && !game.canChangeMode()) return;
   if (bluetooth.busy()) return;
 
@@ -417,7 +488,7 @@ void loop() {
       draw();
     }
     ui.updateFireworks(game);
-  } else if (view != View::Launcher && millis() - lastRefresh >= 1000) {
+  } else if (view != View::Launcher && view != View::Settings && millis() - lastRefresh >= 1000) {
     lastRefresh = millis();
     draw();
   }
