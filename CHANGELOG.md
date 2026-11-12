@@ -4,6 +4,13 @@ Screenshots below were captured from the corresponding [live browser simulator](
 
 下方截图均取自对应版本的[在线网页模拟器](https://uim-g.github.io/ESP32-DeskConsole/)。
 
+## v2.0.0
+
+- Separate page state, input handling, and rendering from app scheduling. 将页面状态、按键处理和绘制从主程序调度中拆出。
+- Drive transitions and local UI animations by elapsed time across firmware and the browser. 实体版和网页版共用按时间推进的切页与局部动画。
+- Preserve existing F1 scores, calibration, and settings. 兼容已有 F1 成绩、校准和设置。
+- Refresh only changed uptime digits on the Device page. Device 页只刷新发生变化的运行时长数字。
+
 ## v1.5.0
 
 - Add persistent Settings for auto sleep, idle duration, RGB enable, and brightness. 新增可记忆的自动休眠、时长、RGB 开关和亮度设置。

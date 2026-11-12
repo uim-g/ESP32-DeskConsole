@@ -77,6 +77,7 @@ class Interface {
   int lastBrightness = -1;
   int lastSleepMinutes = -1;
   bool panelsReady = false;
+  char uptimeDigits[8] = {};
   int deviceBars[3] = {-1, -1, -1};
   int lastWeatherCode = -100;
   int forecastIcons[3] = {-100, -100, -100};

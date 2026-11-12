@@ -14,11 +14,11 @@ Page changes animate the active button labels at the screen edges. Each app has 
 
 ## Browser simulators
 
-[Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all seven versions from v1.0.0 through v1.5.0. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
+[Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all eight versions from v1.0.0 through v2.0.0. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
 
-[Play the latest browser version (v1.5.0)](https://uim-g.github.io/ESP32-DeskConsole/v1.5.0/)
+[Play the latest browser version (v2.0.0)](https://uim-g.github.io/ESP32-DeskConsole/v2.0.0/)
 
-[![Live browser screenshots of all seven DeskConsole versions](docs/browser-releases/overview.jpg)](CHANGELOG.md)
+[![Live browser screenshots of the seven DeskConsole v1.x versions](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 
 Click the four side buttons or use **Q**, **A**, **↑**, and **↓**. In F1, use **↓** for PLAY. Scores are stored in the browser. Weather uses Open-Meteo and requires internet access. Wi-Fi and device readings are simulated.
 

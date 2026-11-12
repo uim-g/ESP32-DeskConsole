@@ -97,6 +97,7 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   for (auto& value : settingSwitches) value = -1;
   lastSettingRow = lastBrightness = lastSleepMinutes = -1;
   panelsReady = false;
+  uptimeDigits[0] = '\0';
   for (auto& bar : deviceBars) bar = -1;
   lastWeatherCode = -100;
   for (auto& code : forecastIcons) code = -100;

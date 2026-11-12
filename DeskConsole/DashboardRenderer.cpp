@@ -226,7 +226,27 @@ void Interface::device(const Platform::Device& data) {
   memoryCard(0, 104, "HEAP", data.heap.total, data.heap.free);
   memoryCard(1, 144, "PSRAM", data.psram.total, data.psram.free);
   memoryCard(2, 184, "Firmware", data.application.total, data.application.free);
-  field(10, 40, 223, 240, 16, String("Up ") + data.uptimeSeconds + " s  /  Flash " +
-        data.flash / (1024 * 1024) + " MiB", 3, muted, true);
+  field(9, 54, 223, 32, 16, "Up", 3, muted);
+  field(10, 150, 223, 116, 16,
+        String("s  /  Flash ") + data.flash / (1024 * 1024) + " MiB", 3, muted);
+
+  // 固定每个数字的位置，位数增加和秒数进位都只重绘变化的格子。
+  char digits[sizeof(uptimeDigits)];
+  snprintf(digits, sizeof(digits), "%7lu", static_cast<unsigned long>(data.uptimeSeconds));
+  constexpr int cellWidth = 9, firstDigit = 86, baseline = 235;
+  screen.setFont(&NunitoTab);
+  screen.setTextColor(muted);
+  const bool firstDraw = uptimeDigits[0] == '\0';
+  for (size_t i = 0; i < sizeof(digits) - 1; ++i) {
+    if (!firstDraw && uptimeDigits[i] == digits[i]) continue;
+    const int x = firstDigit + static_cast<int>(i) * cellWidth;
+    screen.fillRect(x, 223, cellWidth, 16, background);
+    if (digits[i] != ' ') {
+      const auto& glyph = NunitoTab.glyph[digits[i] - NunitoTab.first];
+      screen.setCursor(x + (cellWidth - glyph.width) / 2 - glyph.xOffset, baseline);
+      screen.write(static_cast<uint8_t>(digits[i]));
+    }
+  }
+  memcpy(uptimeDigits, digits, sizeof(digits));
   panelsReady = true;
 }
