@@ -40,9 +40,11 @@ Click the four side buttons or use **Q**, **A**, **↑**, and **↓**. In F1, us
 
 ## UI overview
 
-![DeskConsole v1.1.0 UI concept sheet](docs/ui-v1.1.0.png)
+**Design reference only.** This image is a UI mockup. [Actual browser screenshots by version](CHANGELOG.md) are in the release history.
 
-The v1.1.0 concept sheet illustrates Home, Apps, F1, Statistics, Calibration, Weather Now, Forecast, Wi-Fi, and Device. This is a design illustration with sample values. The current firmware also has a Bluetooth app and updated Device meters. It uses a vertical app list, side labels aligned to physical buttons, vertically stacked RAW and CAL times, and forecast rain probability.
+![DeskConsole v1.1.0 design reference](docs/ui-v1.1.0.png)
+
+The v1.1.0 concept sheet illustrates Home, Apps, F1, Statistics, Calibration, Weather Now, Forecast, Wi-Fi, and Device. The current firmware also has a Bluetooth app and updated Device meters. It uses a vertical app list, side labels aligned to physical buttons, vertically stacked RAW and CAL times, and forecast rain probability.
 
 ## Navigation and rendering
 
