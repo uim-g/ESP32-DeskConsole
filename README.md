@@ -18,6 +18,8 @@ Page changes animate the active button labels at the screen edges. Each app has 
 
 [Play the latest browser version (v1.5.0)](https://uim-g.github.io/ESP32-DeskConsole/v1.5.0/)
 
+[![Live browser screenshots of all seven DeskConsole versions](docs/browser-releases/overview.jpg)](CHANGELOG.md)
+
 Click the four side buttons or use **Q**, **A**, **↑**, and **↓**. In F1, use **↓** for PLAY. Scores are stored in the browser. Weather uses Open-Meteo and requires internet access. Wi-Fi and device readings are simulated.
 
 | Home | Apps | F1 Reaction |
