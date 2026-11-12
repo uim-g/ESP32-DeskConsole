@@ -5,6 +5,12 @@
 <title>DeskConsole 网页版本</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#16191c;color:#e9edf1;font:16px system-ui,sans-serif}main{max-width:44rem;margin:auto;padding:3rem 1rem}h1{margin:0;font-size:2.5rem}p{color:#bac3cc;margin:1rem 0 1.5rem}ul{padding:0;list-style:none;display:grid;gap:.65rem}li a{display:grid;grid-template-columns:6rem 1fr;gap:.5rem;padding:1rem;background:#252a2f;border:1px solid #45505a;border-radius:.6rem;color:#e9edf1;text-decoration:none}li a:hover,li a:focus-visible{border-color:#a9d7ff;background:#303942}strong{color:#a9d7ff}footer a{color:#a9d7ff}
+ul{position:relative;isolation:isolate}
+ul::before{content:"";position:absolute;inset:0 0 auto;height:var(--selection-height,0px);transform:translateY(var(--selection-y,0px));background:#303942;border:1px solid #a9d7ff;border-radius:.6rem;pointer-events:none;z-index:1;transition:transform 220ms cubic-bezier(.4,0,.2,1),height 220ms cubic-bezier(.4,0,.2,1)}
+li a{position:relative}
+li a:hover,li a:focus-visible{background:#252a2f;border-color:#45505a}
+li a > *{position:relative;z-index:2}
+@media(prefers-reduced-motion:reduce){ul::before{transition:none}}
 </style>
 <main>
 <h1>DeskConsole</h1>
@@ -20,4 +26,26 @@
 </ul>
 <footer><a href="https://github.com/uim-g/ESP32-DeskConsole/releases">GitHub 发布记录</a></footer>
 </main>
+<script>
+const list = document.querySelector("ul");
+const links = [...list.querySelectorAll("a")];
+let selected = 0;
+function select(index) {
+  selected = index;
+  list.style.setProperty("--selection-y", links[index].offsetTop + "px");
+  list.style.setProperty("--selection-height", links[index].offsetHeight + "px");
+}
+links.forEach((link,index) => {
+  link.addEventListener("pointerenter", () => select(index));
+  link.addEventListener("focus", () => select(index));
+  link.addEventListener("keydown", event => {
+    const direction = {ArrowUp:-1, ArrowDown:1}[event.key];
+    if (!direction) return;
+    event.preventDefault();
+    links[(index + direction + links.length) % links.length].focus();
+  });
+});
+new ResizeObserver(() => select(selected)).observe(list);
+select(0);
+</script>
 </html>
