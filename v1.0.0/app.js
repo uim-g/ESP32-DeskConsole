@@ -273,10 +273,10 @@ async function fetchWeather() {
     const data=await response.json();
     if(!data.current || !Array.isArray(data.daily?.time)) throw Error("Weather payload");
     weather=data; stale=false;
-    status.textContent="士毛月天气来自 Open-Meteo";
+    status.textContent="士毛月天气 / Semenyih weather · Open-Meteo";
   } catch {
     stale=true;
-    status.textContent=weather?"天气更新失败，显示缓存":"天气暂不可用，30 秒后重试";
+    status.textContent=weather?"天气更新失败，显示缓存 / Weather update failed. Showing cached data.":"天气暂不可用，30 秒后重试 / Weather unavailable. Retrying in 30 seconds.";
   } finally {
     fetching=false;
     weatherTimer=setTimeout(fetchWeather,stale?30000:900000);

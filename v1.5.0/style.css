@@ -11,4 +11,4 @@ button{background:#353e46;color:#f2f4f6;border:1px solid #56616c;border-radius:7
 button.pressed,button:active{background:#556675}
 button:focus-visible{outline:2px solid #a9d7ff}
 p{margin:12px 0 0;font-size:13px}
-header a{margin-left:auto;color:#a9d7ff} #led{width:10px;height:10px;border-radius:50%;background:#353e46}
+header a{margin-left:auto;color:#a9d7ff;text-align:right} header a span{color:inherit} #led{width:10px;height:10px;border-radius:50%;background:#353e46}
