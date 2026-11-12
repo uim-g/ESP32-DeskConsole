@@ -1,3 +1,5 @@
+// 桌面、App 列表、天气、蓝牙和设备页的页面控制器。只在各自页面活跃时更新画面。
+
 #pragma once
 #include "Page.h"
 

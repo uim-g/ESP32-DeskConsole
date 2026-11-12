@@ -1,3 +1,5 @@
+// 平台实现集中调用 Arduino、Wi-Fi 和 ESP32 系统 API。网页构建时将输入就绪和画面提交转交浏览器适配器。
+
 #include "Platform.h"
 #include "Config.h"
 #include <WiFi.h>

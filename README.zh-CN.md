@@ -6,24 +6,25 @@ DeskConsole 使用 ESP32-S3、320×240 ILI9341 SPI 屏幕和四个实体按键�
 
 - **F1 Reaction**。五组双排灯箱、随机熄灯、抢跑、超时及 Normal / Debug 模式。上一局结果、个人最佳和总局数保存到闪存。
 - **天气**。显示 [Open-Meteo](https://open-meteo.com/en/docs) 的当前天气和三天预报。
-- **Wi-Fi**。查看连接状态、SSID、IP、信号强度，支持手动重连。
+- **Wi-Fi**。查看连接状态、扫描网络、输入密码及管理已保存的网络。
 - **Bluetooth**。扫描附近的 BLE 广播，操作见下方。
 - **设备诊断**。查看温度、内存和固件用量、Flash 容量及版本。
 
 切页时，侧边可用按键的标签会滑出和滑入。各 App 使用各自的主题色。
 
-## v2.1.0 更新
+## v2.2.0 更新
 
-- App 菜单滚动条提示当前可见范围，选中框恢复 v1.5.0 网页版的动画节奏。
-- Device 页运行时长采用紧凑排版，位数相同时只重绘变化的数字。
+- 支持扫描附近的 2.4 GHz Wi-Fi，在设备上输入密码，并管理已保存的网络。
+- Wi-Fi 页面可以开关无线功能。Wi-Fi 和设置的开关滑动时，拨钮左侧实时显示绿色，右侧显示灰色。
+- Wi-Fi 列表选中框和密码候选字符加入非线性动画，固件源码补充了中文注释。
 
-[查看 v2.1.0 发布说明](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.1.0)。
+[查看 v2.2.0 发布说明](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.0)。
 
 ## 网页模拟器
 
-[打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v2.1.0 的全部九个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
+[打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v2.2.0 的全部十个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
 
-[在线试玩最新版（v2.1.0）](https://uim-g.github.io/ESP32-DeskConsole/v2.1.0/)
+[在线试玩最新版（v2.2.0）](https://uim-g.github.io/ESP32-DeskConsole/v2.2.0/)
 
 [![DeskConsole 七个 v1.x 网页版本的实测截图总览](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 
@@ -60,7 +61,7 @@ v1.1.0 的九格设计稿依次展示桌面、App 菜单、F1、统计、补偿�
 - **桌面**显示时间、日期、天气和气温。按左上键打开 App 菜单。
 - **App 菜单**用右侧两键选择，左下键打开。圆角高亮在卡片之间缓动，扫过的文字和图标反色，高亮限制在卡片范围内。
 - **天气**用任一右侧键切换当前天气和三天预报。当前页显示湿度、风速、气压、降雨和当天的日出日落。预报页显示每日高低温、降雨概率和 Open-Meteo 数据时间。
-- **Wi-Fi**显示连接状态、SSID、IP、RSSI 和 NTP 校时状态。左下键请求重连。
+- **Wi-Fi**显示连接状态、SSID、IP、RSSI 和 NTP 校时状态。第一行控制 Wi-Fi 开关。扫描后可选择网络连接。输入密码时长按 SELECT 切换字符组。在已保存列表中，短按左下键连接，长按删除选中的网络。
 - **Bluetooth** 位于 Wi-Fi 和 Device 之间。短按 SCAN 扫描约 4 秒，长按约 800 ms 切换是否隐藏无名称设备并重新扫描。结果按 RSSI 排序，最多保留 24 条，每页三条。显示广播名称、地址、RSSI，以及有提供的服务 UUID。
 - **设备诊断**显示芯片温度、运行时长、固件版本和 Flash 总容量。运行时长只重绘变化的数字。Heap、PSRAM 和 Firmware 显示「已用 / 总量」及用量条。Firmware 总量对应运行中的 APP 分区。温度提示低于 40°C 为绿，40°C 起为黄，50°C 起为红。
 - App 菜单双向循环滚动。App 菜单、天气和蓝牙页支持长按右侧两键连续翻动。
@@ -97,7 +98,7 @@ Settings 位于 App 列表中 Device 后面。右侧键选择项目，EDIT 切�
 
 1. 在 Arduino IDE 2 中安装 **esp32 by Espressif Systems**，选择 **ESP32S3 Dev Module** 和开发板串口。N16R8 的 Flash Size 设为 16 MB，选择带 3 MiB APP 槽的分区方案（如 16M Flash，3MB APP/9.9MB FATFS）。若要使用板载 8 MiB PSRAM，可启用 OPI PSRAM。BLE 使用 ESP32 核心自带库。
 2. 安装 **Adafruit ILI9341** 及其依赖，以及 **ArduinoJson 7**。
-3. 打开 `DeskConsole/DeskConsole.ino`，在本地 `Config.h` 填入 2.4 GHz Wi-Fi 名称和密码。分享代码时保留占位符。
+3. 打开 `DeskConsole/DeskConsole.ino`，在 Wi-Fi 页面扫描并连接 2.4 GHz 网络。也可以在本地 `Config.h` 配置备用网络，分享代码时保留占位符。
 4. 按下表接好屏幕和按钮，再编译上传。
 
 | ILI9341 | ESP32-S3 |

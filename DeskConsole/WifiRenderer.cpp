@@ -22,6 +22,7 @@ constexpr int listX = 42, listY = 46, switchX = 182, switchY = 11;
 constexpr int knobOff = 12, knobOn = 32;
 }
 
+// 保存本次绘制快照，并在选择变动时启动高亮动画。时间轴由主循环统一推进。
 void Interface::wifiList(const WifiRow* rows, int count, int selected, const String& footer) {
   if (wifiListAnimation.active() && selected != wifiSelected) {
     wifiListAnimation.stop();
@@ -55,6 +56,7 @@ void Interface::wifiList(const WifiRow* rows, int count, int selected, const Str
   field(6, 40, 205, 240, 23, footer, 4, muted, true);
 }
 
+// 把高亮遮罩与圆角卡片遮罩相交，再根据像素位置决定文字颜色。缓存命中的卡片跳过传输。
 void Interface::renderWifiList(float progress) {
   constexpr int x = listX, firstY = listY;
   const int marker = lroundf((wifiPrevious + (wifiSelected - wifiPrevious) * smoothStep(progress)) * rowPitch);
@@ -115,6 +117,7 @@ void Interface::renderWifiList(float progress) {
   }
 }
 
+// 拨钮按缓动曲线移动。只更新轨道的固定小区域，选中卡片和其他内容由列表绘制负责。
 void Interface::renderWifiSwitch(float progress) {
   if (wifiSwitchTarget < 0) return;
   const int target = wifiSwitchTarget ? knobOn : knobOff;
@@ -164,6 +167,7 @@ void Interface::wifiPassword(const String& ssid, const String& value, size_t len
   field(6, 38, 203, 244, 26, footer, 4, muted, true);
 }
 
+// 在四个字符组之间移动圆角框，保留每一组的固定文字位置。
 void Interface::renderWifiGroups(float progress) {
   constexpr int width = 232, height = 25, pitch = 58;
   constexpr const char* labels[] = {"abc", "ABC", "123", "+=#"};
@@ -180,6 +184,7 @@ void Interface::renderWifiGroups(float progress) {
   screen.drawRGBBitmap(44, 115, strip.getBuffer(), width, height);
 }
 
+// 离屏条带裁切滑出边缘的候选字符。中心卡位固定，旧字符和新字符按方向连续滑动。
 void Interface::renderWifiWheel(float progress) {
   constexpr int width = 240, height = 41;
   GFXcanvas16 strip(width, height);

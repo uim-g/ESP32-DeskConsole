@@ -30,6 +30,7 @@ WeatherData Weather::snapshot() {
 }
 
 // 联网后抓取。成功每 15 分钟再抓，失败约 30 秒后重试，并保留上次数据。
+// 后台按间隔尝试联网请求，失败时保留旧结果。快照交换用短临界区，网络请求在锁外。
 void Weather::worker(void* context) {
   auto& self = *static_cast<Weather*>(context);
   bool waitingReported = false;
@@ -59,6 +60,7 @@ void Weather::worker(void* context) {
 }
 
 // 一次请求取回实时数据和三天预报，使用校区坐标与 Kuala Lumpur 时区。
+// 用当前坐标构造 Open-Meteo 请求，解析当前与未来三天的字段。缺失字段保留默认值。
 bool Weather::fetch(WeatherData& result) {
   String url = "https://api.open-meteo.com/v1/forecast?latitude=";
   url += Config::latitude;

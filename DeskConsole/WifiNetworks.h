@@ -1,3 +1,5 @@
+// Wi-Fi 服务状态和数据结构。附近列表是扫描快照，成功的连接历史及无线开关写入独立的 NVS 命名空间。
+
 #pragma once
 #include <Arduino.h>
 #include <Preferences.h>

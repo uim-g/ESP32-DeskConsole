@@ -1,3 +1,5 @@
+// F1 反应状态机及其 NVS 存档。计时使用微秒，统计以原始反应时间为准，校准参数单独存放。
+
 #pragma once
 #include <Arduino.h>
 #include <Preferences.h>

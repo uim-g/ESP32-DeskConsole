@@ -1,6 +1,7 @@
 #include "Interface.h"
 #include "NunitoFonts.h"
 
+// 根据视口内移动、滚屏或首尾循环选择动画帧数，立即画第一帧。
 void Interface::launcher(uint8_t selected, const char* const labels[], int count) {
   if (launcherAnimation.active()) {
     if (launcherTarget == selected) return;
@@ -26,6 +27,7 @@ void Interface::launcher(uint8_t selected, const char* const labels[], int count
   }
 }
 
+// 从时间进度计算选中框及列表偏移，只绘制落在视口中的卡片；右侧滚动条按可见范围定位。
 void Interface::renderLauncher(float progress) {
   const int selected = launcherTarget;
   const auto labels = launcherLabels;
@@ -147,6 +149,7 @@ void Interface::renderLauncher(float progress) {
   }
 }
 
+// 比较上一次设置快照，根据选中行、开关和数值变化启动对应动画。
 void Interface::settings(const Settings& values, uint8_t selected, bool editing, bool saveFailed) {
   if (settingsAnimation.active()) {
     settingsAnimation.stop();
@@ -169,6 +172,7 @@ void Interface::settings(const Settings& values, uint8_t selected, bool editing,
   } else renderSettings(1.0f);
 }
 
+// 分别处理选中框位移、开关轨道和数值滚动。数字变化时尽量只重绘数字窗口。
 void Interface::renderSettings(float progress) {
   const auto& values = settingsValues;
   const int selected = settingsTarget;

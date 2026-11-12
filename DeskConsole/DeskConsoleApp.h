@@ -1,3 +1,5 @@
+// 应用层持有页面和服务，保证它们的生命周期覆盖整个程序。页面通过 PageContext 请求导航，应用负责切页动画、按键重复、网络维护和休眠。
+
 #pragma once
 #include "DashboardPages.h"
 #include "F1Pages.h"

@@ -1,3 +1,5 @@
+// Open-Meteo 天气缓存的数据结构。缺失数值用 NaN 表示，available 表示曾经取到结果，stale 表示当前显示缓存。
+
 #pragma once
 #include <Arduino.h>
 

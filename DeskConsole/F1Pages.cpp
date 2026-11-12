@@ -30,6 +30,7 @@ void F1Page::input(Key key, uint32_t us) {
   }
 }
 
+// 推进五灯倒计时与超时，灯熄灭前按住起跑键会判抢跑。先提交熄灯画面再记录起跑时刻。
 void F1Page::tick(uint32_t now) {
   const uint32_t us = micros();
   if (game.tick(us)) {
@@ -51,6 +52,7 @@ void F1Page::tick(uint32_t now) {
   ctx.ui.updateFireworks(game);
 }
 
+// 清空记录需要两次确认，普通返回不修改存档。
 void StatsPage::input(Key key, uint32_t) {
   if (key == Key::Back) ctx.nav.open(View::F1);
   else if (key == Key::Action) {
@@ -107,6 +109,7 @@ void CalibrationPage::input(Key key, uint32_t) {
   }
 }
 
+// FIELD 短按切换编辑项，长按恢复默认；方向键可按住重复调整，退出前由保存动作写入。
 void CalibrationPage::tick(uint32_t now) {
   if (fieldPending) {
     if (!ctx.buttons.held(Key::Action)) {

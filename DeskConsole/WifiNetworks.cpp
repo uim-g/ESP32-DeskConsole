@@ -29,6 +29,7 @@ const char* authName(wifi_auth_mode_t auth) {
 }
 }
 
+// 读取独立保存的开关和网络记录，先校验结构版本、记录数量以及字符数组结束符。无线驱动自身的持久化被关闭，历史由本模块管理。
 void WifiNetworks::begin() {
   WiFi.persistent(false);
   storageReady = storage.begin("desk-wifi", false);
@@ -47,6 +48,7 @@ void WifiNetworks::begin() {
   Serial.printf("[WIFI] Loaded %u saved networks\n", static_cast<unsigned>(data.count));
 }
 
+// 开机或唤醒优先尝试最近成功的一条记录。第一次使用时可以尝试 Config 的默认网络；关闭无线时直接返回。
 void WifiNetworks::connectPreferred() {
   if (!radioEnabled) return;
   WiFi.mode(WIFI_STA);
@@ -56,6 +58,7 @@ void WifiNetworks::connectPreferred() {
   }
 }
 
+// 先让驱动切换无线模式，再保存开关。保存失败尝试恢复旧状态；成功关闭则清除本次扫描和连接状态。
 bool WifiNetworks::setEnabled(bool enabled) {
   if (enabled == radioEnabled) return true;
   if (!storageReady || !WiFi.mode(enabled ? WIFI_STA : WIFI_OFF)) return false;
@@ -91,6 +94,7 @@ int WifiNetworks::find(const char* ssid, bool secured) const {
   return -1;
 }
 
+// 只有 NVS 返回完整写入长度才替换内存里的记录，避免界面误报保存成功。
 bool WifiNetworks::save(const SavedData& next) {
   if (!storageReady || storage.putBytes("profiles", &next, sizeof(next)) != sizeof(next)) return false;
   data = next;
@@ -98,6 +102,7 @@ bool WifiNetworks::save(const SavedData& next) {
   return true;
 }
 
+// 只在确认连接成功后写入历史。已有记录移动到最前，新记录最多保存八条；日期尚未校时则保留已有时间。
 bool WifiNetworks::remember() {
   const int previous = find(target.ssid, target.password[0] != 0);
   const auto now = time(nullptr);
@@ -114,6 +119,7 @@ bool WifiNetworks::remember() {
   return save(next);
 }
 
+// 移除目标记录并压紧数组。若删除的是当前连接，则关闭驱动自动重连，当前会话可以继续使用。
 bool WifiNetworks::forget(int index) {
   if (index < 0 || index >= data.count) return false;
   SavedData next = data;
@@ -125,6 +131,7 @@ bool WifiNetworks::forget(int index) {
   return true;
 }
 
+// 把目标凭据复制进本次连接缓存。若当前已联网先请求断开，随后由 tick 推进下一阶段。
 bool WifiNetworks::startJoin(const char* ssid, const char* password) {
   if (!radioEnabled || busy() || !*ssid || strlen(ssid) >= sizeof(target.ssid) ||
       strlen(password) >= sizeof(target.password)) return false;
@@ -156,6 +163,7 @@ void WifiNetworks::cancelJoin() {
   joining = Join::Idle;
 }
 
+// 启动异步扫描，由主循环检查结果；扫描和连接尝试共用无线资源，同一时刻只处理一项。
 bool WifiNetworks::startScan() {
   if (!radioEnabled || busy()) return false;
   found = 0;
@@ -166,6 +174,7 @@ bool WifiNetworks::startScan() {
   return scanning != Scan::Failed;
 }
 
+// 按名称和安全类别去重，只保留信号较强的同类热点。结果按 RSSI 从强到弱排列，最多十六条。
 void WifiNetworks::finishScan(int count) {
   for (int i = 0; i < count && i < 256; ++i) {
     const auto ssid = WiFi.SSID(i);
@@ -200,6 +209,7 @@ void WifiNetworks::finishScan(int count) {
   scanning = count < 0 ? Scan::Failed : Scan::Ready;
 }
 
+// 处理扫描完成、等待旧连接断开、连接成功和超时。目标网络确认连接后才写入历史；超时约十二秒。
 void WifiNetworks::tick(uint32_t now) {
   if (scanning == Scan::Running) {
     const int result = WiFi.scanComplete();

@@ -81,6 +81,7 @@ void Interface::setDisplayOn(bool on) {
   screen.sendCommand(on ? ILI9341_DISPON : ILI9341_DISPOFF);
 }
 
+// 切换页面时清空局部字段缓存并停止旧动画，防止上个页面的中间帧写到新页面。
 void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   fireworks.reset();
   tabAnimation.stop();
@@ -163,6 +164,7 @@ void Interface::replaceTab(uint8_t index, const char* label) {
   }
 }
 
+// 用同一个时间点更新活动动画。帧尚未变化时跳过绘制，避免在循环中等待。
 void Interface::advanceAnimations(uint32_t now) {
   int step;
   if ((step = tabAnimation.frame(now)) >= 0) {
@@ -262,6 +264,7 @@ void Interface::renderTabs(int offset, uint8_t mask) {
   }
 }
 
+// 文本字段使用缓存减少闪烁。先测量实际字形，再裁到中间区域，以免覆盖侧键。
 void Interface::field(uint8_t slot, int x, int y, int w, int h, String value,
                       uint8_t size, uint16_t color, bool centered, bool onCard) {
   // 动态字段只能写在两侧按键标签之间。
@@ -307,6 +310,7 @@ void Interface::card(int x, int y, int w, int h) {
   screen.drawRoundRect(x, y, w, h, 9, cardOutline);
 }
 
+// 用横向扫描线绘制圆角轨道。动画中以拨钮中心分开绿、灰两段，两个端点分别显示全灰、全绿。
 void Interface::paintSwitch(Adafruit_GFX& gfx, int x, int y, int height, int knob, int knobRadius) {
   constexpr int width = 44;
   constexpr uint16_t green = 0x3D6C, gray = 0x528A;

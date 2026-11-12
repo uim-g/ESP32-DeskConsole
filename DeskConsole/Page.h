@@ -1,3 +1,5 @@
+// 各页面共享的生命周期和输入协议。enter/leave 对应页面切换，tick 用于轮询异步状态，wake 用于清理唤醒前留下的按键状态。
+
 #pragma once
 #include "Buttons.h"
 #include "Interface.h"

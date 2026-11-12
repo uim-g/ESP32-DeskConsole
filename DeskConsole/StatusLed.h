@@ -1,3 +1,5 @@
+// 板载 RGB 状态灯。提示按经过的时间推进，主循环仍可以扫描按键和绘制。F1 计时期间由游戏页控制熄灯。
+
 #pragma once
 #include <Arduino.h>
 #include "Config.h"

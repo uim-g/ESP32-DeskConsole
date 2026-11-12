@@ -32,6 +32,7 @@ bool validPassword(const char* password) {
 }
 }
 
+// 为当前子页分配标题、主题色和四个侧键提示。结果和确认页只有相关按键。
 PageStyle NetworkPage::style() const {
   const char* title = "Wi-Fi";
   const char* action = "SELECT";
@@ -48,6 +49,7 @@ PageStyle NetworkPage::style() const {
   return {title, 0x0842, Interface::accent, {"BACK", action, arrows ? "^" : nullptr, arrows ? "v" : nullptr}};
 }
 
+// 从 App 菜单进入时回到概览。Wi-Fi 子页之间切换时保留本次选择和输入状态。
 void NetworkPage::enter() {
   if (!internal) {
     screen = Screen::Overview;
@@ -88,6 +90,7 @@ String NetworkPage::label(const char* name) {
   return String(printable);
 }
 
+// 把当前列表切成每页三条，按当前选择定位页码。附近网络和已保存网络使用同一个卡片绘制入口。
 void NetworkPage::drawList(bool saved) {
   if (!saved && !wifi.enabled()) {
     ctx.ui.wifiMessage("Wi-Fi is off", "", "Turn it on in Wi-Fi overview");
@@ -129,6 +132,7 @@ void NetworkPage::drawList(bool saved) {
   ctx.ui.wifiList(rows, min(rowsPerPage, count - first), selected % rowsPerPage, footer);
 }
 
+// 密码默认掩码；字符、空格、删除、显示和连接共用横向字符轮。渲染器接收相邻三个候选和移动方向。
 void NetworkPage::drawPassword() {
   String masked;
   const size_t length = strlen(password);
@@ -205,6 +209,7 @@ void NetworkPage::join(const char* secret) {
   show(Screen::Connecting);
 }
 
+// 开放网络直接连接，个人加密网络尝试已有密码或进入输入页；不支持的认证类型会显示提示。
 void NetworkPage::pick(const char* name, NearbyWifi::Security security, Screen source) {
   if (security == NearbyWifi::Security::Unsupported) {
     hint = "This security type is unsupported";
@@ -232,6 +237,7 @@ void NetworkPage::back() {
   }
 }
 
+// 短按确认当前字符或操作。密码格式合格后才会提交；确认连接后，页面清除输入缓冲。
 void NetworkPage::passwordAction() {
   const int letters = strlen(alphabets[group]);
   size_t length = strlen(password);
@@ -247,6 +253,7 @@ void NetworkPage::passwordAction() {
   draw();
 }
 
+// 处理各子页的短按操作。删除确认通过网络名称和安全类别再次定位记录。
 void NetworkPage::select() {
   switch (screen) {
     case Screen::Overview:
@@ -295,6 +302,7 @@ void NetworkPage::select() {
   }
 }
 
+// 密码页换组，扫描页重扫，已保存页进入删除确认。三者共享同一个长按判定。
 void NetworkPage::hold() {
   if (screen == Screen::Password) {
     group = (group + 1) % 4;
@@ -341,6 +349,7 @@ void NetworkPage::input(Key key, uint32_t) {
   } else if (vertical(key) && repeats() && !pendingAction) move(key);
 }
 
+// 短按在松手时执行；按住到达阈值只执行一次长按操作。连接和扫描状态改变后再更新对应子页。
 void NetworkPage::tick(uint32_t now) {
   if (pendingAction) {
     const bool held = ctx.buttons.held(Key::Action);

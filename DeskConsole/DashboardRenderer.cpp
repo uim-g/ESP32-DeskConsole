@@ -63,6 +63,7 @@ String Interface::temperature(float value) {
   return number(value, 1) + degree + "C";
 }
 
+// 桌面分别缓存时分秒和天气字段，普通秒跳只更新对应数字格。
 void Interface::home(const WeatherData& data, const Platform::Clock& clock) {
   // 固定时分秒的文字区，秒变化时只刷新右边一格。
   field(0, 44, 45, 62, 71, String(clock.time).substring(0, 2), 2, ILI9341_WHITE, true);
@@ -94,6 +95,7 @@ void Interface::metric(uint8_t slot, int x, int y, int w, int h,
   field(slot, x + 8, y + 22, w - 16, h - 26, value, 0, ILI9341_WHITE, false, true);
 }
 
+// 按当前天气或预报组织卡片数据。未取得结果时显示等待，刷新失败时可以继续显示缓存。
 void Interface::weather(const WeatherData& data, bool forecast) {
   if (!data.available) {
     field(0, 42, 53, 236, 33, "Fetching weather...", 1, muted, true);
@@ -193,6 +195,7 @@ void Interface::memoryCard(uint8_t index, int y, const char* label, size_t total
   }
 }
 
+// 设备页展示快照中的温度、内存、Flash 和运行时长。时长等宽数字逐位刷新，位数变化才移动单位。
 void Interface::device(const Platform::Device& data) {
   field(8, 198, 10, 88, 24, Config::firmwareVersion, 3, muted, true);
   constexpr uint16_t cool = 0x7DEB, warm = 0xFDC0, hot = 0xFA69;

@@ -1,3 +1,5 @@
+// 集中定义固件版本、屏幕连线和默认配置。Wi-Fi 常量仅用于还没有保存记录时的启动连接；后续连接历史由 WifiNetworks 管理。
+
 #pragma once
 #include <Arduino.h>
 

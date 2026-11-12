@@ -1,3 +1,5 @@
+// 设备设置与闪存读写。完整的一组设置通过单个键保存，读取时校验范围以防旧记录或损坏记录被误用。
+
 #pragma once
 #include <Preferences.h>
 #include "Config.h"

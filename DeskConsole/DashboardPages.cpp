@@ -9,6 +9,7 @@ static_assert(count == sizeof(names) / sizeof(names[0]));
 
 void LauncherPage::draw() { ctx.ui.launcher(selected, names, count); }
 
+// 上下键循环选择，左下打开，左上返回桌面。
 void LauncherPage::input(Key key, uint32_t) {
   if (key == Key::Back) ctx.nav.open(View::Home);
   else if (key == Key::Action) {
@@ -28,6 +29,7 @@ void WeatherPage::enter() {
 void WeatherPage::leave() {
   if (!changingForecast) forecast = false;
 }
+// 方向键切换当前天气与预报，通过同一路由切换标题和内容。
 void WeatherPage::input(Key key, uint32_t us) {
   if (vertical(key)) {
     forecast = !forecast;
@@ -56,6 +58,7 @@ void BluetoothPage::input(Key key, uint32_t us) {
   } else Page::input(key, us);
 }
 
+// 松手触发普通扫描，长按切换过滤并扫描；后台完成后更新页面及 RGB 提示。
 void BluetoothPage::tick(uint32_t now) {
   if (scanPending) {
     const bool held = ctx.buttons.held(Key::Action);

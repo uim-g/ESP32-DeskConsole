@@ -6,24 +6,25 @@ DeskConsole is a desktop console for the ESP32-S3 and a 320×240 ILI9341 SPI dis
 
 - **F1 Reaction** — five two-row lamp housings, random lights-out, false starts, timeouts, Normal and Debug modes. The last result, personal best, and total completed rounds are saved in flash.
 - **Weather** — current conditions and a three-day forecast from [Open-Meteo](https://open-meteo.com/en/docs).
-- **Wi-Fi** — connection state, SSID, IP, signal strength and manual reconnect.
+- **Wi-Fi** — connection status, network scanning, on-device password entry, and saved networks.
 - **Bluetooth** — scans nearby BLE broadcasts. See the controls below.
 - **Device** — temperature, memory and firmware usage, flash capacity and version.
 
 Page changes animate the active button labels at the screen edges. Each app has its own accent color.
 
-## What's new in v2.1.0
+## What's new in v2.2.0
 
-- The Apps scrollbar shows which rows are visible, and the highlight uses the v1.5.0 browser animation cadence.
-- Device uptime uses compact spacing and redraws only the digits that change while the number has the same length.
+- Scan nearby 2.4 GHz Wi-Fi networks, enter a password on the device, and manage saved networks.
+- Turn Wi-Fi on or off from its app. Wi-Fi and Settings switches animate a green track to the left of the knob and gray to its right.
+- Wi-Fi list selection and password characters use eased animations. The firmware source includes expanded Chinese comments.
 
-[Read the v2.1.0 release notes](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.1.0).
+[Read the v2.2.0 release notes](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.0).
 
 ## Browser simulators
 
-[Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all nine versions from v1.0.0 through v2.1.0. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
+[Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all ten versions from v1.0.0 through v2.2.0. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
 
-[Play the latest browser version (v2.1.0)](https://uim-g.github.io/ESP32-DeskConsole/v2.1.0/)
+[Play the latest browser version (v2.2.0)](https://uim-g.github.io/ESP32-DeskConsole/v2.2.0/)
 
 [![Live browser screenshots of the seven DeskConsole v1.x versions](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 
@@ -60,7 +61,7 @@ The v1.1.0 concept sheet illustrates Home, Apps, F1, Statistics, Calibration, We
 - **Home** shows time, date, current conditions and temperature. Press the upper-left button to open Apps.
 - **Apps** uses the right buttons to move the selection and the lower-left button to open it. The rounded highlight eases between cards and inverts the text and icon it passes over. The card boundaries clip the moving highlight.
 - **Weather** uses either right button to toggle between current conditions and the three-day forecast. Current conditions include humidity, wind, pressure, rain, sunrise and sunset. The forecast shows daily highs, lows, rain probability, and the Open-Meteo data time.
-- **Wi-Fi** shows status, SSID, IP, RSSI and NTP readiness. Press the lower-left button to request reconnection.
+- **Wi-Fi** shows status, SSID, IP, RSSI and NTP readiness. Use the first row to toggle Wi-Fi. Scan for networks and select one to connect. In password entry, hold SELECT to cycle the character groups. In Saved, press the lower-left button to connect or hold it to delete the selected profile.
 - **Bluetooth** sits between Wi-Fi and Device. Press SCAN to scan for about four seconds. Hold SCAN for about 800 ms to toggle hiding unnamed devices and rescan. Results are sorted by RSSI, up to 24 devices, with three per page. Results can include the advertised name, address, RSSI and service UUID.
 - **Device** shows chip temperature, uptime, firmware version and Flash capacity. The uptime display redraws only the digits that change. Heap, PSRAM and Firmware cards display used / total with bars. Firmware capacity refers to the running APP partition. The thermometer uses green below 40°C, yellow from 40°C, and red from 50°C as visual cues.
 - The App list scrolls and wraps in both directions. Hold either right button to repeat navigation in Apps, Weather, or Bluetooth.
@@ -97,7 +98,7 @@ Use **115200 baud**. For native USB, enable **USB CDC On Boot** and re-upload if
 
 1. In Arduino IDE 2, install **esp32 by Espressif Systems**. Select **ESP32S3 Dev Module** and your board's serial port. For N16R8, set Flash Size to 16 MB, choose a partition scheme with a 3 MiB APP slot (such as 16M Flash, 3MB APP/9.9MB FATFS), and enable OPI PSRAM if you want to use the onboard 8 MiB. BLE uses the ESP32 core library.
 2. Install **Adafruit ILI9341** and its dependencies, plus **ArduinoJson 7**.
-3. Open `DeskConsole/DeskConsole.ino`. In your local `Config.h`, fill in your 2.4 GHz Wi-Fi name and password. Keep placeholders in shared copies.
+3. Open `DeskConsole/DeskConsole.ino`. Use the Wi-Fi app to scan and connect to a 2.4 GHz network. Optionally set a fallback network in your local `Config.h`. Keep placeholders in shared copies.
 4. Wire the display and buttons as below, then compile and upload.
 
 | ILI9341 | ESP32-S3 |

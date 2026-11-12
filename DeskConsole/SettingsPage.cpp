@@ -1,5 +1,6 @@
 #include "SettingsPage.h"
 
+// 保存成功才应用新的 RGB 状态。失败提示保留，用户可以重试。
 bool SettingsPage::save(const Settings& next) {
   saveFailed = !store.save(next);
   if (saveFailed) {
@@ -14,6 +15,7 @@ bool SettingsPage::save(const Settings& next) {
   return true;
 }
 
+// 开关直接保存；数值先复制到编辑副本，确认提交，返回取消。
 void SettingsPage::input(Key key, uint32_t us) {
   if (key == Key::Back) {
     if (!editing) { Page::input(key, us); return; }

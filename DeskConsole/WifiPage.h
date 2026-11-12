@@ -1,3 +1,5 @@
+// Wi-Fi 页的子状态机。概览、扫描、已保存列表、字符输入、删除确认和连接结果共用四键，业务操作交给 WifiNetworks。
+
 #pragma once
 #include "Page.h"
 #include "WifiNetworks.h"

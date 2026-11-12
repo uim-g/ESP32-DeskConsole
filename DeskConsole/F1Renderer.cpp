@@ -9,6 +9,7 @@ String duration(uint32_t us) {
 }
 }
 
+// 灯组和提示文字各自缓存。计时过程中只重绘灯或数值变化的位置。
 void Interface::game(const Game& game) {
   using State = Game::State;
   if (fireworks && game.state != State::Result) stopFireworks();
@@ -69,6 +70,7 @@ void Interface::stopFireworks() {
   lastLights = -1;
 }
 
+// 烟花效果用独立的矩形画布和帧间隔更新，结束后恢复游戏区域。
 void Interface::updateFireworks(const Game& game) {
   if (!fireworks) return;
   const uint32_t now = millis();

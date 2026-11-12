@@ -1,3 +1,5 @@
+// 四个实体键使用内部上拉，按下时 GPIO 接地。原始电平稳定 30 ms 后才确认事件，F1 成绩仍使用第一次检测到按下的时间戳。
+
 #pragma once
 #include <Arduino.h>
 #include <driver/gpio.h>

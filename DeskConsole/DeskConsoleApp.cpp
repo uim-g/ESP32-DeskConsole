@@ -1,5 +1,6 @@
 #include "DeskConsoleApp.h"
 
+// 根据路由取得页面对象。对象由应用持有，切换只改变当前路由。
 Page& DeskConsoleApp::page(View view) {
   switch (view) {
     case View::Home: return home;
@@ -16,6 +17,7 @@ Page& DeskConsoleApp::page(View view) {
   return home;
 }
 
+// 记录下一页并开始收起当前侧键。退出动画结束后，tick 才会建立新页面。
 void DeskConsoleApp::open(View next) {
   pending = next;
   page(active).leave();
@@ -24,6 +26,7 @@ void DeskConsoleApp::open(View next) {
   ui.startTabs(false);
 }
 
+// 初始化页面和绘制缓存，画出内容，再让新页面的侧键进入。
 void DeskConsoleApp::show(View next) {
   active = next;
   auto& current = page(active);
@@ -37,6 +40,7 @@ void DeskConsoleApp::show(View next) {
   transition = Transition::Entering;
 }
 
+// 依次初始化输入、闪存、显示和联网。桌面先提交一帧，再开始无线初始化。
 void DeskConsoleApp::begin() {
   Serial.begin(115200);
   Serial.printf("[BOOT] DeskConsole starting; reset reason=%d\n", Platform::resetReason());
@@ -81,6 +85,7 @@ void DeskConsoleApp::reportConnectivity() {
   }
 }
 
+// 达到闲置时间且当前页面、无线扫描和按键均允许休眠时，关闭屏幕并轻睡。醒来恢复连接和页面。
 void DeskConsoleApp::sleepIfIdle(uint32_t now) {
   if (!wakeConfigured || !settings.current.autoSleep || now - lastInput < idleSleepMs() ||
       buttons.anyPressed() || !page(active).canSleep() || bluetooth.busy() || wifi.busy()) return;
@@ -104,6 +109,7 @@ void DeskConsoleApp::sleepIfIdle(uint32_t now) {
   page(active).draw();
 }
 
+// 把消抖后的单次事件交给当前页面。支持连翻的页面会在长按超过首段等待后重复方向键。
 void DeskConsoleApp::dispatch(Key key, uint32_t pressedUs, uint32_t now) {
   if (key != Key::None) {
     lastInput = now;
@@ -125,6 +131,7 @@ void DeskConsoleApp::dispatch(Key key, uint32_t pressedUs, uint32_t now) {
   }
 }
 
+// 每圈推进无线状态、按钮、页面和动画。切页时网页输入适配层会等待，唤醒键要松开后才重新接受操作。
 void DeskConsoleApp::tick() {
   const uint32_t now = millis();
   if (discardWakePress) {

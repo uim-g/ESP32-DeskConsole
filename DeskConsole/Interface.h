@@ -1,3 +1,5 @@
+// 显示层接口。页面传入数据快照，绘制函数使用局部缓存和离屏画布来减少 TFT 重绘。缓存编号在 beginPage 清空后可由不同页面复用。
+
 #pragma once
 #include "Config.h"
 #include "Game.h"

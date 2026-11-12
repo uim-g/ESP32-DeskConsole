@@ -4,6 +4,12 @@ Screenshots below were captured from the corresponding [live browser simulator](
 
 下方截图均取自对应版本的[在线网页模拟器](https://uim-g.github.io/ESP32-DeskConsole/)。
 
+## v2.2.0
+
+- Add Wi-Fi scanning, on-device password entry and saved network management. 增加 Wi-Fi 扫描、设备端密码输入和已保存网络管理。
+- Animate Wi-Fi selection and password characters, and draw green and gray switch tracks as the knob moves. Wi-Fi 列表选中框和密码字符加入动画，拨钮移动时实时绘制绿灰轨道。
+- Expand Chinese comments across the firmware source. 补充固件源码的中文注释。
+
 ## v2.1.0
 
 - Show a viewport scrollbar in Apps. Its thumb moves with the list, including wraparound. App 菜单增加可见范围滚动条，随列表滚动和首尾循环移动。

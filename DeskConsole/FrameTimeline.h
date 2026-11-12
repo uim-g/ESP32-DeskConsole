@@ -1,3 +1,5 @@
+// 统一的非阻塞动画时间轴。frame 返回本次需要绘制的帧序号，返回 -1 表示可以跳过绘制；经过时间使用无符号减法处理 millis 回绕。
+
 #pragma once
 #include <stdint.h>
 

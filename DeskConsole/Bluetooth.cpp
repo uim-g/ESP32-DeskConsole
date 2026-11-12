@@ -2,6 +2,7 @@
 #include <BLEDevice.h>
 #include <BLEScan.h>
 
+// 在临界区标记扫描已启动，随后创建后台任务。创建失败时恢复可再次扫描的状态。
 bool BluetoothScanner::start(bool filterUnnamed) {
   portENTER_CRITICAL(&lock);
   const bool running = results.state == BluetoothSnapshot::State::Scanning;
@@ -33,6 +34,7 @@ BluetoothSnapshot BluetoothScanner::snapshot() {
   return copy;
 }
 
+// 在后台执行 BLE 扫描，按过滤条件保留信号较强的结果，最后一次性发布快照。
 void BluetoothScanner::worker(void* context) {
   auto& scanner = *static_cast<BluetoothScanner*>(context);
   portENTER_CRITICAL(&scanner.lock);
