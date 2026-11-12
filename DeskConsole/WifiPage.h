@@ -35,7 +35,7 @@ class NetworkPage : public Page {
   Screen screen = Screen::Overview, origin = Screen::Nearby;
   bool internal = false, pendingAction = false, visiblePassword = false, passwordRequired = false;
   uint32_t pressedAt = 0, refreshed = 0;
-  int selected = 0, group = 0, item = 1;
+  int selected = 0, group = 0, item = 1, wheelDirection = 0;
   WifiNetworks::Scan lastScan = WifiNetworks::Scan::Idle;
   char ssid[33] = {}, password[65] = {};
   const char* hint = "";

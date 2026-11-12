@@ -23,6 +23,8 @@ class WifiNetworks {
   enum class Join { Idle, Running, Connected, SaveFailed, Failed };
   void begin();
   void connectPreferred();
+  bool enabled() const { return radioEnabled; }
+  bool setEnabled(bool enabled);
   void tick(uint32_t now);
   bool startScan();
   bool startJoin(const char* ssid, const char* password);
@@ -55,5 +57,6 @@ class WifiNetworks {
   uint32_t joinStarted = 0;
   Scan scanning = Scan::Idle;
   Join joining = Join::Idle;
+  bool radioEnabled = true;
   bool storageReady = false, hasSavedRecord = false, disconnecting = false;
 };

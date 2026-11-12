@@ -8,7 +8,6 @@ constexpr const char* alphabets[] = {
   "abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0123456789",
   "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
 };
-constexpr const char* groups[] = {"abc", "ABC", "123", "#+="};
 constexpr const char* commands[] = {"Space", "Delete", "Show", "Connect"};
 
 String lastUsed(uint32_t stamp) {
@@ -35,7 +34,7 @@ bool validPassword(const char* password) {
 
 PageStyle NetworkPage::style() const {
   const char* title = "Wi-Fi";
-  const char* action = "OPEN";
+  const char* action = "SELECT";
   switch (screen) {
     case Screen::Overview: break;
     case Screen::Nearby: title = "Nearby Wi-Fi"; action = "SELECT"; break;
@@ -90,6 +89,10 @@ String NetworkPage::label(const char* name) {
 }
 
 void NetworkPage::drawList(bool saved) {
+  if (!saved && !wifi.enabled()) {
+    ctx.ui.wifiMessage("Wi-Fi is off", "", "Turn it on in Wi-Fi overview");
+    return;
+  }
   if (!saved && wifi.scanState() == WifiNetworks::Scan::Running) {
     ctx.ui.wifiMessage("Scanning nearby networks...", "", "Searching 2.4 GHz");
     return;
@@ -134,16 +137,16 @@ void NetworkPage::drawPassword() {
   if (length > 26 && !visiblePassword) masked = masked + "...";
 
   const int letters = strlen(alphabets[group]);
-  const int count = 1 + letters + 4;
+  const int count = letters + 4;
   auto token = [&](int index) -> String {
-    if (index == 0) return "Group";
     if (index <= letters) return String(alphabets[group][index - 1]);
     if (index == letters + 3 && visiblePassword) return "Hide";
     return commands[index - letters - 1];
   };
-  ctx.ui.wifiPassword(label(ssid), masked, length, groups[group],
-                      token((item + count - 1) % count), token(item), token((item + 1) % count),
-                      *hint ? hint : "UP / DOWN browse  /  SELECT");
+  ctx.ui.wifiPassword(label(ssid), masked, length, group,
+                      token((item + count - 2) % count + 1), token(item), token(item % count + 1),
+                      wheelDirection, *hint ? hint : "Hold SELECT to switch group");
+  wheelDirection = 0;
 }
 
 void NetworkPage::draw() {
@@ -151,13 +154,14 @@ void NetworkPage::draw() {
     case Screen::Overview: {
       const auto data = Platform::network();
       Interface::WifiRow rows[] = {
-        {data.connected ? String("Connected: ") + label(data.ssid.c_str()) : String("Disconnected"),
+        {!wifi.enabled() ? String("Wi-Fi off") :
+         data.connected ? String("Connected: ") + label(data.ssid.c_str()) : String("Wi-Fi on"),
          data.connected ? data.address + " / " + data.signal + " dBm" :
-                          String("Choose a saved or nearby network")},
+                          String(wifi.enabled() ? "Disconnected" : "SELECT to turn on"), wifi.enabled() ? 1 : 0},
         {"Scan nearby", "Find 2.4 GHz networks"},
         {"Saved networks", String(wifi.savedCount()) + " saved"}
       };
-      ctx.ui.wifiList(rows, 3, selected + 1, *hint ? hint : "UP / DOWN choose  /  OPEN");
+      ctx.ui.wifiList(rows, 3, selected, *hint ? hint : "UP / DOWN choose  /  SELECT");
       break;
     }
     case Screen::Nearby: drawList(false); break;
@@ -187,12 +191,13 @@ void NetworkPage::openPassword(Screen source) {
   erasePassword();
   group = 0;
   item = 1;
+  wheelDirection = 0;
   show(Screen::Password);
 }
 
 void NetworkPage::join(const char* secret) {
   if (!wifi.startJoin(ssid, secret)) {
-    hint = "Wi-Fi busy. Try again.";
+    hint = wifi.enabled() ? "Wi-Fi busy. Try again." : "Turn Wi-Fi on first";
     draw();
     return;
   }
@@ -231,8 +236,7 @@ void NetworkPage::passwordAction() {
   const int letters = strlen(alphabets[group]);
   size_t length = strlen(password);
   hint = "";
-  if (item == 0) group = (group + 1) % 4;
-  else if (item <= letters || item == letters + 1) {
+  if (item <= letters || item == letters + 1) {
     if (length == sizeof(password) - 1) hint = "Password field is full";
     else password[length] = item <= letters ? alphabets[group][item - 1] : ' ';
   } else if (item == letters + 2) {
@@ -247,6 +251,10 @@ void NetworkPage::select() {
   switch (screen) {
     case Screen::Overview:
       if (selected == 0) {
+        hint = wifi.setEnabled(!wifi.enabled()) ? "" : "Could not change Wi-Fi state";
+        draw();
+      } else if (selected == 1) {
+        if (!wifi.enabled()) { hint = "Turn Wi-Fi on first"; draw(); break; }
         if (wifi.busy()) { hint = "Wi-Fi busy. Try again."; draw(); break; }
         wifi.startScan();
         lastScan = wifi.scanState();
@@ -288,7 +296,12 @@ void NetworkPage::select() {
 }
 
 void NetworkPage::hold() {
-  if (screen == Screen::Nearby) {
+  if (screen == Screen::Password) {
+    group = (group + 1) % 4;
+    item = 1;
+    hint = "";
+    draw();
+  } else if (screen == Screen::Nearby) {
     if (wifi.startScan()) {
       selected = 0;
       lastScan = wifi.scanState();
@@ -306,10 +319,11 @@ void NetworkPage::move(Key key) {
   const int step = key == Key::Up ? -1 : 1;
   hint = "";
   if (screen == Screen::Password) {
-    const int count = strlen(alphabets[group]) + 5;
-    item = (item + step + count) % count;
+    const int count = strlen(alphabets[group]) + 4;
+    item = (item - 1 + step + count) % count + 1;
+    wheelDirection = step;
   } else {
-    const int count = screen == Screen::Overview ? 2 :
+    const int count = screen == Screen::Overview ? 3 :
                       screen == Screen::Saved ? wifi.savedCount() : wifi.nearbyCount();
     if (!count) return;
     selected = (selected + step + count) % count;
@@ -320,7 +334,7 @@ void NetworkPage::move(Key key) {
 void NetworkPage::input(Key key, uint32_t) {
   if (key == Key::Back) { pendingAction = false; back(); }
   else if (key == Key::Action) {
-    if (screen == Screen::Nearby || screen == Screen::Saved) {
+    if (screen == Screen::Nearby || screen == Screen::Saved || screen == Screen::Password) {
       pendingAction = true;
       pressedAt = millis();
     } else select();

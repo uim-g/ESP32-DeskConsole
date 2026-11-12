@@ -32,6 +32,7 @@ const char* authName(wifi_auth_mode_t auth) {
 void WifiNetworks::begin() {
   WiFi.persistent(false);
   storageReady = storage.begin("desk-wifi", false);
+  if (storageReady) radioEnabled = storage.getUChar("enabled", 1) != 0;
   if (!storageReady || storage.getBytesLength("profiles") != sizeof(data)) return;
   SavedData loaded;
   if (storage.getBytes("profiles", &loaded, sizeof(loaded)) != sizeof(loaded) ||
@@ -47,11 +48,39 @@ void WifiNetworks::begin() {
 }
 
 void WifiNetworks::connectPreferred() {
+  if (!radioEnabled) return;
   WiFi.mode(WIFI_STA);
   if (data.count) startJoin(data.profiles[0].ssid, data.profiles[0].password);
   else if (!hasSavedRecord && strcmp(Config::ssid, "YOUR_WIFI_NAME") != 0 && Config::ssid[0]) {
     startJoin(Config::ssid, Config::password);
   }
+}
+
+bool WifiNetworks::setEnabled(bool enabled) {
+  if (enabled == radioEnabled) return true;
+  if (!storageReady || !WiFi.mode(enabled ? WIFI_STA : WIFI_OFF)) return false;
+  if (storage.putUChar("enabled", enabled) != 1) {
+    WiFi.mode(radioEnabled ? WIFI_STA : WIFI_OFF);
+    if (radioEnabled) {
+      cancelJoin();
+      WiFi.scanDelete();
+      scanning = Scan::Idle;
+      connectPreferred();
+    }
+    return false;
+  }
+  radioEnabled = enabled;
+  if (enabled) {
+    connectPreferred();
+  } else {
+    WiFi.scanDelete();
+    scanning = Scan::Idle;
+    joining = Join::Idle;
+    disconnecting = false;
+    found = 0;
+    target = {};
+  }
+  return true;
 }
 
 int WifiNetworks::find(const char* ssid, bool secured) const {
@@ -97,7 +126,7 @@ bool WifiNetworks::forget(int index) {
 }
 
 bool WifiNetworks::startJoin(const char* ssid, const char* password) {
-  if (busy() || !*ssid || strlen(ssid) >= sizeof(target.ssid) ||
+  if (!radioEnabled || busy() || !*ssid || strlen(ssid) >= sizeof(target.ssid) ||
       strlen(password) >= sizeof(target.password)) return false;
   target = {};
   snprintf(target.ssid, sizeof(target.ssid), "%s", ssid);
@@ -128,7 +157,7 @@ void WifiNetworks::cancelJoin() {
 }
 
 bool WifiNetworks::startScan() {
-  if (busy()) return false;
+  if (!radioEnabled || busy()) return false;
   found = 0;
   WiFi.scanDelete();
   const int result = WiFi.scanNetworks(true);

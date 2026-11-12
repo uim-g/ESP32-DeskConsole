@@ -86,6 +86,11 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   tabAnimation.stop();
   launcherAnimation.stop();
   settingsAnimation.stop();
+  wifiListAnimation.stop();
+  wifiGroupAnimation.stop();
+  wifiWheelAnimation.stop();
+  wifiPrevious = wifiSelected = wifiPreviousGroup = wifiGroup = -1;
+  for (auto& token : wifiWheel) token = "";
   replacementLabel = nullptr;
   // 真正切页才清屏。换页后所有绘制缓存需要重新建立。
   background = base;
@@ -173,6 +178,9 @@ void Interface::advanceAnimations(uint32_t now) {
   }
   if ((step = launcherAnimation.frame(now)) >= 0) renderLauncher(launcherAnimation.progress(step));
   if ((step = settingsAnimation.frame(now)) >= 0) renderSettings(settingsAnimation.progress(step));
+  if ((step = wifiListAnimation.frame(now)) >= 0) renderWifiList(wifiListAnimation.progress(step));
+  if ((step = wifiGroupAnimation.frame(now)) >= 0) renderWifiGroups(wifiGroupAnimation.progress(step));
+  if ((step = wifiWheelAnimation.frame(now)) >= 0) renderWifiWheel(wifiWheelAnimation.progress(step));
 }
 
 void Interface::renderTabs(int offset, uint8_t mask) {

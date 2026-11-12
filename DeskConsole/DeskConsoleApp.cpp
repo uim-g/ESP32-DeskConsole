@@ -86,7 +86,7 @@ void DeskConsoleApp::sleepIfIdle(uint32_t now) {
       buttons.anyPressed() || !page(active).canSleep() || bluetooth.busy() || wifi.busy()) return;
 
   Serial.println("[POWER] Idle timeout; entering light sleep");
-  if (!Platform::stopNetwork()) {
+  if (wifi.enabled() && !Platform::stopNetwork()) {
     Serial.println("[POWER] Could not stop Wi-Fi; sleep skipped");
     lastInput = millis();
     return;

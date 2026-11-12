@@ -37,11 +37,11 @@ class Interface {
   void stats(const Game& game, bool confirmClear);
   void calibration(const Game& game, bool editOffset, bool saveFailed);
   void weather(const WeatherData& data, bool forecast);
-  struct WifiRow { String name, detail; };
+  struct WifiRow { String name, detail; int radio = -1; };
   void wifiList(const WifiRow* rows, int count, int selected, const String& footer);
   void wifiMessage(const String& title, const String& detail, const String& footer);
-  void wifiPassword(const String& ssid, const String& value, size_t length, const char* group,
-                    const String& previous, const String& selected, const String& next, const char* footer);
+  void wifiPassword(const String& ssid, const String& value, size_t length, int group,
+                    const String& previous, const String& selected, const String& next, int direction, const char* footer);
   void device(const Platform::Device& data);
 
  private:
@@ -52,6 +52,14 @@ class Interface {
   void renderTabs(int offset, uint8_t mask);
   void renderLauncher(float progress);
   void renderSettings(float progress);
+  void renderWifiList(float progress);
+  void renderWifiGroups(float progress);
+  void renderWifiWheel(float progress);
+  FrameTimeline wifiListAnimation, wifiGroupAnimation, wifiWheelAnimation;
+  WifiRow wifiRows[3];
+  int wifiRowCount = 0, wifiPrevious = -1, wifiSelected = -1;
+  int wifiPreviousGroup = -1, wifiGroup = -1, wifiWheelDirection = 0;
+  String wifiPreviousWheel[3], wifiWheel[3];
   void card(int x, int y, int w, int h);
   FrameTimeline tabAnimation, launcherAnimation, settingsAnimation;
   bool tabsEntering = false;
