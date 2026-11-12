@@ -20,6 +20,24 @@ DeskConsole 使用 ESP32-S3、320×240 ILI9341 SPI 屏幕和四个实体按键�
 
 点击两侧的四个按钮，或使用 **Q**、**A**、**↑** 和 **↓**。F1 中用 **↓** 开始和起跑。成绩保存在浏览器中。实时天气需要联网访问 Open-Meteo，Wi-Fi 和设备读数为模拟值。
 
+| 桌面 | App 菜单 | F1 Reaction |
+|---|---|---|
+| ![桌面](docs/web-v1.0.0/home.png) | ![App 菜单](docs/web-v1.0.0/apps.png) | ![F1 Reaction](docs/web-v1.0.0/f1-reaction.png) |
+
+<details>
+<summary>更多 v1.0.0 网页截图</summary>
+
+| 当前天气 | 三日预报 |
+|---|---|
+| ![当前天气](docs/web-v1.0.0/weather-now.png) | ![三日预报](docs/web-v1.0.0/weather-forecast.png) |
+
+| Wi-Fi | 设备诊断 |
+|---|---|
+| ![Wi-Fi](docs/web-v1.0.0/wifi.png) | ![设备诊断](docs/web-v1.0.0/device.png) |
+
+</details>
+
+
 ## 界面预览
 
 ![DeskConsole v1.1.0 界面示意图](docs/ui-v1.1.0.png)

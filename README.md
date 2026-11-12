@@ -20,6 +20,24 @@ Page changes animate the active button labels at the screen edges. Each app has 
 
 Click the four side buttons or use **Q**, **A**, **↑**, and **↓**. In F1, use **↓** for PLAY. Scores are stored in the browser. Weather uses Open-Meteo and requires internet access. Wi-Fi and device readings are simulated.
 
+| Home | Apps | F1 Reaction |
+|---|---|---|
+| ![Home](docs/web-v1.0.0/home.png) | ![Apps](docs/web-v1.0.0/apps.png) | ![F1 Reaction](docs/web-v1.0.0/f1-reaction.png) |
+
+<details>
+<summary>More v1.0.0 browser screenshots</summary>
+
+| Current weather | Three-day forecast |
+|---|---|
+| ![Current weather](docs/web-v1.0.0/weather-now.png) | ![Three-day forecast](docs/web-v1.0.0/weather-forecast.png) |
+
+| Wi-Fi | Device |
+|---|---|
+| ![Wi-Fi](docs/web-v1.0.0/wifi.png) | ![Device](docs/web-v1.0.0/device.png) |
+
+</details>
+
+
 ## UI overview
 
 ![DeskConsole v1.1.0 UI concept sheet](docs/ui-v1.1.0.png)
