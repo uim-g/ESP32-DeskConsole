@@ -202,8 +202,7 @@ void Interface::renderSettings(float progress) {
     gfx.setCursor(ox + 10, oy + 24);
     gfx.print(labels[row]);
     if (row % 2 == 0) {
-      gfx.fillRoundRect(ox + 192, oy + 6, 44, 24, 12, knob >= 22 ? 0x3D6C : 0x528A);
-      gfx.fillCircle(ox + 192 + knob, oy + 18, 9, ILI9341_WHITE);
+      paintSwitch(gfx, ox + 192, oy + 6, 24, knob, 9);
     } else {
       gfx.setTextColor(!available[row] ? muted : editing && row == selected ? highlight : ILI9341_WHITE);
       gfx.setCursor(ox + 170, oy + 24);
@@ -248,8 +247,7 @@ void Interface::renderSettings(float progress) {
       if (toggle.getBuffer()) {
         const int current = previous + lroundf((knob - previous) * eased);
         toggle.fillScreen(row == selected ? selection : background);
-        toggle.fillRoundRect(0, 0, 44, 24, 12, current >= 22 ? 0x3D6C : 0x528A);
-        toggle.fillCircle(current, 12, 9, ILI9341_WHITE);
+        paintSwitch(toggle, 0, 0, 24, current, 9);
         screen.drawRGBBitmap(229, firstY + row * pitch + 6, toggle.getBuffer(), 44, 24);
       }
       continue;

@@ -84,7 +84,7 @@ void Interface::renderWifiList(float progress) {
            active ? ILI9341_BLACK : ILI9341_WHITE);
       text(screen, item.detail, &NunitoHint, x + 9, y + 24, item.radio >= 0 ? 171 : 218, 15,
            active ? ILI9341_BLACK : muted);
-      if (item.radio >= 0) paintWifiSwitch(screen, x + switchX, y + switchY);
+      if (item.radio >= 0) paintSwitch(screen, x + switchX, y + switchY, 22, wifiSwitchKnob, 8);
       cache[row] = key;
       continue;
     }
@@ -109,24 +109,10 @@ void Interface::renderWifiList(float progress) {
         else if (frame.getPixel(px, py) == background) frame.drawPixel(px, py, cardColor);
       }
     }
-    if (item.radio >= 0) paintWifiSwitch(frame, switchX, switchY);
+    if (item.radio >= 0) paintSwitch(frame, switchX, switchY, 22, wifiSwitchKnob, 8);
     screen.drawRGBBitmap(x, y, frame.getBuffer(), rowWidth, rowHeight);
     cache[row] = key;
   }
-}
-
-void Interface::paintWifiSwitch(Adafruit_GFX& gfx, int x, int y) const {
-  constexpr uint16_t offColor = 0x528A, onColor = 0x3D6C;
-  const int weight = wifiSwitchKnob - knobOff;
-  const int span = knobOn - knobOff;
-  const auto channel = [&](int shift, int mask) {
-    const int from = (offColor >> shift) & mask;
-    const int to = (onColor >> shift) & mask;
-    return (from * (span - weight) + to * weight + span / 2) / span;
-  };
-  const uint16_t track = (channel(11, 31) << 11) | (channel(5, 63) << 5) | channel(0, 31);
-  gfx.fillRoundRect(x, y, 44, 22, 11, track);
-  gfx.fillCircle(x + wifiSwitchKnob, y + 11, 8, ILI9341_WHITE);
 }
 
 void Interface::renderWifiSwitch(float progress) {
@@ -136,7 +122,7 @@ void Interface::renderWifiSwitch(float progress) {
   if (position == wifiSwitchKnob) return;
   wifiSwitchKnob = position;
   // 拨钮和轨道共用固定矩形，动画帧无需重绘卡片。
-  paintWifiSwitch(screen, listX + switchX, listY + switchY);
+  paintSwitch(screen, listX + switchX, listY + switchY, 22, wifiSwitchKnob, 8);
 }
 
 void Interface::wifiMessage(const String& title, const String& detail, const String& footer) {

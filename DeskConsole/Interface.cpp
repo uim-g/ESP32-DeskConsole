@@ -306,3 +306,19 @@ void Interface::card(int x, int y, int w, int h) {
   screen.fillRoundRect(x, y, w, h, 9, cardColor);
   screen.drawRoundRect(x, y, w, h, 9, cardOutline);
 }
+
+void Interface::paintSwitch(Adafruit_GFX& gfx, int x, int y, int height, int knob, int knobRadius) {
+  constexpr int width = 44;
+  constexpr uint16_t green = 0x3D6C, gray = 0x528A;
+  const int radius = height / 2;
+  const int split = knob <= 12 ? 0 : knob >= 32 ? width : knob;
+  for (int row = 0; row < height; ++row) {
+    const int dy = radius - min(row, height - 1 - row) - 1;
+    const int inset = radius - lroundf(sqrtf(radius * radius - dy * dy));
+    const int right = width - inset;
+    const int boundary = constrain(split, inset, right);
+    if (boundary > inset) gfx.drawFastHLine(x + inset, y + row, boundary - inset, green);
+    if (right > boundary) gfx.drawFastHLine(x + boundary, y + row, right - boundary, gray);
+  }
+  gfx.fillCircle(x + knob, y + radius, knobRadius, ILI9341_WHITE);
+}

@@ -56,7 +56,7 @@ class Interface {
   void renderWifiGroups(float progress);
   void renderWifiWheel(float progress);
   void renderWifiSwitch(float progress);
-  void paintWifiSwitch(Adafruit_GFX& gfx, int x, int y) const;
+  static void paintSwitch(Adafruit_GFX& gfx, int x, int y, int height, int knob, int knobRadius);
   FrameTimeline wifiListAnimation, wifiGroupAnimation, wifiWheelAnimation, wifiSwitchAnimation;
   int wifiSwitchTarget = -1, wifiSwitchFrom = 12, wifiSwitchKnob = 12;
   WifiRow wifiRows[3];
