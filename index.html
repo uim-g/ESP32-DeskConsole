@@ -2,18 +2,22 @@
 <html lang="zh-CN">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DeskConsole v1.0.0</title>
-<link rel="stylesheet" href="style.css">
+<title>DeskConsole 网页版本</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#16191c;color:#e9edf1;font:16px system-ui,sans-serif}main{max-width:44rem;margin:auto;padding:3rem 1rem}h1{margin:0;font-size:2.5rem}p{color:#bac3cc;margin:1rem 0 1.5rem}ul{padding:0;list-style:none;display:grid;gap:.65rem}li a{display:grid;grid-template-columns:6rem 1fr;gap:.5rem;padding:1rem;background:#252a2f;border:1px solid #45505a;border-radius:.6rem;color:#e9edf1;text-decoration:none}li a:hover,li a:focus-visible{border-color:#a9d7ff;background:#303942}strong{color:#a9d7ff}footer a{color:#a9d7ff}
+</style>
 <main>
-<header><h1>DeskConsole</h1><span>v1.0.0</span></header>
-<div class="console">
- <div class="keys"><button data-key="0" aria-label="左上 GPIO 4">Q</button><button data-key="1" aria-label="左下 GPIO 5">A</button></div>
- <canvas width="320" height="240" aria-label="DeskConsole 虚拟 TFT 屏幕"></canvas>
- <div class="keys"><button data-key="2" aria-label="右上 GPIO 6">↑</button><button data-key="3" aria-label="右下 GPIO 7">↓</button></div>
-</div>
-<p>点击两侧按键，或使用 Q、A、↑、↓。F1 使用 ↓ 起跑。</p>
-<p>时钟采用电脑时间（马来西亚时区）。<span id="weather">天气连接中</span>。Wi-Fi 与设备读数为模拟值。</p>
+<h1>DeskConsole</h1>
+<p>选择固件版本，在浏览器里运行对应的模拟器。</p>
+<ul>
+<li><a href="v1.5.0/"><strong>v1.5.0</strong><span>设置、自动休眠与 RGB 亮度</span></a></li>
+<li><a href="v1.4.0/"><strong>v1.4.0</strong><span>板载 RGB 状态提示</span></a></li>
+<li><a href="v1.3.1/"><strong>v1.3.1</strong><span>淡色侧边按键提示</span></a></li>
+<li><a href="v1.3.0/"><strong>v1.3.0</strong><span>蓝牙扫描、滚动菜单与设备用量</span></a></li>
+<li><a href="v1.2.0/"><strong>v1.2.0</strong><span>新纪录烟花与一分钟轻睡</span></a></li>
+<li><a href="v1.1.0/"><strong>v1.1.0</strong><span>Nunito 界面与 F1 校准</span></a></li>
+<li><a href="v1.0.0/"><strong>v1.0.0</strong><span>首版桌面、天气与 F1 Reaction</span></a></li>
+</ul>
+<footer><a href="https://github.com/uim-g/ESP32-DeskConsole/releases">GitHub 发布记录</a></footer>
 </main>
-<script src="fonts.js"></script>
-<script src="app.js"></script>
 </html>
