@@ -421,38 +421,8 @@ function updateInput(i,source,down) {
   if(wasDown!==isDown) key.changed=performance.now();
   buttons[i].classList.toggle("pressed",isDown);
 }
+const samplePointerButtons=createPointerButtons(buttons,updateInput);
 buttons.forEach((button,i)=>{
-  const pointers=new Map();
-  function release(id,press){
-    if(pointers.get(id)!==press) return;
-    clearTimeout(press.timer);
-    pointers.delete(id);
-    updateInput(i,press.source,false);
-  }
-  button.addEventListener("pointerdown",event=>{
-    if(event.button!==0) return;
-    const previous=pointers.get(event.pointerId);
-    if(previous) release(event.pointerId,previous);
-    button.setPointerCapture(event.pointerId);
-    const press={source:Symbol(),start:performance.now(),released:false};
-    pointers.set(event.pointerId,press);
-    updateInput(i,press.source,true);
-  });
-  button.addEventListener("pointerup",event=>{
-    const press=pointers.get(event.pointerId);
-    if(!press||press.released) return;
-    press.released=true;
-    // Bridge short taps across the 30 ms firmware debounce and browser polling.
-    const remaining=60-(performance.now()-press.start);
-    if(remaining>0) press.timer=setTimeout(()=>release(event.pointerId,press),remaining);
-    else release(event.pointerId,press);
-  });
-  for(const type of ["pointercancel","lostpointercapture"]){
-    button.addEventListener(type,event=>{
-      const press=pointers.get(event.pointerId);
-      if(press&&!press.released) release(event.pointerId,press);
-    });
-  }
   button.addEventListener("click",e=>{ if(e.detail===0&&!moving) handle(i,performance.now()); });
 });
 const keyMap={KeyQ:0,KeyA:1,ArrowUp:2,ArrowDown:3};
@@ -472,6 +442,7 @@ let lastRefresh=0;
 function tick() {
   const now=performance.now();
   if(!moving) {
+    samplePointerButtons(true);
     let event=null;
     input.forEach((key,i)=>{
       const down=key.sources.size>0;
