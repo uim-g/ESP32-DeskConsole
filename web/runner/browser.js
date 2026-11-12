@@ -62,10 +62,10 @@ const desk = {
       weather.data=data;
       weather.version++;
       weather.stale=false;
-      status.textContent="士毛月天气 · Open-Meteo";
+      status.textContent="士毛月天气 / Semenyih weather · Open-Meteo";
     } catch {
       weather.stale=true;
-      status.textContent=weather.data?"天气更新失败，显示缓存":"天气暂不可用，30 秒后重试";
+      status.textContent=weather.data?"天气更新失败，显示缓存 / Weather update failed. Showing cached data.":"天气暂不可用，30 秒后重试 / Weather unavailable. Retrying in 30 seconds.";
     }
     setTimeout(()=>this.startWeather(),weather.stale?30000:900000);
   }
