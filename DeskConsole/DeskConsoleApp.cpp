@@ -127,6 +127,7 @@ void DeskConsoleApp::dispatch(Key key, uint32_t pressedUs, uint32_t now) {
 void DeskConsoleApp::tick() {
   const uint32_t now = millis();
   if (discardWakePress) {
+    Platform::setInputReady(false);
     if (buttons.anyPressed()) lastWakeLow = now;
     if (now - lastWakeLow >= 35) {
       buttons.begin();
@@ -136,6 +137,7 @@ void DeskConsoleApp::tick() {
     return;
   }
 
+  Platform::setInputReady(transition == Transition::None);
   uint32_t pressedUs = 0;
   const auto key = buttons.poll(pressedUs);
   // 倒计时和抢跑先于普通动画及联网日志处理。

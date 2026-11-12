@@ -13,6 +13,8 @@ void markDisplayDirty(){dirty=true;}
 void displayPower(bool on){powered=on;dirty=true;}
 EM_JS(void, render, (const uint16_t* data, bool on), { desk.render(data, on, HEAPU16); });
 EM_JS(int, keys, (), { return desk.keys; });
+EM_JS(void, browserInputReady, (bool ready), { desk.pollInput(ready); });
+void setBrowserInputReady(bool ready) { browserInputReady(ready); }
 EM_JS(bool, browserOnline, (), { return navigator.onLine; });
 EM_JS(void, rgbLedWrite, (int pin,int r,int g,int b), { desk.led(r,g,b); });
 EM_JS(size_t, readPreference, (const char* group,const char* key,void* dst,size_t size), {
@@ -30,7 +32,11 @@ void delay(unsigned ms){
   emscripten_sleep(ms);
 }
 esp_err_t esp_light_sleep_start(){
-  while(!keys()) delay(25);
+  for (;;) {
+    setBrowserInputReady(true);
+    if (keys()) break;
+    delay(25);
+  }
   return ESP_OK;
 }
 

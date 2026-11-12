@@ -29,6 +29,15 @@ foreach ($version in $Versions) {
   }
   $firmware = Join-Path $build 'firmware.cpp'
   Copy-Item "$source/DeskConsole.ino" $firmware
+  if (!(Test-Path (Join-Path $source 'DeskConsoleApp.cpp'))) {
+    $sketch = [IO.File]::ReadAllText($firmware)
+    $marker = '  uint32_t pressedUs = 0;'
+    if (!$sketch.Contains($marker)) { throw "Input polling point not found in $version" }
+    $hook = "  extern void setBrowserInputReady(bool);`n  setBrowserInputReady(true);`n"
+    $sketch = $sketch.Replace($marker,$hook+$marker)
+    $sketch = $sketch.Replace('  if (discardWakePress) {', "  if (discardWakePress) {`n    extern void setBrowserInputReady(bool);`n    setBrowserInputReady(false);")
+    [IO.File]::WriteAllText($firmware,$sketch)
+  }
   $interfacePath = "$source/Interface.cpp"
   $interface = [IO.File]::ReadAllText($interfacePath)
   if (!$WorkingTree -and $interface.Contains('void Interface::animateTabs(')) {
@@ -41,13 +50,28 @@ foreach ($version in $Versions) {
     $interfacePath = Join-Path $build 'Interface.cpp'
     [IO.File]::WriteAllText($interfacePath,$interface)
   }
+  $appPath = Join-Path $source 'DeskConsoleApp.cpp'
+  $browserApp = $null
+  if (!$WorkingTree -and (Test-Path $appPath)) {
+    $app = [IO.File]::ReadAllText($appPath)
+    if (!$app.Contains('Platform::setInputReady(')) {
+      # Historical v2 tags do not report transition readiness to the browser.
+      $marker = '  uint32_t pressedUs = 0;'
+      if (!$app.Contains($marker)) { throw "Input polling point not found in $version" }
+      $browserApp = Join-Path $build 'DeskConsoleApp.cpp'
+      $hook = "  extern void setBrowserInputReady(bool);`n  setBrowserInputReady(transition == Transition::None);`n"
+      $app = $app.Replace('  if (discardWakePress) {', "  if (discardWakePress) {`n    extern void setBrowserInputReady(bool);`n    setBrowserInputReady(false);")
+      [IO.File]::WriteAllText($browserApp,$app.Replace($marker,$hook+$marker))
+    }
+  }
   $modules = Get-ChildItem -LiteralPath $source -Filter '*.cpp' | Where-Object {
-    $_.Name -notin @('Interface.cpp','Weather.cpp','Bluetooth.cpp','firmware.cpp')
+    $_.Name -notin @('Interface.cpp','Weather.cpp','Bluetooth.cpp','firmware.cpp') -and
+      (!$browserApp -or $_.Name -ne 'DeskConsoleApp.cpp')
   } | ForEach-Object FullName
   Write-Host "Building $version"
   & $Compiler -std=c++17 -O2 -DARDUINO=10819 "-I$PSScriptRoot" "-I$GfxLibrary" "-I$source" `
-    $firmware $interfacePath $modules "$PSScriptRoot/runner.cpp" "$GfxLibrary/Adafruit_GFX.cpp" `
-    --pre-js "$PSScriptRoot/browser.js" -sASYNCIFY -sASYNCIFY_STACK_SIZE=65536 -sSTACK_SIZE=131072 `
+    $firmware $interfacePath $browserApp $modules "$PSScriptRoot/runner.cpp" "$GfxLibrary/Adafruit_GFX.cpp" `
+    --pre-js "$PSScriptRoot/../pointer-input.js" --pre-js "$PSScriptRoot/browser.js" -sASYNCIFY -sASYNCIFY_STACK_SIZE=65536 -sSTACK_SIZE=131072 `
     -sSINGLE_FILE -sENVIRONMENT=web -o "$site/firmware.js"
   if ($LASTEXITCODE) { throw "Could not compile $version" }
   $html = (Get-Content -Raw "$PSScriptRoot/index-template.html").Replace('VERSION',$version)

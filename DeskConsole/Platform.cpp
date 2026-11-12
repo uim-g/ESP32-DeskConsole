@@ -7,6 +7,7 @@
 
 #ifdef __EMSCRIPTEN__
 void presentBrowserDisplay();
+void setBrowserInputReady(bool ready);
 #endif
 
 namespace Platform {
@@ -55,6 +56,13 @@ int32_t signal() { return WiFi.RSSI(); }
 void configureClock() { configTzTime("MYT-8", "pool.ntp.org", "time.google.com"); }
 int resetReason() { return static_cast<int>(esp_reset_reason()); }
 int lightSleep() { return esp_light_sleep_start(); }
+void setInputReady(bool ready) {
+#ifdef __EMSCRIPTEN__
+  setBrowserInputReady(ready);
+#else
+  (void)ready;
+#endif
+}
 void presentDisplay() {
 #ifdef __EMSCRIPTEN__
   presentBrowserDisplay();

@@ -35,4 +35,5 @@ void configureClock();
 int resetReason();
 int lightSleep();
 void presentDisplay();
+void setInputReady(bool ready);
 }
