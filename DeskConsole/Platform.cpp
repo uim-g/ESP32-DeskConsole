@@ -43,12 +43,6 @@ Device device() {
           {image ? capacity : 0, capacity - min(capacity, image)}, ESP.getFlashChipSize(), millis() / 1000};
 }
 
-void connectNetwork() {
-  WiFi.mode(WIFI_STA);
-  WiFi.setAutoReconnect(true);
-  WiFi.begin(Config::ssid, Config::password);
-}
-bool retryNetwork() { return WiFi.reconnect(); }
 bool stopNetwork() { return WiFi.mode(WIFI_OFF); }
 int networkStatus() { return WiFi.status(); }
 bool isConnected(int status) { return status == WL_CONNECTED; }

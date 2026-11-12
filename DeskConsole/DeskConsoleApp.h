@@ -2,6 +2,7 @@
 #include "DashboardPages.h"
 #include "F1Pages.h"
 #include "SettingsPage.h"
+#include "WifiPage.h"
 
 class DeskConsoleApp : public Navigation {
  public:
@@ -24,12 +25,13 @@ class DeskConsoleApp : public Navigation {
   Weather weather;
   BluetoothScanner bluetooth;
   SettingsStore settings;
+  WifiNetworks wifi;
   PageContext context{*this, ui, buttons, led};
   HomePage home{context, weather};
   LauncherPage launcher{context};
   F1Page f1{context, game};
   WeatherPage forecast{context, weather};
-  NetworkPage network{context};
+  NetworkPage network{context, wifi};
   BluetoothPage ble{context, bluetooth};
   DevicePage device{context};
   SettingsPage preferences{context, settings};

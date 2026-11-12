@@ -25,8 +25,6 @@ Clock clock();
 Network network();
 Device device();
 bool clockReady();
-void connectNetwork();
-bool retryNetwork();
 bool stopNetwork();
 int networkStatus();
 bool isConnected(int status);

@@ -36,14 +36,6 @@ void WeatherPage::input(Key key, uint32_t us) {
   } else Page::input(key, us);
 }
 
-void NetworkPage::input(Key key, uint32_t us) {
-  if (key != Key::Action) { Page::input(key, us); return; }
-  const bool requested = Platform::retryNetwork();
-  Serial.printf("[WIFI] Manual reconnect: %s\n", requested ? "requested" : "failed");
-  if (requested) ctx.led.play(StatusLed::Cue::Scan);
-  draw();
-}
-
 void BluetoothPage::draw() {
   const auto scan = scanner.snapshot();
   state = scan.state;

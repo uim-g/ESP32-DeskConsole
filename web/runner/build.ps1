@@ -3,7 +3,8 @@ param(
   [Parameter(Mandatory)] [string] $GfxLibrary,
   [Parameter(Mandatory)] [string] $Output,
   [string[]] $Versions = @('v1.1.0','v1.2.0','v1.3.0','v1.3.1','v1.4.0','v1.5.0','v2.0.0','v2.1.0'),
-  [switch] $WorkingTree
+  [switch] $WorkingTree,
+  [string] $PreviewVersion = "dev"
 )
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path "$PSScriptRoot/../..").Path
@@ -11,8 +12,9 @@ $GfxLibrary = (Resolve-Path $GfxLibrary).Path
 $Output = [IO.Path]::GetFullPath($Output)
 New-Item -ItemType Directory -Force $Output | Out-Null
 if ($WorkingTree) {
+  if ($PreviewVersion -notmatch '^(dev|v\d+\.\d+\.\d+)$') { throw 'Invalid preview version.' }
   if ($PSBoundParameters.ContainsKey('Versions')) { throw 'Select either -WorkingTree or -Versions.' }
-  $Versions = @('dev')
+  $Versions = @($PreviewVersion)
 }
 foreach ($version in $Versions) {
   if (!$WorkingTree -and $version -notmatch '^v\d+\.\d+\.\d+$') { throw "Invalid version: $version" }

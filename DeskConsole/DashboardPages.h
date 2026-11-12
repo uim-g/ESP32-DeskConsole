@@ -39,14 +39,6 @@ class WeatherPage : public RefreshPage {
   bool changingForecast = false;
 };
 
-class NetworkPage : public RefreshPage {
- public:
-  using RefreshPage::RefreshPage;
-  PageStyle style() const override { return {"Wi-Fi",0x0842,Interface::accent,{"BACK","RETRY"}}; }
-  void draw() override { ctx.ui.network(Platform::network()); }
-  void input(Key key, uint32_t us) override;
-};
-
 class DevicePage : public RefreshPage {
  public:
   using RefreshPage::RefreshPage;

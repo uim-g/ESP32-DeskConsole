@@ -111,7 +111,7 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
       }
       field(9, 71, 6, 180, 30, "APPS", 1, highlight);
     } else {
-      const char icon = strcmp(title, "Wi-Fi") == 0 ? 'w' :
+      const char icon = strstr(title, "Wi-Fi") || strcmp(title, "Connecting") == 0 ? 'w' :
                         strcmp(title, "Bluetooth") == 0 ? 'b' :
                         strcmp(title, "Settings") == 0 ? 'g' :
                         strncmp(title, "Weather", 7) == 0 ? 'c' :

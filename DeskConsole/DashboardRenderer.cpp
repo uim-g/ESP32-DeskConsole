@@ -139,16 +139,6 @@ void Interface::weather(const WeatherData& data, bool forecast) {
   panelsReady = true;
 }
 
-void Interface::network(const Platform::Network& data) {
-  if (!panelsReady) card(40, 43, 240, 34);
-  field(0, 51, 46, 218, 28, data.connected ? "Connected" : "Disconnected", 1, highlight, true, true);
-  metric(1, 40, 82, 240, 44, 'w', "Network", data.ssid);
-  metric(2, 40, 132, 240, 44, 'm', "IP address", data.address);
-  metric(3, 40, 182, 116, 45, 's', "Signal", data.connected ? String(data.signal) + " dBm" : String("--"));
-  metric(4, 164, 182, 116, 45, 'p', "Clock", data.clockReady ? "NTP ready" : "Waiting");
-  panelsReady = true;
-}
-
 void Interface::bluetooth(const BluetoothSnapshot& scan, int first, bool namedOnly) {
   using State = BluetoothSnapshot::State;
   // 只在扫描状态或滚动位置改变时重画内容，保留标题和侧边键。

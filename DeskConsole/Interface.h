@@ -37,7 +37,11 @@ class Interface {
   void stats(const Game& game, bool confirmClear);
   void calibration(const Game& game, bool editOffset, bool saveFailed);
   void weather(const WeatherData& data, bool forecast);
-  void network(const Platform::Network& data);
+  struct WifiRow { String name, detail; };
+  void wifiList(const WifiRow* rows, int count, int selected, const String& footer);
+  void wifiMessage(const String& title, const String& detail, const String& footer);
+  void wifiPassword(const String& ssid, const String& value, size_t length, const char* group,
+                    const String& previous, const String& selected, const String& next, const char* footer);
   void device(const Platform::Device& data);
 
  private:

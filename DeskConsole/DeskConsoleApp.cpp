@@ -56,7 +56,8 @@ void DeskConsoleApp::begin() {
   led.begin();
   const uint32_t networkStarted = millis();
   Serial.println("[WIFI] Connecting in station mode");
-  Platform::connectNetwork();
+  wifi.begin();
+  wifi.connectPreferred();
   Platform::configureClock();
   Serial.println("[TIME] NTP configured for MYT (UTC+8)");
   weather.begin();
@@ -82,7 +83,7 @@ void DeskConsoleApp::reportConnectivity() {
 
 void DeskConsoleApp::sleepIfIdle(uint32_t now) {
   if (!wakeConfigured || !settings.current.autoSleep || now - lastInput < idleSleepMs() ||
-      buttons.anyPressed() || !page(active).canSleep() || bluetooth.busy()) return;
+      buttons.anyPressed() || !page(active).canSleep() || bluetooth.busy() || wifi.busy()) return;
 
   Serial.println("[POWER] Idle timeout; entering light sleep");
   if (!Platform::stopNetwork()) {
@@ -94,7 +95,7 @@ void DeskConsoleApp::sleepIfIdle(uint32_t now) {
   led.stop();
   const int result = buttons.anyPressed() ? ESP_OK : Platform::lightSleep();
   ui.setDisplayOn(true);
-  Platform::connectNetwork();
+  wifi.connectPreferred();
   lastInput = lastWakeLow = millis();
   discardWakePress = true;
   repeatKey = Key::None;
@@ -137,6 +138,7 @@ void DeskConsoleApp::tick() {
     return;
   }
 
+  if (active != View::F1 || f1.canSleep()) wifi.tick(now);
   Platform::setInputReady(transition == Transition::None);
   uint32_t pressedUs = 0;
   const auto key = buttons.poll(pressedUs);
