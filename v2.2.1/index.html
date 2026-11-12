@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeskConsole v2.2.1</title>
+<link rel="stylesheet" href="style.css">
+<main>
+<header><h1>DeskConsole</h1><span>v2.2.1</span><span id="led" hidden aria-label="板载 RGB / Onboard RGB"></span><a href="../">版本选择 / <span lang="en">Versions</span></a></header>
+<div class="console">
+ <div class="keys"><button data-key="0" aria-label="左上 GPIO 4 / Upper left GPIO 4">Q</button><button data-key="1" aria-label="左下 GPIO 5 / Lower left GPIO 5">A</button></div>
+ <canvas width="320" height="240" aria-label="DeskConsole 虚拟 TFT 屏幕 / Virtual TFT display"></canvas>
+ <div class="keys"><button data-key="2" aria-label="右上 GPIO 6 / Upper right GPIO 6">↑</button><button data-key="3" aria-label="右下 GPIO 7 / Lower right GPIO 7">↓</button></div>
+</div>
+<p>点击两侧按键，或使用 Q、A、↑、↓。F1 使用 ↓ 起跑。<br><span lang="en">Click the side buttons or use Q, A, ↑, and ↓. In F1, press ↓ to start and react.</span></p>
+<p id="weather" aria-live="polite">天气连接中 / Loading weather…</p>
+<p>Wi-Fi、BLE 和设备读数为模拟值。<br><span lang="en">Wi-Fi, BLE, and device readings are simulated.</span></p>
+</main>
+<script src="firmware.js?input=2"></script>
+</html>
