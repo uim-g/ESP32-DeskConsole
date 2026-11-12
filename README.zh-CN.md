@@ -12,6 +12,15 @@ DeskConsole 使用 ESP32-S3、320×240 ILI9341 SPI 屏幕和四个实体按键�
 
 切页时，侧边可用按键的标签会滑出和滑入。各 App 使用各自的主题色。
 
+## v2.0.0 更新
+
+- 各页面管理自己的状态、按键和绘制。主程序负责切页、调度和休眠。
+- ESP32-S3 固件与网页模拟器共用按时间推进的动画代码。F1 在提交熄灯画面后开始反应计时。
+- 升级后可继续读取开发板上已有的 F1 成绩、校准和设置。网页存档按版本网址分别保存。
+
+[查看 v2.0.0 发布说明](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.0.0)。
+
+
 ## 网页模拟器
 
 [打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v2.0.0 的全部八个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
@@ -55,7 +64,7 @@ v1.1.0 的九格设计稿依次展示桌面、App 菜单、F1、统计、补偿�
 - **天气**用任一右侧键切换当前天气和三天预报。当前页显示湿度、风速、气压、降雨和当天的日出日落。预报页显示每日高低温、降雨概率和 Open-Meteo 数据时间。
 - **Wi-Fi**显示连接状态、SSID、IP、RSSI 和 NTP 校时状态。左下键请求重连。
 - **Bluetooth** 位于 Wi-Fi 和 Device 之间。短按 SCAN 扫描约 4 秒，长按约 800 ms 切换是否隐藏无名称设备并重新扫描。结果按 RSSI 排序，最多保留 24 条，每页三条。显示广播名称、地址、RSSI，以及有提供的服务 UUID。
-- **设备诊断**显示芯片温度、运行时长、固件版本和 Flash 总容量。Heap、PSRAM 和 Firmware 显示「已用 / 总量」及用量条。Firmware 总量对应运行中的 APP 分区。温度提示低于 40°C 为绿，40°C 起为黄，50°C 起为红。
+- **设备诊断**显示芯片温度、运行时长、固件版本和 Flash 总容量。运行时长只重绘变化的数字。Heap、PSRAM 和 Firmware 显示「已用 / 总量」及用量条。Firmware 总量对应运行中的 APP 分区。温度提示低于 40°C 为绿，40°C 起为黄，50°C 起为红。
 - App 菜单双向循环滚动。App 菜单、天气和蓝牙页支持长按右侧两键连续翻动。
 - 换页时旧标签先滑出，正文换页后新标签再滑入。标签动画只更新屏幕边缘。界面使用 Nunito 字体，许可证见 [Nunito-OFL.txt](DeskConsole/Nunito-OFL.txt)。
 
