@@ -22,8 +22,11 @@ EM_JS(size_t, writePreference, (const char* group,const char* key,const void* sr
   return desk.write(UTF8ToString(group),UTF8ToString(key),HEAPU8.subarray(src,src+size));
 });
 int digitalRead(int pin){return (keys() & (1<<(pin-4))) ? LOW : HIGH;}
-void delay(unsigned ms){
+void presentBrowserDisplay(){
   if(dirty){render(pixels,powered);dirty=false;}
+}
+void delay(unsigned ms){
+  presentBrowserDisplay();
   emscripten_sleep(ms);
 }
 esp_err_t esp_light_sleep_start(){
