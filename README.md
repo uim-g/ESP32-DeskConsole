@@ -4,6 +4,10 @@ English · [简体中文](README.zh-CN.md)
 
 DeskConsole is a desktop console for the ESP32-S3 and a 320×240 ILI9341 SPI display. Its home screen shows the time, date, current weather and temperature for Semenyih, Malaysia. Four physical buttons open apps and navigate the interface.
 
+[Play online](https://uim-g.github.io/ESP32-DeskConsole/) · [Build your own](#setup)
+
+<img src="docs/deskconsole-prototype.jpg" alt="DeskConsole breadboard prototype with ESP32-S3, TFT and four buttons" width="600">
+
 - **F1 Reaction** — five two-row lamp housings, random lights-out, false starts, timeouts, Normal and Debug modes. The last result, personal best, and total completed rounds are saved in flash.
 - **Weather** — current conditions and a three-day forecast from [Open-Meteo](https://open-meteo.com/en/docs).
 - **Wi-Fi** — connection status, network scanning, on-device password entry, and saved networks.
@@ -19,6 +23,45 @@ Page changes animate the active button labels at the screen edges. Each app has 
 - Wi-Fi list selection and password characters use eased animations. The firmware source includes expanded Chinese comments.
 
 [Read the v2.2.0 release notes](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.0).
+
+## Setup
+
+You will need an ESP32-S3 N16R8 dev board, a 2.8-inch ILI9341 SPI display, four normally open push buttons, a breadboard, jumper wires, and a USB data cable.
+
+1. In Arduino IDE 2, install **esp32 by Espressif Systems**. Select **ESP32S3 Dev Module** and your board's serial port. For N16R8, set Flash Size to 16 MB, choose a partition scheme with a 3 MiB APP slot (such as 16M Flash, 3MB APP/9.9MB FATFS), and enable OPI PSRAM if you want to use the onboard 8 MiB. BLE uses the ESP32 core library.
+2. Install **Adafruit ILI9341** and its dependencies, plus **ArduinoJson 7**.
+3. Download **Source code (zip)** from the [v2.2.0 Release](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.0), extract it, and open `DeskConsole/DeskConsole.ino`.
+4. Disconnect USB before wiring the screen and buttons as shown below. Reconnect USB, select the serial port and upload. When Home appears, press the upper-left button to open Apps and select Wi-Fi.
+
+Wi-Fi supports open and personal networks on 2.4 GHz. It stores up to eight networks and tries the most recently connected saved network at startup when the radio is enabled. If it fails, scan again or select another saved network. WPA-Enterprise campus networks are unsupported. Saved credentials are stored in NVS without application-configured encryption.
+
+| ILI9341 | ESP32-S3 |
+|---|---|
+| VCC | 3V3 (with J1 bridged on the display module shown) |
+| GND | GND |
+| CS, RESET, DC | GPIO10, GPIO8, GPIO9 |
+| MOSI, SCK | GPIO11, GPIO12 |
+| LED (backlight) | 3V3 |
+| SDO (MISO) | Leave disconnected |
+
+Each button connects its GPIO to common GND when pressed. The firmware enables internal pull-ups.
+
+| Button | Home / app navigation | F1 |
+|---|---|---|
+| Top left · GPIO4 | Apps / Back | Back |
+| Bottom left · GPIO5 | Open / Action | Normal / Debug |
+| Top right · GPIO6 | Up | Statistics |
+| Bottom right · GPIO7 | Down | Play / React / Reset result |
+
+F1 timing uses the TFT lights-out signal and includes hardware-dependent display and input latency. The prototype weather client skips HTTPS certificate verification. The v2.2.0 firmware was tested on the ESP32-S3 N16R8 prototype.
+
+See [release history](CHANGELOG.md).
+
+### Wiring diagram
+
+![DeskConsole Wokwi wiring reference](docs/wokwi-wiring.png)
+
+The black wire immediately below the red VCC lead connects TFT GND to the same breadboard ground rail as the four buttons and ESP32-S3 GND. The diagram shows the display pins from VCC through SDO (MISO). On a module with extra touch pins, follow the printed labels and leave the touch pins disconnected for this build.
 
 ## Browser simulators
 
@@ -93,41 +136,6 @@ Settings selection and value changes use eased animations. Startup now draws Hom
 ## Serial Monitor
 
 Use **115200 baud**. For native USB, enable **USB CDC On Boot** and re-upload if the sketch produces no serial output. Open the monitor before pressing RESET to capture startup messages. Logs include button presses, navigation, Wi-Fi and NTP status, weather updates, F1 lights and results, calibration edits and flash saves.
-
-## Setup
-
-1. In Arduino IDE 2, install **esp32 by Espressif Systems**. Select **ESP32S3 Dev Module** and your board's serial port. For N16R8, set Flash Size to 16 MB, choose a partition scheme with a 3 MiB APP slot (such as 16M Flash, 3MB APP/9.9MB FATFS), and enable OPI PSRAM if you want to use the onboard 8 MiB. BLE uses the ESP32 core library.
-2. Install **Adafruit ILI9341** and its dependencies, plus **ArduinoJson 7**.
-3. Open `DeskConsole/DeskConsole.ino`. Use the Wi-Fi app to scan and connect to a 2.4 GHz network. Optionally set a fallback network in your local `Config.h`. Keep placeholders in shared copies.
-4. Wire the display and buttons as below, then compile and upload.
-
-| ILI9341 | ESP32-S3 |
-|---|---|
-| VCC | 3V3 (with J1 bridged on the display module shown) |
-| GND | GND |
-| CS, RESET, DC | GPIO10, GPIO8, GPIO9 |
-| MOSI, SCK | GPIO11, GPIO12 |
-| LED (backlight) | 3V3 |
-| SDO (MISO) | Leave disconnected |
-
-Each button connects its GPIO to common GND when pressed. The firmware enables internal pull-ups.
-
-| Button | Home / app navigation | F1 |
-|---|---|---|
-| Top left · GPIO4 | Apps / Back | Back |
-| Bottom left · GPIO5 | Open / Action | Normal / Debug |
-| Top right · GPIO6 | Up | Statistics |
-| Bottom right · GPIO7 | Down | Play / React / Reset result |
-
-F1 timing uses the TFT lights-out signal and includes hardware-dependent display and input latency. The prototype weather client skips HTTPS certificate verification. This release snapshot has not been recompiled or hardware-tested during packaging.
-
-See [release history](CHANGELOG.md).
-
-## Wiring diagram
-
-![DeskConsole Wokwi wiring reference](docs/wokwi-wiring.png)
-
-The black wire immediately below the red VCC lead connects TFT GND to the same breadboard ground rail as the four buttons and ESP32-S3 GND. The diagram shows the display pins from VCC through SDO (MISO). On a module with extra touch pins, follow the printed labels and leave the touch pins disconnected for this build.
 
 ## Onboard RGB status LED
 

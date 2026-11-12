@@ -4,6 +4,10 @@
 
 DeskConsole 使用 ESP32-S3、320×240 ILI9341 SPI 屏幕和四个实体按键。桌面显示时间、日期，以及马来西亚士毛月的当前天气和气温。按键可以打开 App 和切换页面。
 
+[在线试玩](https://uim-g.github.io/ESP32-DeskConsole/) · [动手复刻](#安装)
+
+<img src="docs/deskconsole-prototype.jpg" alt="DeskConsole 面包板原型，含 ESP32-S3、TFT 屏幕和四个按键" width="600">
+
 - **F1 Reaction**。五组双排灯箱、随机熄灯、抢跑、超时及 Normal / Debug 模式。上一局结果、个人最佳和总局数保存到闪存。
 - **天气**。显示 [Open-Meteo](https://open-meteo.com/en/docs) 的当前天气和三天预报。
 - **Wi-Fi**。查看连接状态、扫描网络、输入密码及管理已保存的网络。
@@ -19,6 +23,45 @@ DeskConsole 使用 ESP32-S3、320×240 ILI9341 SPI 屏幕和四个实体按键�
 - Wi-Fi 列表选中框和密码候选字符加入非线性动画，固件源码补充了中文注释。
 
 [查看 v2.2.0 发布说明](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.0)。
+
+## 安装
+
+准备 ESP32-S3 N16R8 开发板、2.8 英寸 ILI9341 SPI 屏幕、四个常开轻触按键、面包板、跳线和 USB 数据线。
+
+1. 在 Arduino IDE 2 中安装 **esp32 by Espressif Systems**，选择 **ESP32S3 Dev Module** 和开发板串口。N16R8 的 Flash Size 设为 16 MB，选择带 3 MiB APP 槽的分区方案（如 16M Flash，3MB APP/9.9MB FATFS）。若要使用板载 8 MiB PSRAM，可启用 OPI PSRAM。BLE 使用 ESP32 核心自带库。
+2. 安装 **Adafruit ILI9341** 及其依赖，以及 **ArduinoJson 7**。
+3. 到 [v2.2.0 发布页](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.0) 下载 **Source code (zip)**，解压后打开 `DeskConsole/DeskConsole.ino`。
+4. 拔掉 USB 后按下表接线，再接回 USB、选择串口并上传。屏幕进入桌面后，按左上键打开应用菜单，再选择 Wi-Fi 联网。
+
+Wi-Fi 支持 2.4 GHz 开放网络和个人网络，最多保存八个网络。无线功能开启时，开机会尝试最近连接成功的已保存网络。连接失败时，可以重新扫描或手动选择其他已保存网络。暂不支持 WPA-Enterprise 校园网。密码保存在 NVS，项目未配置加密存储。
+
+| ILI9341 | ESP32-S3 |
+|---|---|
+| VCC | 3V3（图中对应的屏幕模块需短接 J1） |
+| GND | GND |
+| CS、RESET、DC | GPIO10、GPIO8、GPIO9 |
+| MOSI、SCK | GPIO11、GPIO12 |
+| LED（背光） | 3V3 |
+| SDO（MISO） | 留空 |
+
+每个按钮接相应 GPIO 和公共 GND。程序启用内部上拉。
+
+| 按键 | 桌面和 App 导航 | F1 |
+|---|---|---|
+| 左上 GPIO4 | App 列表／返回 | 返回 |
+| 左下 GPIO5 | 打开／执行 | Normal / Debug |
+| 右上 GPIO6 | 向上 | 统计 |
+| 右下 GPIO7 | 向下 | 开始／反应／清除本局 |
+
+F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气客户端目前跳过 HTTPS 证书校验。v2.2.0 固件已在 ESP32-S3 N16R8 原型上实测。
+
+参见[版本记录](CHANGELOG.md)。
+
+### 接线图
+
+![DeskConsole Wokwi 接线参考图](docs/wokwi-wiring.png)
+
+红色 VCC 线下方的黑线把屏幕 GND 接到公共地排，与四个按键及 ESP32-S3 共地。图中画的是 VCC 到 SDO（MISO）这组屏幕引脚。若实物还有触摸排针，请按模块丝印接线，触摸引脚留空。
 
 ## 网页模拟器
 
@@ -93,41 +136,6 @@ Settings 位于 App 列表中 Device 后面。右侧键选择项目，EDIT 切�
 ## 串口监视器
 
 波特率为 **115200**。通过原生 USB 连接时，若串口没有输出，可启用 **USB CDC On Boot** 后重新上传。先打开监视器再按 RESET，可以看到启动日志。日志包括按键、导航、Wi-Fi 和 NTP 状态、天气更新、F1 灯号与成绩、补偿调整和闪存保存结果。
-
-## 安装
-
-1. 在 Arduino IDE 2 中安装 **esp32 by Espressif Systems**，选择 **ESP32S3 Dev Module** 和开发板串口。N16R8 的 Flash Size 设为 16 MB，选择带 3 MiB APP 槽的分区方案（如 16M Flash，3MB APP/9.9MB FATFS）。若要使用板载 8 MiB PSRAM，可启用 OPI PSRAM。BLE 使用 ESP32 核心自带库。
-2. 安装 **Adafruit ILI9341** 及其依赖，以及 **ArduinoJson 7**。
-3. 打开 `DeskConsole/DeskConsole.ino`，在 Wi-Fi 页面扫描并连接 2.4 GHz 网络。也可以在本地 `Config.h` 配置备用网络，分享代码时保留占位符。
-4. 按下表接好屏幕和按钮，再编译上传。
-
-| ILI9341 | ESP32-S3 |
-|---|---|
-| VCC | 3V3（图中对应的屏幕模块需短接 J1） |
-| GND | GND |
-| CS、RESET、DC | GPIO10、GPIO8、GPIO9 |
-| MOSI、SCK | GPIO11、GPIO12 |
-| LED（背光） | 3V3 |
-| SDO（MISO） | 留空 |
-
-每个按钮接相应 GPIO 和公共 GND。程序启用内部上拉。
-
-| 按键 | 桌面和 App 导航 | F1 |
-|---|---|---|
-| 左上 GPIO4 | App 列表／返回 | 返回 |
-| 左下 GPIO5 | 打开／执行 | Normal / Debug |
-| 右上 GPIO6 | 向上 | 统计 |
-| 右下 GPIO7 | 向下 | 开始／反应／清除本局 |
-
-F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气客户端目前跳过 HTTPS 证书校验。本次发布归档未重新编译或上板验证。
-
-参见[版本记录](CHANGELOG.md)。
-
-## 接线图
-
-![DeskConsole Wokwi 接线参考图](docs/wokwi-wiring.png)
-
-红色 VCC 线下方的黑线把屏幕 GND 接到公共地排，与四个按键及 ESP32-S3 共地。图中画的是 VCC 到 SDO（MISO）这组屏幕引脚。若实物还有触摸排针，请按模块丝印接线，触摸引脚留空。
 
 ## 板载 RGB 状态灯
 
