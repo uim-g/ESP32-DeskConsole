@@ -16,6 +16,13 @@ DeskConsole is a desktop console for the ESP32-S3 and a 320×240 ILI9341 SPI dis
 
 Page changes animate the active button labels at the screen edges. Each app has its own accent color.
 
+## Project origins
+
+DeskConsole grew out of two standalone ESP32-S3 experiments, each with its own sketch and wiring guide.
+
+- [Campus Dashboard](experiments/campus-dashboard/README.md) introduced the network clock, weather display, and button-driven pages.
+- [F1 Reaction Game](experiments/f1-reaction-game/README.md) tested starting lights, false starts, and reaction timing with five physical LEDs.
+
 ## What's new in v2.2.1
 
 - Weather updates the subtitle and content in place when switching between Now and Forecast.

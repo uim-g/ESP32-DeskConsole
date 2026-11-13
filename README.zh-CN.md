@@ -16,6 +16,13 @@ DeskConsole 使用 ESP32-S3、320×240 ILI9341 SPI 屏幕和四个实体按键�
 
 切页时，侧边可用按键的标签会滑出和滑入。各 App 使用各自的主题色。
 
+## 项目起源
+
+DeskConsole 从两个 ESP32-S3 小实验发展而来。每个实验都有自己的 Arduino 草图和接线指南，可以单独复刻。
+
+- [Campus Dashboard](experiments/campus-dashboard/README.zh-CN.md) 验证了联网时钟、天气显示和按键翻页，后来发展为桌面和天气应用。
+- [F1 Reaction Game](experiments/f1-reaction-game/README.zh-CN.md) 用五颗实体 LED 验证了起跑灯、抢跑判定和反应计时，后来整合为 F1 应用。
+
 ## v2.2.1 更新
 
 - 天气实况和预报切换时，只更新副标题和内容。
