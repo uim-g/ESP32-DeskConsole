@@ -13,6 +13,7 @@ void markDisplayDirty(){dirty=true;}
 void displayPower(bool on){powered=on;dirty=true;}
 EM_JS(void, render, (const uint16_t* data, bool on), { desk.render(data, on, HEAPU16); });
 EM_JS(int, keys, (), { return desk.keys; });
+EM_JS(bool, readBrowserMotion, (int16_t* reading), { return desk.readMotion(reading, HEAP16); });
 EM_JS(void, browserInputReady, (bool ready), { desk.pollInput(ready); });
 void setBrowserInputReady(bool ready) { browserInputReady(ready); }
 EM_JS(bool, browserOnline, (), { return navigator.onLine; });

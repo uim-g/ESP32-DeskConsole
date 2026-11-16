@@ -91,6 +91,8 @@ The black wire immediately below the red VCC lead connects TFT GND to the same b
 
 [Download the v3.3.1 browser ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.3.1/DeskConsole-v3.3.1-Web.zip) · [Play v3.3.1 online](https://uim-g.github.io/ESP32-DeskConsole/v3.3.1/)
 
+Online versions v3.1.0 through v3.3.1 include an **MPU6050 simulator**. Open **Apps → Motion**, then use the X/Y/Z sliders below the screen. The connection checkbox simulates unplugging and reconnecting the module. Each online version keeps its original Motion views. The original release ZIPs still contain the browser builds packaged at release time.
+
 [![Live browser screenshots of the seven DeskConsole v1.x versions](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 
 Click the four side buttons or use **Q**, **A**, **↑**, and **↓**. In F1, use **↓** for PLAY. Scores are stored in the browser. Weather uses Open-Meteo and requires internet access. Wi-Fi and device readings are simulated.

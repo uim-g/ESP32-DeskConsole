@@ -2,7 +2,8 @@ param(
   [Parameter(Mandatory)] [string] $Compiler,
   [Parameter(Mandatory)] [string] $GfxLibrary,
   [Parameter(Mandatory)] [string] $Output,
-  [string[]] $Versions = @('v1.1.0','v1.2.0','v1.3.0','v1.3.1','v1.4.0','v1.5.0','v2.0.0','v2.1.0','v2.2.0','v2.2.1','v3.0.0'),
+  [string[]] $Versions = @('v1.1.0','v1.2.0','v1.3.0','v1.3.1','v1.4.0','v1.5.0','v2.0.0','v2.1.0','v2.2.0','v2.2.1','v3.0.0',
+                          'v3.1.0','v3.1.1','v3.1.2','v3.1.3','v3.2.0','v3.2.1','v3.3.0','v3.3.1'),
   [switch] $WorkingTree,
   [string] $PreviewVersion = "dev"
 )
@@ -66,6 +67,22 @@ foreach ($version in $Versions) {
       [IO.File]::WriteAllText($browserApp,$app.Replace($marker,$hook+$marker))
     }
   }
+  $motionSource = Join-Path $source 'MotionPage.cpp'
+  $hasBrowserMotion = $false
+  if (Test-Path $motionSource) {
+    $motion = [IO.File]::ReadAllText($motionSource)
+    $hasBrowserMotion = $motion.Contains('readBrowserMotion(')
+    if (!$WorkingTree -and !$hasBrowserMotion) {
+      # 只在导出的历史网页源码里替换空传感器，保留 Git 标签与硬件代码。
+      $offline = '(?m)(^#ifdef __EMSCRIPTEN__\r?\n)  return false;[^\r\n]*(\r?\n#else)'
+      if (![regex]::IsMatch($motion, $offline)) { throw "Motion simulator hook not found in $version" }
+      $motion = [regex]::Replace($motion, $offline,
+        ('$1' + "  const bool connected = readBrowserMotion(reading);`n  address = connected ? 0x68 : 0;`n  return connected;" + '$2'))
+      [IO.File]::WriteAllText($motionSource,
+        "#include <stdint.h>`nextern `"C`" bool readBrowserMotion(int16_t* reading);`n" + $motion)
+      $hasBrowserMotion = $true
+    }
+  }
   $modules = Get-ChildItem -LiteralPath $source -Filter '*.cpp' | Where-Object {
     $_.Name -notin @('Interface.cpp','Weather.cpp','Bluetooth.cpp','firmware.cpp') -and
       (!$browserApp -or $_.Name -ne 'DeskConsoleApp.cpp')
@@ -77,6 +94,9 @@ foreach ($version in $Versions) {
     -sSINGLE_FILE -sENVIRONMENT=web -o "$site/firmware.js"
   if ($LASTEXITCODE) { throw "Could not compile $version" }
   $html = (Get-Content -Raw "$PSScriptRoot/index-template.html").Replace('VERSION',$version)
+  if (!$hasBrowserMotion) {
+    $html = $html -replace '(?s)<!-- MOTION_START -->.*?<!-- MOTION_END -->\r?\n',''
+  }
   [IO.File]::WriteAllText("$site/index.html",$html)
   Copy-Item "$PSScriptRoot/style.css" "$site/style.css"
   Copy-Item "$source/Nunito-OFL.txt" "$site/Nunito-OFL.txt"

@@ -14,6 +14,19 @@
 <p>点击两侧按键，或使用 Q、A、↑、↓。F1 使用 ↓ 起跑。<br><span lang="en">Click the side buttons or use Q, A, ↑, and ↓. In F1, press ↓ to start and react.</span></p>
 <p id="weather" aria-live="polite">天气连接中 / Loading weather…</p>
 <p>Wi-Fi、BLE 和设备读数为模拟值。<br><span lang="en">Wi-Fi, BLE, and device readings are simulated.</span></p>
+<!-- MOTION_START -->
+<details id="motion-panel">
+ <summary>MPU6050 模拟 / Sensor simulator</summary>
+ <label><input id="motion-sensor" type="checkbox" checked> 模拟模块已连接 / Sensor connected</label>
+ <div class="motion-sliders">
+  <label>X <input id="motion-x" type="range" min="-180" max="180" value="0"><output for="motion-x">0°</output></label>
+  <label>Y <input id="motion-y" type="range" min="-180" max="180" value="0"><output for="motion-y">0°</output></label>
+  <label>Z <input id="motion-z" type="range" min="-180" max="180" value="0"><output for="motion-z">0°</output></label>
+ </div>
+ <button id="motion-reset" type="button">姿态归零 / Reset pose</button>
+ <p>打开 Apps → Motion。拖动滑块转动模拟模块，松手后角速度归零。<br><span lang="en">Open Apps → Motion. Drag a slider to rotate the virtual sensor. Angular velocity returns to zero when held still.</span></p>
+</details>
+<!-- MOTION_END -->
 </main>
 <script src="firmware.js?input=2"></script>
 </html>

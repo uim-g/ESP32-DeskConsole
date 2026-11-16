@@ -6,11 +6,52 @@ const badge = document.querySelector("#led");
 const buttons = [...document.querySelectorAll("[data-key]")];
 const inputs = buttons.map(()=>new Set());
 const weather = {data:null,version:0,stale:false};
+const motionPanel = document.querySelector("#motion-panel");
+const motionSensor = document.querySelector("#motion-sensor");
+const motionSliders = ["x","y","z"].map(axis=>document.querySelector("#motion-"+axis));
+const motionPose = [0,0,0];
+let lastMotionAt = null;
+for (const slider of motionSliders) {
+  if (!slider) continue;
+  slider.addEventListener("input",()=>{ slider.nextElementSibling.textContent=slider.value+"°"; });
+}
+document.querySelector("#motion-reset")?.addEventListener("click",()=>{
+  for (const slider of motionSliders) {
+    slider.value=0;
+    slider.nextElementSibling.textContent="0°";
+  }
+});
 const storagePrefix = "deskconsole:"+location.pathname+":";
 const desk = {
   keys:0,
   weather,
   pollInput(ready){ samplePointerButtons(ready); },
+  readMotion(ptr,heap){
+    if(!motionSensor?.checked){
+      lastMotionAt=null;
+      return false;
+    }
+    const now=performance.now();
+    const dt=lastMotionAt===null?0:Math.min((now-lastMotionAt)/1000,.12);
+    lastMotionAt=now;
+    const velocity=motionPose.map((value,i)=>{
+      const difference=Number(motionSliders[i].value)-value;
+      const step=Math.max(-160*dt,Math.min(160*dt,difference));
+      motionPose[i]+=step;
+      return dt>0?step/dt:0;
+    });
+    const [x,y,z]=motionPose.map(value=>value*Math.PI/180);
+    const sx=Math.sin(x), sy=Math.sin(y), sz=Math.sin(z);
+    const cx=Math.cos(x), cy=Math.cos(y), cz=Math.cos(z);
+    const [dx,dy,dz]=velocity;
+    // Rz·Ry·Rx：重力从初始竖直方向转回模块坐标，欧拉角速率转换为体轴角速度。
+    const axes=[
+      -16384*sz*cy, -16384*(sz*sy*sx+cz*cx), 16384*(sz*sy*cx-cz*sx),
+      -131*(dx-dz*sy), -131*(dy*cx+dz*sx*cy), 131*(-dy*sx+dz*cx*cy)
+    ];
+    for(let i=0;i<axes.length;i++) heap[(ptr>>1)+i]=Math.max(-32768,Math.min(32767,Math.round(axes[i])));
+    return true;
+  },
   render(ptr,on,heap){
     const start=ptr>>1;
     for(let i=0,j=0;i<320*240;i++,j+=4){
@@ -88,6 +129,7 @@ buttons.forEach((button,i)=>{
 const keyMap={KeyQ:0,KeyA:1,ArrowUp:2,ArrowDown:3};
 for(const type of ["keydown","keyup"]) addEventListener(type,event=>{
   if(!Object.hasOwn(keyMap,event.code)) return;
+  if(type==="keydown" && event.target && motionPanel?.contains(event.target)) return;
   if(type==="keydown" && (event.ctrlKey||event.altKey||event.metaKey)) return;
   event.preventDefault();
   input(keyMap[event.code],"keyboard",type==="keydown");
