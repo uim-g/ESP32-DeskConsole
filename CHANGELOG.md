@@ -4,6 +4,12 @@ Screenshots below were captured from the corresponding [live browser simulator](
 
 下方截图均取自对应版本的[在线网页模拟器](https://uim-g.github.io/ESP32-DeskConsole/)。
 
+## v3.0.0
+
+- **Wiring change / 接线变更** — TFT signals use CS GPIO9, RESET GPIO8, DC GPIO18, MOSI GPIO17, SCK GPIO16 and LED GPIO15. Rewire before uploading. 更新 TFT 引脚，上传前需重新接线。
+- Switch off the backlight in light sleep and restore it on wake. 浅睡关闭背光，唤醒后恢复。
+- Add two prototype wiring photos and bilingual upgrade instructions. 加入两张实物接线照和双语升级说明。
+
 ## v2.2.1
 
 - Weather switches between Now and Forecast without redrawing the title, icon or side controls. 天气切换实况和预报时保留标题、图标和侧键，只刷新副标题与内容。

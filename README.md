@@ -16,6 +16,12 @@ DeskConsole is a desktop console for the ESP32-S3 and a 320×240 ILI9341 SPI dis
 
 Page changes animate the active button labels at the screen edges. Each app has its own accent color.
 
+## v3.0.0 upgrade guide
+
+**Rewire the TFT before uploading v3.0.0.** The SPI and backlight pin assignments have changed. If you are keeping the original wiring, use [v2.2.1](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.1).
+
+Connect the module's active-high **LED** control pin to **GPIO15** and remove its old 3V3 connection. Keep TFT VCC on 3V3 with J1 bridged on the pictured module. The backlight switches off in light sleep and returns when any of the four buttons wakes the device.
+
 ## Project origins
 
 DeskConsole grew out of two standalone ESP32-S3 experiments, each with its own sketch and wiring guide.
@@ -23,21 +29,13 @@ DeskConsole grew out of two standalone ESP32-S3 experiments, each with its own s
 - [Campus Dashboard](experiments/campus-dashboard/README.md) introduced the network clock, weather display, and button-driven pages.
 - [F1 Reaction Game](experiments/f1-reaction-game/README.md) tested starting lights, false starts, and reaction timing with five physical LEDs.
 
-## What's new in v2.2.1
-
-- Weather updates the subtitle and content in place when switching between Now and Forecast.
-- Wi-Fi status appears in the header. Long Wi-Fi and Bluetooth names scroll within their fields.
-- When saved Wi-Fi is full, the result page explains why a new connection was not saved. The Device footer is centered and keeps digit-only uptime updates.
-
-[Read the v2.2.1 release notes](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.1).
-
 ## Setup
 
 You will need an ESP32-S3 N16R8 dev board, a 2.8-inch ILI9341 SPI display, four normally open push buttons, a breadboard, jumper wires, and a USB data cable.
 
 1. In Arduino IDE 2, install **esp32 by Espressif Systems**. Select **ESP32S3 Dev Module** and your board's serial port. For N16R8, set Flash Size to 16 MB, choose a partition scheme with a 3 MiB APP slot (such as 16M Flash, 3MB APP/9.9MB FATFS), and enable OPI PSRAM if you want to use the onboard 8 MiB. BLE uses the ESP32 core library.
 2. Install **Adafruit ILI9341** and its dependencies, plus **ArduinoJson 7**.
-3. Download **Source code (zip)** from the [v2.2.1 Release](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v2.2.1), extract it, and open `DeskConsole/DeskConsole.ino`.
+3. Download **Source code (zip)** from the [v3.0.0 Release](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v3.0.0), extract it, and open `DeskConsole/DeskConsole.ino`.
 4. Disconnect USB before wiring the screen and buttons as shown below. Reconnect USB, select the serial port and upload. When Home appears, press the upper-left button to open Apps and select Wi-Fi.
 
 Wi-Fi supports open and personal networks on 2.4 GHz. It stores up to eight networks and tries the most recently connected saved network at startup when the radio is enabled. If it fails, scan again or select another saved network. If all eight slots are full, a new network can connect without being saved. Forget an old entry and reconnect to save the new network. WPA-Enterprise campus networks are unsupported. Saved credentials are stored in NVS without application-configured encryption.
@@ -60,7 +58,7 @@ Each button connects its GPIO to common GND when pressed. The firmware enables i
 | Top right · GPIO6 | Up | Statistics |
 | Bottom right · GPIO7 | Down | Play / React / Reset result |
 
-F1 timing uses the TFT lights-out signal and includes hardware-dependent display and input latency. The prototype weather client skips HTTPS certificate verification. The v2.2.0 firmware was tested on the ESP32-S3 N16R8 prototype. v2.2.1 was verified in the browser simulator.
+F1 timing uses the TFT lights-out signal and includes hardware-dependent display and input latency. The prototype weather client skips HTTPS certificate verification. The v3.0.0 wiring and light-sleep behavior were verified on the ESP32-S3 N16R8 prototype.
 
 See [release history](CHANGELOG.md).
 
@@ -80,9 +78,9 @@ The black wire immediately below the red VCC lead connects TFT GND to the same b
 
 ## Browser simulators
 
-[Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all eleven versions from v1.0.0 through v2.2.1. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
+[Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all twelve versions from v1.0.0 through v3.0.0. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
 
-[Play the latest browser version (v2.2.1)](https://uim-g.github.io/ESP32-DeskConsole/v2.2.1/)
+[Play the latest browser version (v3.0.0)](https://uim-g.github.io/ESP32-DeskConsole/v3.0.0/)
 
 [![Live browser screenshots of the seven DeskConsole v1.x versions](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 
