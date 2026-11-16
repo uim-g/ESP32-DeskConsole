@@ -12,3 +12,11 @@ button.pressed,button:active{background:#556675}
 button:focus-visible{outline:2px solid #a9d7ff}
 p{margin:12px 0 0;font-size:13px}
 header a{margin-left:auto;color:#a9d7ff;text-align:right} header a span{color:inherit} #led{width:10px;height:10px;border-radius:50%;background:#353e46}
+#motion-panel{margin-top:16px;padding:12px;background:#252a2f;border-radius:12px}
+#motion-panel summary{cursor:pointer}
+#motion-panel>label{display:block;margin-top:12px}
+.motion-sliders{display:grid;gap:8px;margin:12px 0}
+.motion-sliders label{display:grid;grid-template-columns:1.3rem minmax(0,1fr) 3.4rem;align-items:center;gap:8px}
+.motion-sliders input{width:100%;margin:0;accent-color:#a9d7ff}
+.motion-sliders output{text-align:right;font-variant-numeric:tabular-nums}
+#motion-reset{height:auto;padding:6px 10px}
