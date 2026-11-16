@@ -438,11 +438,12 @@ void Interface::renderMotionNotice(int offset) {
   strip.getTextBounds(message, 0, 0, &x, &y, &w, &h);
   strip.setCursor((width - w) / 2 - x, (height - h) / 2 - y + offset);
   strip.print(message);
-  screen.drawRGBBitmap(50, 203, strip.getBuffer(), width, height);
+  screen.drawRGBBitmap(50, 201, strip.getBuffer(), width, height);
 }
 
-void Interface::motionCalibrationPrompt(const char* message, bool alert, int offset) {
-  const String key = String(message) + '/' + String(alert) + '/' + String(offset);
+void Interface::motionCalibrationPrompt(const char* message, CalibrationTone tone, int offset) {
+  const bool bold = tone != CalibrationTone::Normal;
+  const String key = String(message) + '/' + String(static_cast<int>(tone)) + '/' + String(offset);
   if (cache[6] == key) return;
   constexpr int width = 248, height = 17;
   GFXcanvas16 line(width, height);
@@ -451,15 +452,16 @@ void Interface::motionCalibrationPrompt(const char* message, bool alert, int off
   line.fillScreen(background);
   line.setTextWrap(false);
   line.setFont(&NunitoHint);
-  line.setTextColor(alert ? 0xF986 : ILI9341_WHITE);
+  line.setTextColor(tone == CalibrationTone::Alert ? 0xF986 :
+                    tone == CalibrationTone::Success ? 0x57A8 : ILI9341_WHITE);
   int16_t x, y;
   uint16_t w, h;
   line.getTextBounds(message, 0, 0, &x, &y, &w, &h);
-  const int left = (width - w - (alert ? 1 : 0)) / 2 - x + offset;
+  const int left = (width - w - (bold ? 1 : 0)) / 2 - x + offset;
   const int baseline = (height - h) / 2 - y;
   line.setCursor(left, baseline);
   line.print(message);
-  if (alert) {
+  if (bold) {
     line.setCursor(left + 1, baseline);
     line.print(message);
   }

@@ -51,7 +51,8 @@ class Interface {
   void motionLevel(int roll, int pitch);
   void motionTube(bool horizontal, int angle);
   void motionCalibrationGuide(bool negative, int reading, bool valid, bool aligned);
-  void motionCalibrationPrompt(const char* message, bool alert, int offset);
+  enum class CalibrationTone { Normal, Alert, Success };
+  void motionCalibrationPrompt(const char* message, CalibrationTone tone, int offset);
   void motionMode(const char* mode);
   void motionNotice(const char* message);
 
