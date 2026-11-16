@@ -165,7 +165,7 @@ void Interface::renderLauncher(float progress) {
 namespace {
 constexpr const char* screenRgbNames[] = {"Off", "Intermittent Rainbow", "Continuous Rainbow"};
 constexpr int modeX = 192, modeY = 181, modeWidth = 71, modeHeight = 31;
-constexpr uint16_t settingsSelection = 0x2A69;
+constexpr uint16_t settingsSelection = 0x3245;
 }
 
 void Interface::renderScreenRgbName(uint32_t now) {
@@ -216,7 +216,7 @@ void Interface::renderSettings(float progress) {
   const bool editing = settingsEditing, saveFailed = settingsFailed;
   const float eased = smoothStep(progress);
   constexpr int x = 37, firstY = 39, pitch = 35, width = 246, height = 33;
-  constexpr uint16_t selection = 0x2A69;
+  constexpr uint16_t selection = settingsSelection;
   const char* labels[] = {"Auto sleep", "Sleep after", "RGB status LED", "RGB brightness", "Screen-off RGB"};
   const bool available[] = {true, values.autoSleep != 0, true, values.rgbEnabled != 0, values.rgbEnabled != 0};
   GFXcanvas16 strip(width, pitch);

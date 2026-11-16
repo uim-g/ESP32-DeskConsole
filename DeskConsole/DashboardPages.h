@@ -42,14 +42,14 @@ class WeatherPage : public RefreshPage {
 class DevicePage : public RefreshPage {
  public:
   using RefreshPage::RefreshPage;
-  PageStyle style() const override { return {"Device",0x18E3,0xB6B1,{"BACK"}}; }
+  PageStyle style() const override { return {"Device",0x18C2,0xFDEE,{"BACK"}}; }
   void draw() override { ctx.ui.device(Platform::device()); }
 };
 
 class BluetoothPage : public Page {
  public:
   BluetoothPage(PageContext& context, BluetoothScanner& service) : Page(context), scanner(service) {}
-  PageStyle style() const override { return {"Bluetooth",0x0868,0x75BF,{"BACK","SCAN","^","v"}}; }
+  PageStyle style() const override { return {"Bluetooth",0x18C4,0xBCFF,{"BACK","SCAN","^","v"}}; }
   void draw() override;
   void input(Key key, uint32_t us) override;
   void tick(uint32_t now) override;

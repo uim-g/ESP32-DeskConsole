@@ -6,7 +6,7 @@ class MotionPage : public Page {
  public:
   using Page::Page;
   PageStyle style() const override {
-    return {"Motion", 0x18E3, 0xB6B1, {"BACK", "DATA", "VIEW", graphic == Graphic::None ? "CAL" : nullptr}};
+    return {"Motion", 0x20A4, theme, {"BACK", "DATA", "VIEW", graphic == Graphic::None ? "CAL" : nullptr}};
   }
   void enter() override;
   void leave() override;
@@ -17,6 +17,7 @@ class MotionPage : public Page {
   bool canSleep() const override { return !calibrating; }
 
  private:
+  static constexpr uint16_t theme = 0xF4B9;
   struct Calibration {
     float offset[3], scale[3], gyro[3];
   };

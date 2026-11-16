@@ -46,7 +46,7 @@ PageStyle NetworkPage::style() const {
     case Screen::Result: title = "Wi-Fi result"; action = "OK"; break;
   }
   const bool arrows = repeats();
-  return {title, 0x0842, Interface::accent, {"BACK", action, arrows ? "^" : nullptr, arrows ? "v" : nullptr}};
+  return {title, 0x0842, 0x6F16, {"BACK", action, arrows ? "^" : nullptr, arrows ? "v" : nullptr}};
 }
 
 // 从 App 菜单进入时回到概览。Wi-Fi 子页之间切换时保留本次选择和输入状态。

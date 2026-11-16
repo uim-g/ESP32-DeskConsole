@@ -365,7 +365,7 @@ void Interface::renderMotionMode(int step) {
   const float phase = abs(step - 6) / 6.0f;
   const int width = 14 + lroundf((fullWidth - 14) * smoothStep(phase));
   screen.fillRect(160 - fullWidth / 2, y, fullWidth, height, background);
-  screen.fillRoundRect(160 - width / 2, y, width, height, min(8, width / 2), 0x3246);
+  screen.fillRoundRect(160 - width / 2, y, width, height, min(8, width / 2), 0x4168);
   screen.drawRoundRect(160 - width / 2, y, width, height, min(8, width / 2), highlight);
   screen.setFont(&NunitoHint);
   int16_t x1, y1;

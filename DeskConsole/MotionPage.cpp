@@ -334,13 +334,13 @@ void MotionPage::draw() {
   }
 
   ctx.ui.field(11, 38, 59, 100, 25, showCorrected ? "Accel (g)" : "Accel",
-               0, Interface::accent, true);
+               0, theme, true);
   ctx.ui.field(12, 182, 59, 100, 25, showCorrected ? "Gyro (deg/s)" : "Gyro",
-               0, Interface::accent, true);
+               0, theme, true);
   constexpr const char* labels[] = {"X", "Y", "Z"};
   for (uint8_t axis = 0; axis < 3; ++axis) {
     ctx.ui.field(8 + axis, 144, 93 + axis * 28, 32, 24, labels[axis],
-                 0, Interface::accent, true);
+                 0, theme, true);
   }
   for (uint8_t i = 0; i < 6; ++i) {
     const int x = i < 3 ? 38 : 182;
@@ -361,7 +361,7 @@ void MotionPage::draw() {
   }
   ctx.ui.field(7, 39, 181, 242, 20,
                *notice ? notice : showCorrected && !calibrated ? "Press CAL to set up" : " ",
-               4, Interface::accent, true);
+               4, theme, true);
   ctx.ui.motionMode(showCorrected ? "CALIBRATED" : "RAW");
 }
 
@@ -385,7 +385,7 @@ void MotionPage::drawCalibration() {
   const float current[3] = {float(axes[0]), float(axes[1]), float(axes[2])};
   const bool aligned = valid && faceAligned(current);
   ctx.ui.field(1, 36, 47, 248, 23, String("CALIBRATING  ") + String(face + 1) + " / 6",
-               0, Interface::accent, true);
+               0, theme, true);
   ctx.ui.field(2, 58, 73, 133, 48, String(faces[face]) + "  UP", 1, ILI9341_WHITE, true);
   ctx.ui.motionCalibrationGuide(targetRawNegative(), axes[axis], valid, aligned);
   ctx.ui.field(3, 36, 127, 248, 22,
@@ -397,7 +397,7 @@ void MotionPage::drawCalibration() {
                4, ILI9341_WHITE, true);
   const String readings = valid ? String("X ") + String(axes[0]) + "   Y " + String(axes[1]) +
                                   "   Z " + String(axes[2]) : String("Waiting for sensor");
-  ctx.ui.field(5, 36, 175, 248, 20, readings, 4, Interface::accent, true);
+  ctx.ui.field(5, 36, 175, 248, 20, readings, 4, theme, true);
   constexpr int shake[] = {0, -5, 5, -4, 4, -2, 2};
   const uint32_t frame = (millis() - warningStarted) / 40;
   const int offset = warningActive && !faceAccepted && frame < sizeof(shake) / sizeof(shake[0]) ? shake[frame] : 0;
