@@ -115,7 +115,7 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
     }
     finishCalibration();
     notice = "";
-    ctx.ui.motionCancellation();
+    ctx.ui.motionNotice("Calibration cancelled");
   } else if (key == Key::Action && !calibrating) {
     if (graphic != Graphic::None) {
       lastInstrument = graphic;
@@ -245,7 +245,8 @@ void MotionPage::collect() {
   }
   calibration = pending;
   showCorrected = calibrated = true;
-  notice = "Calibration saved";
+  notice = "";
+  ctx.ui.motionNotice("Calibration saved");
 }
 
 void MotionPage::draw() {
@@ -359,7 +360,7 @@ void MotionPage::drawCalibration() {
   ctx.ui.field(1, 36, 47, 248, 23, String("CALIBRATING  ") + String(face + 1) + " / 6",
                0, Interface::accent, true);
   ctx.ui.field(2, 58, 73, 133, 48, String(faces[face]) + "  UP", 1, ILI9341_WHITE, true);
-  ctx.ui.motionCalibrationIcon(face);
+  ctx.ui.motionCalibrationGuide(face % 2, axes[axis], valid, aligned);
   ctx.ui.field(3, 36, 127, 248, 22,
                axis == 2 ? (face % 2 ? "Lay module face down" : "Lay module face up") :
                            "Stand module on its edge",

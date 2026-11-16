@@ -50,16 +50,17 @@ class Interface {
   void motionAttitude(int roll, int pitch);
   void motionLevel(int roll, int pitch);
   void motionTube(bool horizontal, int angle);
-  void motionCalibrationIcon(uint8_t face);
+  void motionCalibrationGuide(bool negative, int reading, bool valid, bool aligned);
   void motionMode(const char* mode);
-  void motionCancellation();
+  void motionNotice(const char* message);
 
  private:
   void renderMotionMode(int step);
-  void renderMotionCancellation(int offset);
-  FrameTimeline motionCancellationAnimation;
-  uint32_t motionCancellationStarted = 0;
-  bool motionCancellationWaiting = false;
+  void renderMotionNotice(int offset);
+  FrameTimeline motionNoticeAnimation;
+  uint32_t motionNoticeStarted = 0;
+  const char* motionNoticeText = nullptr;
+  bool motionNoticeWaiting = false;
   FrameTimeline motionModeAnimation;
   const char* motionModeShown = nullptr;
   const char* motionModeTarget = nullptr;

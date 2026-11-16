@@ -271,8 +271,8 @@ void Interface::device(const Platform::Device& data) {
 }
 
 void Interface::clearMotionBody() {
-  motionCancellationWaiting = false;
-  motionCancellationAnimation.stop();
+  motionNoticeWaiting = false;
+  motionNoticeAnimation.stop();
   screen.fillRect(34, 43, 252, 173, background);
   for (uint8_t slot = 1; slot < 14; ++slot) cache[slot] = "";
 }
@@ -370,27 +370,24 @@ void Interface::renderMotionMode(int step) {
   screen.print(motionModeShown);
 }
 
-void Interface::motionCalibrationIcon(uint8_t face) {
-  const String key(face);
+void Interface::motionCalibrationGuide(bool negative, int reading, bool valid, bool aligned) {
+  constexpr int x = 196, y = 81, width = 80, height = 32;
+  const int position = valid ? 5 + (constrain(reading, -20000, 20000) + 20000) * 69 / 40000 : -1;
+  const String key = String(negative) + "/" + String(position) + "/" + String(aligned);
   if (cache[13] == key) return;
+  GFXcanvas16 guide(width, height);
+  if (!guide.getBuffer()) return;
   cache[13] = key;
-  constexpr int x = 219, top = 76;
-  screen.fillRect(x - 24, top, 48, 44, background);
-  const bool negative = face % 2;
-  const int axis = face / 2;
-  const int width = axis == 0 ? 15 : 36;
-  const int height = axis == 1 ? 13 : 23;
-  const int y = top + 15;
-  screen.fillRoundRect(x - width / 2, y, width, height, 3, 0x2385);
-  screen.drawRoundRect(x - width / 2, y, width, height, 3, highlight);
-  if (axis != 2 || !negative) {
-    const int pinsX = negative ? x + width / 2 - 4 : x - width / 2 + 3;
-    screen.drawFastVLine(pinsX, y + 4, height - 8, ILI9341_WHITE);
-    screen.fillRect(x - 3, y + height / 2 - 3, 6, 6, ILI9341_WHITE);
-  }
-  screen.drawFastVLine(x, top + 1, 12, highlight);
-  screen.drawLine(x - 4, top + 5, x, top + 1, highlight);
-  screen.drawLine(x + 4, top + 5, x, top + 1, highlight);
+  guide.fillScreen(background);
+  guide.fillRoundRect(3, 9, 74, 12, 6, 0x3246);
+  // 目标区对应校准判定的 ±12000 门槛，圆点显示当前目标轴读数。
+  guide.fillRoundRect(negative ? 3 : 60, 9, 17, 12, 6, 0x2385);
+  guide.drawFastVLine(40, 8, 14, highlight);
+  if (valid) guide.fillCircle(position, 15, 4, aligned ? 0x57A8 : ILI9341_WHITE);
+  guide.drawFastHLine(4, 27, 5, ILI9341_WHITE);
+  guide.drawFastHLine(70, 27, 5, ILI9341_WHITE);
+  guide.drawFastVLine(72, 25, 5, ILI9341_WHITE);
+  screen.drawRGBBitmap(x, y, guide.getBuffer(), width, height);
 }
 
 void Interface::motionTube(bool horizontal, int angle) {
@@ -418,14 +415,15 @@ void Interface::motionTube(bool horizontal, int angle) {
         String(horizontal ? "Z  " : "X  ") + String(angle) + " deg", 4, ILI9341_WHITE, true);
 }
 
-void Interface::motionCancellation() {
-  motionCancellationAnimation.stop();
-  motionCancellationStarted = millis();
-  motionCancellationWaiting = true;
-  renderMotionCancellation(0);
+void Interface::motionNotice(const char* message) {
+  motionNoticeAnimation.stop();
+  motionNoticeText = message;
+  motionNoticeStarted = millis();
+  motionNoticeWaiting = true;
+  renderMotionNotice(0);
 }
 
-void Interface::renderMotionCancellation(int offset) {
+void Interface::renderMotionNotice(int offset) {
   constexpr int width = 220, height = 15;
   // 裁切到状态胶囊上沿，提示滑下时不会覆盖胶囊。
   GFXcanvas16 strip(width, height);
@@ -434,7 +432,7 @@ void Interface::renderMotionCancellation(int offset) {
   strip.setTextWrap(false);
   strip.setFont(&NunitoHint);
   strip.setTextColor(ILI9341_WHITE);
-  constexpr const char* message = "Calibration cancelled";
+  const char* message = motionNoticeText;
   int16_t x, y;
   uint16_t w, h;
   strip.getTextBounds(message, 0, 0, &x, &y, &w, &h);

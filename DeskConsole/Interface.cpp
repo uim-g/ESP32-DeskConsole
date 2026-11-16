@@ -105,8 +105,8 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   fireworks.reset();
   tabAnimation.stop();
   motionModeAnimation.stop();
-  motionCancellationAnimation.stop();
-  motionCancellationWaiting = false;
+  motionNoticeAnimation.stop();
+  motionNoticeWaiting = false;
   motionModeShown = motionModeTarget = nullptr;
   launcherAnimation.stop();
   settingsAnimation.stop();
@@ -196,13 +196,13 @@ void Interface::replaceTab(uint8_t index, const char* label) {
 void Interface::advanceAnimations(uint32_t now) {
   int step;
   if ((step = motionModeAnimation.frame(now)) >= 0) renderMotionMode(step);
-  if (motionCancellationWaiting && now - motionCancellationStarted >= 1400) {
-    motionCancellationWaiting = false;
-    motionCancellationAnimation.start(now, 220, 12);
+  if (motionNoticeWaiting && now - motionNoticeStarted >= 1400) {
+    motionNoticeWaiting = false;
+    motionNoticeAnimation.start(now, 220, 12);
   }
-  if ((step = motionCancellationAnimation.frame(now)) >= 0) {
-    const float progress = motionCancellationAnimation.progress(step);
-    renderMotionCancellation(lroundf(16 * progress * progress));
+  if ((step = motionNoticeAnimation.frame(now)) >= 0) {
+    const float progress = motionNoticeAnimation.progress(step);
+    renderMotionNotice(lroundf(16 * progress * progress));
   }
   if ((step = tabAnimation.frame(now)) >= 0) {
     constexpr int slideOut[] = {0, 1, 3, 7, 12, 18, 21};
