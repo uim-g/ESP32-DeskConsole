@@ -6,7 +6,7 @@ class MotionPage : public Page {
  public:
   using Page::Page;
   PageStyle style() const override {
-    return {"Motion", 0x18E3, 0xB6B1, {"BACK", "CAL", "VIEW", "SAMPLE"}};
+    return {"Motion", 0x18E3, 0xB6B1, {"BACK", "CAL", "VIEW"}};
   }
   void enter() override;
   void leave() override;
@@ -29,7 +29,8 @@ class MotionPage : public Page {
   Preferences storage;
   Calibration calibration{};
   bool loaded = false, calibrated = false, showCorrected = false;
-  bool attitude = false;
+  enum class Graphic { None, Attitude, Level };
+  Graphic graphic = Graphic::None;
   int lastRoll = 999, lastPitch = 999;
   bool calibrating = false, sampling = false, valid = false, busReady = false;
   uint8_t address = 0, face = 0, samples = 0;

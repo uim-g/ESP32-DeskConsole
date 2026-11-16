@@ -105,23 +105,29 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
       return;
     }
     leave();
+    ctx.ui.replaceTab(3, nullptr);
     notice = "Calibration cancelled";
   } else if (key == Key::Action && valid && !calibrating) {
-    if (attitude) ctx.ui.clearMotionBody();
-    attitude = false;
+    if (graphic != Graphic::None) ctx.ui.clearMotionBody();
+    graphic = Graphic::None;
     calibrating = true;
+    ctx.ui.replaceTab(3, "SAMPLE");
     face = 0;
     pending = {};
     notice = "";
   } else if (key == Key::Up && !calibrating) {
-    if (attitude) {
-      attitude = false;
+    if (graphic == Graphic::Level) {
+      graphic = Graphic::None;
       showCorrected = false;
+      ctx.ui.clearMotionBody();
+    } else if (graphic == Graphic::Attitude) {
+      graphic = Graphic::Level;
+      lastRoll = lastPitch = 999;
       ctx.ui.clearMotionBody();
     } else if (calibrated && !showCorrected) {
       showCorrected = true;
     } else {
-      attitude = true;
+      graphic = Graphic::Attitude;
       lastRoll = lastPitch = 999;
       ctx.ui.clearMotionBody();
     }
@@ -140,7 +146,7 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
 void MotionPage::tick(uint32_t now) {
   if (!due(now, nextRead)) return;
   valid = readSample(axes);
-  nextRead = now + (attitude ? 100 : 200);
+  nextRead = now + (graphic == Graphic::None ? 200 : 100);
   if (sampling) {
     if (valid) collect();
     else {
@@ -197,6 +203,7 @@ void MotionPage::collect() {
   if (++face < 6) return;
 
   calibrating = false;
+  ctx.ui.replaceTab(3, nullptr);
   notice = "Calibration out of range";
   if (!usable(pending)) return;
   bool saved = false;
@@ -217,11 +224,12 @@ void MotionPage::draw() {
   const char* state = valid ? (address == 0x68 ? "Connected  /  0x68" : "Connected  /  0x69") :
                       address ? "Initializing..." : "Sensor not detected";
   ctx.ui.field(0, 40, 43, 240, 24, String(state), 0, Interface::accent, true);
-  if (attitude) {
+  if (graphic != Graphic::None) {
+    const bool level = graphic == Graphic::Level;
     if (!valid) {
       if (lastRoll != 999) ctx.ui.clearMotionBody();
       lastRoll = lastPitch = 999;
-      ctx.ui.motionHint("ATTITUDE  |  Waiting for sensor");
+      ctx.ui.motionHint(level ? "LEVEL  |  Waiting for sensor" : "ATTITUDE  |  Waiting for sensor");
       return;
     }
     // 先在模块坐标中校准，再按实物安装方向映射到屏幕坐标。
@@ -239,11 +247,13 @@ void MotionPage::draw() {
     const int roll = lroundf(atan2f(screenY, screenZ) * degrees);
     const int pitch = lroundf(atan2f(-screenX, hypotf(screenY, screenZ)) * degrees);
     if (roll != lastRoll || pitch != lastPitch) {
-      ctx.ui.motionAttitude(roll, pitch);
+      if (level) ctx.ui.motionLevel(roll, pitch);
+      else ctx.ui.motionAttitude(roll, pitch);
       lastRoll = roll;
       lastPitch = pitch;
     }
-    ctx.ui.motionHint(calibrated ? "ATTITUDE  |  Roll and pitch" : "ATTITUDE  |  Uncalibrated");
+    if (level) ctx.ui.motionHint(calibrated ? "LEVEL  |  Center the bubble" : "LEVEL  |  Uncalibrated");
+    else ctx.ui.motionHint(calibrated ? "ATTITUDE  |  Roll and pitch" : "ATTITUDE  |  Uncalibrated");
     return;
   }
 

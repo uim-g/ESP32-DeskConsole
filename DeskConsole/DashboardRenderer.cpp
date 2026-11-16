@@ -310,3 +310,31 @@ void Interface::motionAttitude(int roll, int pitch) {
   field(8, 49, 188, 100, 24, String("Roll ") + String(roll) + " deg", 4, ILI9341_WHITE, true);
   field(9, 171, 188, 100, 24, String("Pitch ") + String(pitch) + " deg", 4, ILI9341_WHITE, true);
 }
+
+void Interface::motionLevel(int roll, int pitch) {
+  constexpr int radius = 55, size = radius * 2 + 1;
+  constexpr float radians = 0.0174532925f;
+  const bool flat = abs(roll) <= 1 && abs(pitch) <= 1;
+  const uint16_t color = flat ? 0x57A8 : 0xE73C;
+  GFXcanvas16 dial(size, size);
+  if (!dial.getBuffer()) return;
+  dial.fillScreen(background);
+  dial.fillCircle(radius, radius, radius, flat ? 0x2385 : 0x2126);
+  dial.drawCircle(radius, radius, radius, color);
+  dial.drawCircle(radius, radius, 12, color);
+  dial.drawFastHLine(radius - 17, radius, 35, color);
+  dial.drawFastVLine(radius, radius - 17, 35, color);
+
+  // 倾角越大，气泡越靠外；将气泡限制在圆盘内。
+  const float x = sinf(roll * radians) * cosf(pitch * radians);
+  const float y = -sinf(pitch * radians);
+  constexpr float travel = radius - 12;
+  const float scale = travel / max(0.5f, hypotf(x, y));
+  const int bubbleX = radius + lroundf(x * scale);
+  const int bubbleY = radius + lroundf(y * scale);
+  dial.fillCircle(bubbleX, bubbleY, 9, color);
+  dial.drawCircle(bubbleX, bubbleY, 9, ILI9341_WHITE);
+  screen.drawRGBBitmap(160 - radius, 73, dial.getBuffer(), size, size);
+  field(8, 49, 188, 100, 24, String("Roll ") + String(roll) + " deg", 4, ILI9341_WHITE, true);
+  field(9, 171, 188, 100, 24, String("Pitch ") + String(pitch) + " deg", 4, ILI9341_WHITE, true);
+}
