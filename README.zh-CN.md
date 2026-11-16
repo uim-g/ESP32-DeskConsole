@@ -87,9 +87,9 @@ F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气请
 
 ## 网页模拟器
 
-[打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v3.0.0 的全部十二个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
+[打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v3.3.1 的全部 20 个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
 
-[下载 v3.3.1 网页版 ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.3.1/DeskConsole-v3.3.1-Web.zip) · [在线试玩 v3.0.0](https://uim-g.github.io/ESP32-DeskConsole/v3.0.0/)
+[下载 v3.3.1 网页版 ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.3.1/DeskConsole-v3.3.1-Web.zip) · [在线试玩 v3.3.1](https://uim-g.github.io/ESP32-DeskConsole/v3.3.1/)
 
 [![DeskConsole 七个 v1.x 网页版本的实测截图总览](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 

@@ -87,9 +87,9 @@ The black wire immediately below the red VCC lead connects TFT GND to the same b
 
 ## Browser simulators
 
-[Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all twelve versions from v1.0.0 through v3.0.0. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
+[Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all 20 versions from v1.0.0 through v3.3.1. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
 
-[Download the v3.3.1 browser ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.3.1/DeskConsole-v3.3.1-Web.zip) · [Play v3.0.0 online](https://uim-g.github.io/ESP32-DeskConsole/v3.0.0/)
+[Download the v3.3.1 browser ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.3.1/DeskConsole-v3.3.1-Web.zip) · [Play v3.3.1 online](https://uim-g.github.io/ESP32-DeskConsole/v3.3.1/)
 
 [![Live browser screenshots of the seven DeskConsole v1.x versions](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 
