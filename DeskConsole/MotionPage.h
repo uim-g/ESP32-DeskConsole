@@ -24,6 +24,8 @@ class MotionPage : public Page {
   static bool usable(const Calibration& data);
   void collect();
   void drawCalibration();
+  void updateCube(uint32_t now);
+  void centerCube();
   void showCalibrationFeedback(const char* message, bool accepted = false);
   void finishCalibration();
   bool faceAligned(const float (&accel)[3]) const;
@@ -35,7 +37,7 @@ class MotionPage : public Page {
   Preferences storage;
   Calibration calibration{};
   bool loaded = false, calibrated = false, showCorrected = false;
-  enum class Graphic { None, Attitude, Level };
+  enum class Graphic { None, Attitude, Level, Cube };
   Graphic graphic = Graphic::Level;
   Graphic lastInstrument = Graphic::Level;
   enum class CalibrationTabs { Idle, ShowSample, RestoreViews };
@@ -46,6 +48,10 @@ class MotionPage : public Page {
   bool calibrating = false, sampling = false, valid = false, busReady = false;
   uint8_t address = 0, face = 0, samples = 0;
   uint32_t nextRead = 0;
+  uint32_t cubeSampleAt = 0;
+  bool cubeReady = false;
+  float cubeRotation[4] = {1, 0, 0, 0};
+  float cubeGravity[3]{};
   uint32_t warningStarted = 0;
   uint32_t warningFrameAt = 0;
   bool warningActive = false;

@@ -48,6 +48,7 @@ class Interface {
   void device(const Platform::Device& data);
   void clearMotionBody();
   void motionAttitude(int roll, int pitch);
+  void motionCube(const float (&rotation)[4]);
   void motionLevel(int roll, int pitch);
   void motionTube(bool horizontal, int angle);
   void motionCalibrationGuide(bool negative, int reading, bool valid, bool aligned);

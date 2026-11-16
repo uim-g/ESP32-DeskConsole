@@ -96,6 +96,7 @@ void MotionPage::finishCalibration() {
 }
 
 void MotionPage::wake() {
+  centerCube();
   sampling = valid = false;
   address = 0;
   nextRead = millis();
@@ -132,13 +133,21 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
     notice = "";
   } else if (key == Key::Up && !calibrating) {
     const bool wasData = graphic == Graphic::None;
+    const bool wasCube = graphic == Graphic::Cube;
     graphic = wasData ? lastInstrument :
-        graphic == Graphic::Attitude ? Graphic::Level : Graphic::Attitude;
-    if (wasData) ctx.ui.replaceTab(3, nullptr);
+        wasCube ? Graphic::Level : graphic == Graphic::Level ? Graphic::Attitude : Graphic::Cube;
+    if (graphic == Graphic::Cube) {
+      centerCube();
+      ctx.ui.replaceTab(3, "CENTER");
+    } else if (wasData || wasCube) {
+      ctx.ui.replaceTab(3, nullptr);
+    }
     uprightLevel = false;
     lastRoll = lastPitch = 999;
     ctx.ui.clearMotionBody();
     notice = "";
+  } else if (key == Key::Down && graphic == Graphic::Cube) {
+    centerCube();
   } else if (key == Key::Down && graphic == Graphic::None && !calibrating) {
     if (!valid) return;
     calibrating = true;
@@ -189,7 +198,14 @@ void MotionPage::tick(uint32_t now) {
   }
   if (!due(now, nextRead)) return;
   valid = readSample(axes);
-  nextRead = now + (graphic == Graphic::None ? 200 : 100);
+  nextRead = now + (graphic == Graphic::None ? 200 : graphic == Graphic::Cube ? 25 : 100);
+  if (graphic == Graphic::Cube) {
+    if (valid) updateCube(now);
+    else if (cubeReady) {
+      centerCube();
+      ctx.ui.clearMotionBody();
+    }
+  }
   if (sampling) {
     if (valid) collect();
     else {
@@ -274,6 +290,11 @@ void MotionPage::draw() {
   ctx.ui.motionConnection(state);
   if (calibrating) {
     drawCalibration();
+    return;
+  }
+  if (graphic == Graphic::Cube) {
+    if (valid) ctx.ui.motionCube(cubeRotation);
+    ctx.ui.motionMode("CUBE");
     return;
   }
   if (graphic != Graphic::None) {
@@ -408,4 +429,61 @@ void MotionPage::drawCalibration() {
       (warningActive ? faceAccepted : aligned) ? Tone::Success : Tone::Alert;
   ctx.ui.motionCalibrationPrompt(prompt, tone, offset);
   ctx.ui.motionMode("CALIBRATING");
+}
+
+void MotionPage::centerCube() {
+  cubeReady = false;
+  cubeRotation[0] = 1;
+  cubeRotation[1] = cubeRotation[2] = cubeRotation[3] = 0;
+}
+
+void MotionPage::updateCube(uint32_t now) {
+  constexpr float radiansPerCount = 0.0174532925f / 131.0f;
+  float gravity[3], rate[3];
+  for (int axis = 0; axis < 3; ++axis) {
+    // 与直立姿态仪共用安装方向：模块 X/Y 取反，Z 保持。
+    const float direction = axis < 2 ? -1.0f : 1.0f;
+    gravity[axis] = direction * (calibrated ?
+        (axes[axis] - calibration.offset[axis]) / calibration.scale[axis] : axes[axis] / 16384.0f);
+    rate[axis] = direction * (axes[axis + 3] - (calibrated ? calibration.gyro[axis] : 0)) * radiansPerCount;
+  }
+  const float magnitude = sqrtf(gravity[0] * gravity[0] + gravity[1] * gravity[1] + gravity[2] * gravity[2]);
+  const bool gravityReliable = magnitude > 0.85f && magnitude < 1.15f;
+  if (gravityReliable) {
+    for (float& component : gravity) component /= magnitude;
+  }
+  if (!cubeReady) {
+    for (int axis = 0; axis < 3; ++axis) cubeGravity[axis] = gravityReliable ? gravity[axis] : 0;
+    cubeReady = true;
+    cubeSampleAt = now;
+    return;
+  }
+
+  const uint32_t elapsed = now - cubeSampleAt;
+  cubeSampleAt = now;
+  if (!elapsed || elapsed > 120) return;
+  const float w = cubeRotation[0], x = cubeRotation[1], y = cubeRotation[2], z = cubeRotation[3];
+  if (gravityReliable) {
+    if (cubeGravity[0] || cubeGravity[1] || cubeGravity[2]) {
+      // 用逆四元数将参考重力转回板子坐标，再用叉积修正可观测的两个方向。
+      const float cx = z * cubeGravity[1] - y * cubeGravity[2];
+      const float cy = x * cubeGravity[2] - z * cubeGravity[0];
+      const float cz = y * cubeGravity[0] - x * cubeGravity[1];
+      const float gx = cubeGravity[0] + 2 * (w * cx + z * cy - y * cz);
+      const float gy = cubeGravity[1] + 2 * (w * cy + x * cz - z * cx);
+      const float gz = cubeGravity[2] + 2 * (w * cz + y * cx - x * cy);
+      rate[0] += 0.8f * (gravity[1] * gz - gravity[2] * gy);
+      rate[1] += 0.8f * (gravity[2] * gx - gravity[0] * gz);
+      rate[2] += 0.8f * (gravity[0] * gy - gravity[1] * gx);
+    }
+  }
+  const float dt = elapsed * 0.0005f;
+  const float rx = rate[0] * dt, ry = rate[1] * dt, rz = rate[2] * dt;
+  cubeRotation[0] = w - x * rx - y * ry - z * rz;
+  cubeRotation[1] = x + w * rx + y * rz - z * ry;
+  cubeRotation[2] = y + w * ry + z * rx - x * rz;
+  cubeRotation[3] = z + w * rz + x * ry - y * rx;
+  const float norm = sqrtf(cubeRotation[0] * cubeRotation[0] + cubeRotation[1] * cubeRotation[1] +
+                           cubeRotation[2] * cubeRotation[2] + cubeRotation[3] * cubeRotation[3]);
+  for (float& component : cubeRotation) component /= norm;
 }
