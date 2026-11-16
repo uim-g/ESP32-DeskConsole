@@ -224,16 +224,20 @@ void MotionPage::draw() {
       ctx.ui.motionHint("ATTITUDE  |  Waiting for sensor");
       return;
     }
-    // 校准模块坐标后，绕安装面的法线旋转 180 度得到机身坐标。
+    // 先在模块坐标中校准，再按实物安装方向映射到屏幕坐标。
     float gravity[3];
     for (int i = 0; i < 3; ++i) {
       const float value = calibrated ? (axes[i] - calibration.offset[i]) / calibration.scale[i]
                                      : axes[i] / 16384.0f;
       gravity[i] = i < 2 ? -value : value;
     }
+    // 模块 X 对应屏幕横滚，模块 Y 对应屏幕俯仰。交换轴时反转一轴以保持右手系。
+    const float screenX = gravity[1];
+    const float screenY = -gravity[0];
+    const float screenZ = gravity[2];
     constexpr float degrees = 57.2957795f;
-    const int roll = lroundf(atan2f(gravity[1], gravity[2]) * degrees);
-    const int pitch = lroundf(atan2f(-gravity[0], hypotf(gravity[1], gravity[2])) * degrees);
+    const int roll = lroundf(atan2f(screenY, screenZ) * degrees);
+    const int pitch = lroundf(atan2f(-screenX, hypotf(screenY, screenZ)) * degrees);
     if (roll != lastRoll || pitch != lastPitch) {
       ctx.ui.motionAttitude(roll, pitch);
       lastRoll = roll;
