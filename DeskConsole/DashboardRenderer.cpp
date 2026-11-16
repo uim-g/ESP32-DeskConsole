@@ -477,12 +477,14 @@ void Interface::motionCalibrationPrompt(const char* message, CalibrationTone ton
 
 void Interface::motionCube(const float (&rotation)[4]) {
   constexpr int size = 146;
-  constexpr uint8_t edges[][2] = {
-    {0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3},
-    {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}
+  // 顶点沿各面的外法线逆时针排列。
+  constexpr uint8_t faces[][4] = {
+    {0, 4, 6, 2}, {1, 3, 7, 5}, {0, 1, 5, 4},
+    {2, 6, 7, 3}, {0, 2, 3, 1}, {4, 5, 7, 6}
   };
+  constexpr uint16_t faceColors[] = {0xA1E6, 0xD38A, 0x2469, 0x35AC, 0x232F, 0x449B};
   constexpr uint16_t axisColors[] = {0xFB2C, 0x67AB, 0x655F}; // X 红、Y 绿、Z 蓝。
-  // 线框按显示坐标反转 X/Y，保留 Z 的正方向。
+  // 立方体按显示坐标反转 X/Y，保留 Z 的正方向。
   const float w = rotation[0], x = -rotation[1], y = -rotation[2], z = rotation[3];
   int px[8], py[8];
   char key[17]{};
@@ -507,11 +509,24 @@ void Interface::motionCube(const float (&rotation)[4]) {
   if (!cube.getBuffer()) return;
   cache[13] = key;
   cube.fillScreen(background);
-  for (const auto& edge : edges) {
-    // 两个顶点编号中唯一不同的位标识这条边的轴向。
-    const uint8_t axisBit = edge[0] ^ edge[1];
-    const uint16_t color = axisColors[axisBit >> 1];
-    cube.drawLine(px[edge[0]], py[edge[0]], px[edge[1]], py[edge[1]], color);
+  bool visible[6]{};
+  for (int face = 0; face < 6; ++face) {
+    const auto& vertices = faces[face];
+    const int a = vertices[0], b = vertices[1], c = vertices[2], d = vertices[3];
+    // 屏幕 Y 朝下，所以顺序对应负的投影面积时面朝观众。
+    const int area = (px[b] - px[a]) * (py[d] - py[a]) - (py[b] - py[a]) * (px[d] - px[a]);
+    if (area >= 0) continue;
+    visible[face] = true;
+    cube.fillTriangle(px[a], py[a], px[b], py[b], px[c], py[c], faceColors[face]);
+    cube.fillTriangle(px[a], py[a], px[c], py[c], px[d], py[d], faceColors[face]);
+  }
+  for (int face = 0; face < 6; ++face) {
+    if (!visible[face]) continue;
+    const auto& vertices = faces[face];
+    for (int i = 0; i < 4; ++i) {
+      const int a = vertices[i], b = vertices[(i + 1) % 4];
+      cube.drawLine(px[a], py[a], px[b], py[b], axisColors[(a ^ b) >> 1]);
+    }
   }
   screen.drawRGBBitmap(160 - size / 2, 63, cube.getBuffer(), size, size);
 }
