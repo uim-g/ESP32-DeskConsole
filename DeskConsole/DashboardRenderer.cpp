@@ -525,7 +525,13 @@ void Interface::motionCube(const float (&rotation)[4]) {
     const auto& vertices = faces[face];
     for (int i = 0; i < 4; ++i) {
       const int a = vertices[i], b = vertices[(i + 1) % 4];
-      cube.drawLine(px[a], py[a], px[b], py[b], axisColors[(a ^ b) >> 1]);
+      const uint16_t color = axisColors[(a ^ b) >> 1];
+      const bool mostlyHorizontal = abs(px[b] - px[a]) >= abs(py[b] - py[a]);
+      for (int offset = -1; offset <= 1; ++offset) {
+        const int dx = mostlyHorizontal ? 0 : offset;
+        const int dy = mostlyHorizontal ? offset : 0;
+        cube.drawLine(px[a] + dx, py[a] + dy, px[b] + dx, py[b] + dy, color);
+      }
     }
   }
   screen.drawRGBBitmap(160 - size / 2, 63, cube.getBuffer(), size, size);
