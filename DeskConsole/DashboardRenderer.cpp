@@ -275,6 +275,29 @@ void Interface::clearMotionBody() {
   motionNoticeAnimation.stop();
   screen.fillRect(34, 43, 252, 173, background);
   for (uint8_t slot = 1; slot < 14; ++slot) cache[slot] = "";
+  for (auto& pixels : motionMeterPixels) pixels = 127;
+}
+
+void Interface::motionMeter(uint8_t axis, int8_t pixels) {
+  const int previous = motionMeterPixels[axis];
+  if (previous == pixels) return;
+  const int center = axis < 3 ? 88 : 232;
+  const int y = 114 + (axis % 3) * 28;
+  const uint16_t fill = axis < 3 ? 0x66DD : 0xBCFF;
+  const bool first = previous == 127;
+  constexpr uint16_t track = 0x3186;
+  if (first) {
+    screen.fillRect(center - motionMeterHalfWidth, y, motionMeterHalfWidth * 2 + 1, 5, track);
+    screen.drawFastVLine(center, y - 2, 9, 0xDE79);
+  }
+  for (int side : {-1, 1}) {
+    const int oldCount = first ? 0 : max(0, side * previous);
+    const int newCount = max(0, side * pixels);
+    if (oldCount == newCount) continue;
+    const int x = side < 0 ? center - max(oldCount, newCount) : center + 1 + min(oldCount, newCount);
+    screen.fillRect(x, y, abs(newCount - oldCount), 5, newCount > oldCount ? fill : track);
+  }
+  motionMeterPixels[axis] = pixels;
 }
 
 void Interface::motionAttitude(int roll, int pitch) {

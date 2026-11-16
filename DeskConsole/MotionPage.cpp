@@ -200,8 +200,10 @@ void MotionPage::tick(uint32_t now) {
     drawCalibration();
   }
   if (!due(now, nextRead)) return;
+  const bool wasValid = valid;
+  const bool wasCalibrating = calibrating;
   valid = readSample(axes);
-  nextRead = now + (graphic == Graphic::None ? 200 : cubeView() ? 25 : 100);
+  nextRead = now + (calibrating ? 200 : graphic == Graphic::None ? 40 : cubeView() ? 25 : 100);
   if (cubeView()) {
     if (valid) updateCube(now);
     else if (cubeReady) {
@@ -220,7 +222,7 @@ void MotionPage::tick(uint32_t now) {
       return;
     }
   }
-  draw();
+  drawFrame(wasValid != valid || wasCalibrating != calibrating);
 }
 
 void MotionPage::collect() {
@@ -288,6 +290,10 @@ void MotionPage::collect() {
 }
 
 void MotionPage::draw() {
+  drawFrame(true);
+}
+
+void MotionPage::drawFrame(bool forceReadings) {
   const char* state = valid ? (address == 0x68 ? "Connected 0x68" : "Connected 0x69") :
                       address ? "Initializing" : "No sensor";
   ctx.ui.motionConnection(state);
@@ -368,22 +374,36 @@ void MotionPage::draw() {
     ctx.ui.field(8 + axis, 144, 93 + axis * 28, 32, 24, labels[axis],
                  0, theme, true);
   }
+  const uint32_t now = millis();
+  const bool refreshText = forceReadings || due(now, nextReadingText);
+  if (refreshText) nextReadingText = now + 320;
   for (uint8_t i = 0; i < 6; ++i) {
     const int x = i < 3 ? 38 : 182;
     const int y = 93 + (i % 3) * 28;
-    String reading("--");
-    if (valid && (!showCorrected || calibrated)) {
-      if (!showCorrected) {
-        reading = String(axes[i]);
-      } else {
+    int8_t pixels = 0;
+    float physical = 0;
+    const bool hasReading = valid && (!showCorrected || calibrated);
+    const bool accel = i < 3;
+    if (hasReading) {
+      physical = showCorrected ?
+          (accel ? (axes[i] - calibration.offset[i]) / calibration.scale[i] :
+                   (axes[i] - calibration.gyro[i - 3]) / 131.0f) :
+          axes[i] / (accel ? 16384.0f : 131.0f);
+      const float fraction = physical / (accel ? 1.5f : 50.0f);
+      pixels = static_cast<int8_t>(lroundf(Interface::motionMeterHalfWidth * constrain(fraction, -1.0f, 1.0f)));
+    }
+    if (refreshText) {
+      String reading("--");
+      if (hasReading && !showCorrected) reading = String(axes[i]);
+      else if (hasReading) {
         char value[32];
-        if (i < 3) snprintf(value, sizeof(value), "%.3f", (axes[i] - calibration.offset[i]) / calibration.scale[i]);
-        else snprintf(value, sizeof(value), "%.2f", (axes[i] - calibration.gyro[i - 3]) / 131.0f);
+        snprintf(value, sizeof(value), accel ? "%.3f" : "%.2f", physical);
         reading = value;
       }
+      ctx.ui.field(i + 1, x, y, 100, 19, reading, 0, ILI9341_WHITE, true);
     }
-    // 每个读数独立缓存，标题和轴名保持固定。
-    ctx.ui.field(i + 1, x, y, 100, 24, reading, 0, ILI9341_WHITE, true);
+    // 色条跟随采样更新，数字按独立节奏更新。
+    ctx.ui.motionMeter(i, pixels);
   }
   ctx.ui.field(7, 39, 181, 242, 20,
                *notice ? notice : showCorrected && !calibrated ? "Press CAL to set up" : " ",

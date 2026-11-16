@@ -4,6 +4,13 @@ Screenshots below were captured from the corresponding [live browser simulator](
 
 下方截图均取自对应版本的[在线网页模拟器](https://uim-g.github.io/ESP32-DeskConsole/)。
 
+## v3.3.0
+
+- Added six continuous, zero-centered bars to Motion Data in Raw and Calibrated modes. Motion 的原始和校准读数页均新增六条以零为中心的连续色条。
+- Displays acceleration at ±1.5 g and angular velocity at ±50°/s, with equivalent count ranges in Raw. 加速度色条显示 ±1.5 g，陀螺仪色条显示 ±50°/s，Raw 使用等效原始计数。
+- Updates the bars about 25 times per second and numbers about 3 times per second, redrawing changed regions only. 色条约每秒更新 25 次，数字约每秒更新 3 次，仅重绘变化区域。
+
+
 ## v3.2.1
 
 - Settings animates EDIT into SAVE and hides the corresponding arrow at the limits of Sleep Timer and RGB. 设置页支持 EDIT 与 SAVE 动画切换，休眠和 RGB 到达边界时自动收起对应箭头。
