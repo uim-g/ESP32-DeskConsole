@@ -498,9 +498,9 @@ void Interface::motionCube(const float (&rotation)[4]) {
     const float tx = vx + 2 * (w * cx + y * cz - z * cy);
     const float ty = vy + 2 * (w * cy + z * cx - x * cz);
     const float tz = vz + 2 * (w * cz + x * cy - y * cx);
-    // 轻微斜视能让归中后的立方体也看见纵深。
-    px[i] = size / 2 + lroundf(32 * (tx + 0.34f * tz));
-    py[i] = size / 2 - lroundf(32 * (ty + 0.23f * tz));
+    // 从右上方斜视，归中时露出前面、上面和右面。
+    px[i] = size / 2 + lroundf(32 * (tx - 0.34f * tz));
+    py[i] = size / 2 - lroundf(32 * (ty - 0.23f * tz));
     key[i * 2] = static_cast<char>(px[i] + 1);
     key[i * 2 + 1] = static_cast<char>(py[i] + 1);
   }
