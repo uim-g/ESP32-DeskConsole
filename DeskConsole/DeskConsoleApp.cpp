@@ -45,8 +45,12 @@ void DeskConsoleApp::begin() {
   Serial.begin(115200);
   Serial.printf("[BOOT] DeskConsole starting; reset reason=%d\n", Platform::resetReason());
   buttons.begin();
+#ifndef __EMSCRIPTEN__
+  pinMode(Config::bootButton, INPUT_PULLUP);
+  bootRaw = bootStable = digitalRead(Config::bootButton);
+#endif
   settings.begin();
-  led.configure(settings.current.rgbEnabled, settings.current.brightness);
+  led.configure(settings.current.rgbEnabled, settings.current.brightnessLevel());
   wakeConfigured = buttons.enableWakeup();
   if (wakeConfigured && settings.current.autoSleep) {
     Serial.printf("[POWER] Light sleep after %lu s idle\n", static_cast<unsigned long>(idleSleepMs() / 1000));
@@ -87,7 +91,7 @@ void DeskConsoleApp::reportConnectivity() {
 
 // 达到闲置时间且当前页面、无线扫描和按键均允许休眠时，关闭屏幕并轻睡。醒来恢复连接和页面。
 void DeskConsoleApp::sleepIfIdle(uint32_t now) {
-  if (!wakeConfigured || !settings.current.autoSleep || now - lastInput < idleSleepMs() ||
+  if (screenOff || !wakeConfigured || !settings.current.autoSleep || now - lastInput < idleSleepMs() ||
       buttons.anyPressed() || !page(active).canSleep() || bluetooth.busy() || wifi.busy()) return;
 
   Serial.println("[POWER] Idle timeout; entering light sleep");
@@ -96,7 +100,8 @@ void DeskConsoleApp::sleepIfIdle(uint32_t now) {
     lastInput = millis();
     return;
   }
-  ui.setDisplayOn(false);
+  ui.setDisplayOn(false, true);
+  screenOff = false;
   led.stop();
   const int result = buttons.anyPressed() ? ESP_OK : Platform::lightSleep();
   ui.setDisplayOn(true);
@@ -132,6 +137,24 @@ void DeskConsoleApp::dispatch(Key key, uint32_t pressedUs, uint32_t now) {
 }
 
 // 每圈推进无线状态、按钮、页面和动画。切页时网页输入适配层会等待，唤醒键要松开后才重新接受操作。
+void DeskConsoleApp::pollBoot(uint32_t now) {
+  const bool raw = digitalRead(Config::bootButton);
+  if (raw != bootRaw) {
+    bootRaw = raw;
+    bootChanged = now;
+  }
+  if (raw == bootStable || now - bootChanged < 30) return;
+  bootStable = raw;
+  // 反应计时或切页时忽略熄屏请求，避免中断当前操作。
+  if (raw != LOW || transition != Transition::None || !page(active).canSleep()) return;
+  lastInput = now;
+  screenOff = !screenOff;
+  screenOffAt = now;
+  repeatKey = Key::None;
+  led.stop();
+  ui.setDisplayOn(!screenOff);
+}
+
 void DeskConsoleApp::tick() {
   const uint32_t now = millis();
   if (discardWakePress) {
@@ -146,6 +169,18 @@ void DeskConsoleApp::tick() {
   }
 
   if (active != View::F1 || f1.canSleep()) wifi.tick(now);
+#ifndef __EMSCRIPTEN__
+  pollBoot(now);
+#endif
+  if (screenOff) {
+    Platform::setInputReady(false);
+    // 排空屏幕关闭期间的导航输入，避免开屏后执行旧按键。
+    uint32_t ignored = 0;
+    buttons.poll(ignored);
+    led.screenOff(settings.current.screenRgb, now - screenOffAt);
+    // 手动熄屏期间保持运行，直到再次按 BOOT。
+    return;
+  }
   Platform::setInputReady(transition == Transition::None);
   uint32_t pressedUs = 0;
   const auto key = buttons.poll(pressedUs);

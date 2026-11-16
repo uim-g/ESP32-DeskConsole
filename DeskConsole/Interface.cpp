@@ -86,7 +86,7 @@ void Interface::begin() {
   screen.setTextWrap(false);
 }
 
-void Interface::setDisplayOn(bool on) {
+void Interface::setDisplayOn(bool on, bool holdForSleep) {
   // TFT 的 LED 是高有效使能。轻睡期间锁住低电平，唤醒后先恢复画面再开背光。
 #ifndef __EMSCRIPTEN__
   const auto pin = static_cast<gpio_num_t>(Config::backlight);
@@ -96,7 +96,7 @@ void Interface::setDisplayOn(bool on) {
   screen.sendCommand(on ? ILI9341_DISPON : ILI9341_DISPOFF);
 #ifndef __EMSCRIPTEN__
   if (on) digitalWrite(Config::backlight, HIGH);
-  else gpio_hold_en(pin);
+  else if (holdForSleep) gpio_hold_en(pin);
 #endif
 }
 
@@ -127,6 +127,7 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   launcherThumbY = -1;
   for (auto& value : settingSwitches) value = -1;
   lastSettingRow = lastBrightness = lastSleepMinutes = -1;
+  lastScreenRgb = screenRgbOffset = -1;
   panelsReady = false;
   uptimeDigits[0] = '\0';
   for (auto& bar : deviceBars) bar = -1;
@@ -212,6 +213,7 @@ void Interface::advanceAnimations(uint32_t now) {
   if (now - nameFrameAt >= 45) {
     nameFrameAt = now;
     renderScrollingNames(now);
+    if (lastSettingRow >= 0 && !settingsAnimation.active()) renderScreenRgbName(now);
     if (wifiRowCount && !wifiListAnimation.active()) renderWifiList(1.0f, true);
   }
 }

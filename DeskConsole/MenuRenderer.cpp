@@ -150,6 +150,30 @@ void Interface::renderLauncher(float progress) {
 }
 
 // 比较上一次设置快照，根据选中行、开关和数值变化启动对应动画。
+namespace {
+constexpr const char* screenRgbNames[] = {"Off", "Intermittent Rainbow", "Continuous Rainbow"};
+constexpr int modeX = 192, modeY = 181, modeWidth = 71, modeHeight = 31;
+constexpr uint16_t settingsSelection = 0x2A69;
+}
+
+void Interface::renderScreenRgbName(uint32_t now) {
+  const String value = screenRgbNames[static_cast<int>(settingsValues.screenRgb)];
+  screen.setFont(&NunitoSmall);
+  int16_t x, y;
+  uint16_t width, height;
+  screen.getTextBounds(value.c_str(), 0, 0, &x, &y, &width, &height);
+  const int offset = nameOffset(width, modeWidth, now - screenRgbChangedAt);
+  if (offset == screenRgbOffset) return;
+  GFXcanvas16 strip(modeWidth, modeHeight);
+  if (!strip.getBuffer()) return;
+  strip.setTextWrap(false);
+  strip.fillScreen(settingsTarget == 4 ? settingsSelection : background);
+  paintName(strip, value, 0, 0, modeWidth, modeHeight, offset,
+            !settingsValues.rgbEnabled ? muted : settingsEditing ? highlight : ILI9341_WHITE);
+  screen.drawRGBBitmap(modeX, modeY, strip.getBuffer(), modeWidth, modeHeight);
+  screenRgbOffset = offset;
+}
+
 void Interface::settings(const Settings& values, uint8_t selected, bool editing, bool saveFailed) {
   if (settingsAnimation.active()) {
     settingsAnimation.stop();
@@ -166,7 +190,8 @@ void Interface::settings(const Settings& values, uint8_t selected, bool editing,
        settingSwitches[1] != (values.rgbEnabled ? 32 : 12));
   const bool rolled = editing &&
       ((selected == 1 && lastSleepMinutes >= 1 && lastSleepMinutes != values.sleepMinutes()) ||
-       (selected == 3 && lastBrightness >= 1 && lastBrightness != values.brightness));
+       (selected == 3 && lastBrightness >= 0 && lastBrightness != values.brightnessPercent()) ||
+       (selected == 4 && lastScreenRgb >= 0 && lastScreenRgb != static_cast<int>(values.screenRgb)));
   if (moved || toggled || rolled) {
     settingsAnimation.start(millis(), moved ? 120 : 96, rolled ? 8 : 6);
   } else renderSettings(1.0f);
@@ -178,10 +203,10 @@ void Interface::renderSettings(float progress) {
   const int selected = settingsTarget;
   const bool editing = settingsEditing, saveFailed = settingsFailed;
   const float eased = smoothStep(progress);
-  constexpr int x = 37, firstY = 44, pitch = 39, width = 246, height = 37;
+  constexpr int x = 37, firstY = 39, pitch = 35, width = 246, height = 33;
   constexpr uint16_t selection = 0x2A69;
-  const char* labels[] = {"Auto sleep", "Sleep after", "RGB status LED", "RGB brightness"};
-  const bool available[] = {true, values.autoSleep != 0, true, values.rgbEnabled != 0};
+  const char* labels[] = {"Auto sleep", "Sleep after", "RGB status LED", "RGB brightness", "Screen-off RGB"};
+  const bool available[] = {true, values.autoSleep != 0, true, values.rgbEnabled != 0, values.rgbEnabled != 0};
   GFXcanvas16 strip(width, pitch);
   strip.setTextWrap(false);
 
@@ -190,7 +215,7 @@ void Interface::renderSettings(float progress) {
     if (strip.getBuffer()) {
       strip.fillScreen(background);
       // 分隔线先画，滑动的高亮经过时会覆盖它。
-      strip.drawFastHLine(5, 37, 235, 0x2946);
+      strip.drawFastHLine(5, height, 235, 0x2946);
       strip.fillRoundRect(0, highlightY - y, width, height, 7, selection);
     }
     Adafruit_GFX& gfx = strip.getBuffer() ? static_cast<Adafruit_GFX&>(strip) : screen;
@@ -198,20 +223,25 @@ void Interface::renderSettings(float progress) {
     const int oy = strip.getBuffer() ? 0 : y;
     if (!strip.getBuffer()) {
       screen.fillRect(x, y, width, height, background);
-      screen.drawFastHLine(42, y + 37, 235, 0x2946);
+      screen.drawFastHLine(42, y + height, 235, 0x2946);
       if (row == selected) screen.fillRoundRect(x, y, width, height, 7, selection);
     }
     gfx.setFont(&NunitoSmall);
     gfx.setTextColor(available[row] ? ILI9341_WHITE : muted);
     gfx.setCursor(ox + 10, oy + 24);
     gfx.print(labels[row]);
-    if (row % 2 == 0) {
+    if (row == 0 || row == 2) {
       paintSwitch(gfx, ox + 192, oy + 6, 24, knob, 9);
     } else {
       gfx.setTextColor(!available[row] ? muted : editing && row == selected ? highlight : ILI9341_WHITE);
       gfx.setCursor(ox + 170, oy + 24);
       if (row == 1) gfx.printf("%u min", static_cast<unsigned>(values.sleepMinutes()));
-      else gfx.print(values.brightness);
+      else if (row == 3) gfx.printf("%u%%", static_cast<unsigned>(values.brightnessPercent()));
+      else if (strip.getBuffer()) {
+        paintName(gfx, screenRgbNames[static_cast<int>(values.screenRgb)], ox + 155, oy + 2,
+                  modeWidth, modeHeight, 0,
+                  !available[row] ? muted : editing ? highlight : ILI9341_WHITE);
+      }
       if (available[row]) {
         gfx.drawLine(ox + 228, oy + 13, ox + 233, oy + 18, highlight);
         gfx.drawLine(ox + 233, oy + 18, ox + 228, oy + 23, highlight);
@@ -223,30 +253,31 @@ void Interface::renderSettings(float progress) {
   const int knobs[] = {values.autoSleep ? 32 : 12, values.rgbEnabled ? 32 : 12};
   const int targetY = firstY + selected * pitch;
   if (strip.getBuffer() && lastSettingRow >= 0 && lastSettingRow != selected) {
-    const int direction = selected == 0 && lastSettingRow == 3 ? 1 :
-                          selected == 3 && lastSettingRow == 0 ? -1 : selected - lastSettingRow;
-    constexpr int cycle = 4 * pitch;
+    const int direction = selected == 0 && lastSettingRow == Settings::rowCount - 1 ? 1 :
+                          selected == Settings::rowCount - 1 && lastSettingRow == 0 ? -1 : selected - lastSettingRow;
+    constexpr int cycle = Settings::rowCount * pitch;
     const int pos = firstY + lastSettingRow * pitch + lroundf(direction * pitch * eased);
     for (int row : {lastSettingRow, selected}) {
       const int y = firstY + row * pitch;
       const int relative = (pos - y + cycle + cycle / 2) % cycle - cycle / 2;
-      paint(row, y + relative, knobs[row / 2]);
+      paint(row, y + relative, knobs[row == 2 ? 1 : 0]);
     }
     if (progress < 1.0f) return;
   }
 
   const bool rollingSleep = selected == 1;
-  const int previousValue = rollingSleep ? lastSleepMinutes : lastBrightness;
-  const int currentValue = rollingSleep ? values.sleepMinutes() : values.brightness;
-  const bool roll = editing && (rollingSleep || selected == 3) && previousValue >= 1 &&
+  const bool rollingMode = selected == 4;
+  const int previousValue = rollingMode ? lastScreenRgb : rollingSleep ? lastSleepMinutes : lastBrightness;
+  const int currentValue = rollingMode ? static_cast<int>(values.screenRgb) : rollingSleep ? values.sleepMinutes() : values.brightnessPercent();
+  const bool roll = editing && (rollingMode || rollingSleep || selected == 3) && previousValue >= 0 &&
                     previousValue != currentValue && strip.getBuffer();
-  for (int row = 0; row < 4; ++row) {
+  for (int row = 0; row < Settings::rowCount; ++row) {
     if (roll) break;  // 连调时只写数值窗口，保留整行其余内容。
-    const int knob = knobs[row / 2];
-    const int previous = settingSwitches[row / 2];
+    const int knob = knobs[row == 2 ? 1 : 0];
+    const int previous = settingSwitches[row == 2 ? 1 : 0];
     if (progress < 1.0f) {
       // 开关滑动期间只传输拨钮区域。
-      if (row % 2 != 0 || previous < 0 || previous == knob) continue;
+      if ((row != 0 && row != 2) || previous < 0 || previous == knob) continue;
       GFXcanvas16 toggle(44, 24);
       if (toggle.getBuffer()) {
         const int current = previous + lroundf((knob - previous) * eased);
@@ -257,16 +288,16 @@ void Interface::renderSettings(float progress) {
       continue;
     }
     paint(row, targetY, knob);
-    if (row % 2 == 0) settingSwitches[row / 2] = knob;
+    if (row == 0 || row == 2) settingSwitches[row / 2] = knob;
   }
 
   if (roll) {
     // 数字画布独立裁剪，旧数字退出时变淡，新数字从另一端进入。
-    GFXcanvas16 digits(56, 31);
+    GFXcanvas16 digits(rollingMode ? modeWidth : 56, 31);
     if (digits.getBuffer()) {
       digits.setFont(&NunitoSmall);
       digits.setTextWrap(false);
-      const int direction = currentValue < previousValue ? 1 : -1;
+      const int direction = (rollingMode ? (currentValue + 1) % 3 == previousValue : currentValue < previousValue) ? 1 : -1;
       auto tint = [&](int alpha) {
         const int inverse = 8 - alpha;
         const int r = (((highlight >> 11) & 31) * alpha + ((selection >> 11) & 31) * inverse) / 8;
@@ -279,22 +310,30 @@ void Interface::renderSettings(float progress) {
       digits.fillScreen(selection);
       digits.setTextColor(tint(8 - alpha));
       digits.setCursor(0, 21 - direction * offset);
-      digits.print(previousValue);
+      if (rollingMode) paintName(digits, screenRgbNames[previousValue], 0, -direction * offset, modeWidth, 31, 0, tint(8 - alpha));
+      else digits.print(previousValue);
       if (rollingSleep) digits.print(" min");
+      else if (!rollingMode) digits.print('%');
       digits.setTextColor(tint(alpha));
       digits.setCursor(0, 21 + direction * (27 - offset));
-      digits.print(currentValue);
+      if (rollingMode) paintName(digits, screenRgbNames[currentValue], 0, direction * (27 - offset), modeWidth, 31, 0, tint(alpha));
+      else digits.print(currentValue);
       if (rollingSleep) digits.print(" min");
-      screen.drawRGBBitmap(207, firstY + selected * pitch + 3, digits.getBuffer(), 56, 31);
+      else if (!rollingMode) digits.print('%');
+      screen.drawRGBBitmap(rollingMode ? modeX : 207, firstY + selected * pitch + (rollingMode ? 2 : 3), digits.getBuffer(), rollingMode ? modeWidth : 56, 31);
     } else {
-      paint(selected, targetY, knobs[selected / 2]);
+      paint(selected, targetY, knobs[selected == 2 ? 1 : 0]);
     }
   }
   if (progress < 1.0f) return;
+  if (lastScreenRgb != static_cast<int>(values.screenRgb)) screenRgbChangedAt = millis();
+  lastScreenRgb = static_cast<int>(values.screenRgb);
+  screenRgbOffset = -1;
+  renderScreenRgbName(millis());
   lastSettingRow = selected;
-  lastBrightness = values.brightness;
+  lastBrightness = values.brightnessPercent();
   lastSleepMinutes = values.sleepMinutes();
-  field(0, 39, 207, 242, 24, saveFailed ? "Save failed; try again" :
+  field(0, 39, 215, 242, 23, saveFailed ? "Save failed; try again" :
         editing ? "EDIT confirms / BACK cancels" : "Changes saved automatically",
         4, saveFailed ? ILI9341_RED : muted, true);
 }

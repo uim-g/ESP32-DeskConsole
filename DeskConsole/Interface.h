@@ -18,7 +18,7 @@ class Interface {
   static constexpr uint16_t accent = 0x5EFF;
   static constexpr int bluetoothRows = 3;
   void begin();
-  void setDisplayOn(bool on);
+  void setDisplayOn(bool on, bool holdForSleep = false);
   void beginPage(const char* title, uint16_t base, uint16_t highlight);
   void tab(bool right, bool lower, const char* label);
   void startTabs(bool entering, uint8_t mask = 0x0F);
@@ -55,6 +55,9 @@ class Interface {
   void renderTabs(int offset, uint8_t mask);
   void renderLauncher(float progress);
   void renderSettings(float progress);
+  void renderScreenRgbName(uint32_t now);
+  int lastScreenRgb = -1, screenRgbOffset = -1;
+  uint32_t screenRgbChangedAt = 0;
   void renderWifiList(float progress, bool namesOnly = false);
   static int nameOffset(int width, int viewport, uint32_t elapsed);
   static void paintName(Adafruit_GFX& gfx, const String& value, int x, int y,
