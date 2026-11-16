@@ -265,6 +265,7 @@ void MotionPage::collect() {
   showCorrected = calibrated = true;
   notice = "";
   ctx.ui.motionNotice("Calibration saved");
+  ctx.led.play(StatusLed::Cue::Saved);
 }
 
 void MotionPage::draw() {
