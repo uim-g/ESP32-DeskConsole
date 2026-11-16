@@ -482,8 +482,8 @@ void Interface::motionCube(const float (&rotation)[4]) {
     {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}
   };
   constexpr uint16_t axisColors[] = {0xFB2C, 0x67AB, 0x655F}; // X 红、Y 绿、Z 蓝。
-  // 线框使用估计姿态的逆旋转，保持传感器融合的坐标约定不变。
-  const float w = rotation[0], x = -rotation[1], y = -rotation[2], z = -rotation[3];
+  // 线框按显示坐标反转 X/Y，保留 Z 的正方向。
+  const float w = rotation[0], x = -rotation[1], y = -rotation[2], z = rotation[3];
   int px[8], py[8];
   char key[17]{};
   for (int i = 0; i < 8; ++i) {
