@@ -79,6 +79,18 @@ void Interface::renderLauncher(float progress) {
       ink.fillCircle(x, dotY, 2, 1);
     } else if (row == 3) {
       smallIcon(ink, x, cy, 'b', 1);
+    } else if (row == 5) {
+      // 倾斜模块和上方的弧形箭头表示旋转感应。
+      ink.drawLine(x - 8, cy + 3, x + 3, cy - 2, 1);
+      ink.drawLine(x + 3, cy - 2, x + 6, cy + 4, 1);
+      ink.drawLine(x + 6, cy + 4, x - 5, cy + 9, 1);
+      ink.drawLine(x - 5, cy + 9, x - 8, cy + 3, 1);
+      ink.fillCircle(x - 1, cy + 3, 1, 1);
+      ink.drawLine(x - 5, cy - 5, x - 2, cy - 8, 1);
+      ink.drawFastHLine(x - 2, cy - 8, 6, 1);
+      ink.drawLine(x + 3, cy - 8, x + 8, cy - 4, 1);
+      ink.drawFastVLine(x + 8, cy - 8, 5, 1);
+      ink.drawFastHLine(x + 4, cy - 4, 5, 1);
     } else if (row == 6) {
       smallIcon(ink, x, cy, 'g', 1);
     } else {
