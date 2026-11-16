@@ -1,4 +1,7 @@
 #include "Interface.h"
+#ifndef __EMSCRIPTEN__
+#include <driver/gpio.h>
+#endif
 #include "NunitoFonts.h"
 
 void Interface::smallIcon(Adafruit_GFX& gfx, int x, int y, char kind, uint16_t color) {
@@ -70,15 +73,31 @@ void Interface::smallIcon(Adafruit_GFX& gfx, int x, int y, char kind, uint16_t c
 }
 
 void Interface::begin() {
+#ifndef __EMSCRIPTEN__
+  pinMode(Config::backlight, OUTPUT);
+  digitalWrite(Config::backlight, LOW);
+#endif
   SPI.begin(Config::sck, -1, Config::mosi, Config::cs);
   screen.begin(10000000);
   screen.setRotation(Config::rotation == 3 ? 3 : 1);
+#ifndef __EMSCRIPTEN__
+  digitalWrite(Config::backlight, HIGH);
+#endif
   screen.setTextWrap(false);
 }
 
 void Interface::setDisplayOn(bool on) {
-  // ILI9341 保留显存。LED 背光脚独立供电，不受这条命令控制。
+  // TFT 的 LED 是高有效使能。轻睡期间锁住低电平，唤醒后先恢复画面再开背光。
+#ifndef __EMSCRIPTEN__
+  const auto pin = static_cast<gpio_num_t>(Config::backlight);
+  if (on) gpio_hold_dis(pin);
+  if (!on) digitalWrite(Config::backlight, LOW);
+#endif
   screen.sendCommand(on ? ILI9341_DISPON : ILI9341_DISPOFF);
+#ifndef __EMSCRIPTEN__
+  if (on) digitalWrite(Config::backlight, HIGH);
+  else gpio_hold_en(pin);
+#endif
 }
 
 // 切换页面时清空局部字段缓存并停止旧动画，防止上个页面的中间帧写到新页面。
