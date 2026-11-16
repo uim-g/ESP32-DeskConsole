@@ -4,6 +4,13 @@ Screenshots below were captured from the corresponding [live browser simulator](
 
 下方截图均取自对应版本的[在线网页模拟器](https://uim-g.github.io/ESP32-DeskConsole/)。
 
+## v3.1.0
+
+- Add an optional MPU6050 Motion page with raw six-axis readings, six-face accelerometer calibration and gyroscope zero-offset correction. 新增可选 MPU6050 Motion 页面，支持原始六轴读数、加速度计六面校准及陀螺仪静置校零。
+- Save calibration across reboots. Refresh only changed readings about five times per second and scroll long calibration hints. 校准参数重启后保留，每秒约五次局部更新读数，过长提示循环滚动。
+- Add a BOOT display toggle and configurable screen-off RGB patterns. BOOT 键可切换屏幕，支持设置熄屏 RGB 模式。
+
+
 ## v3.0.0
 
 - **Wiring change / 接线变更** — TFT signals use CS GPIO9, RESET GPIO8, DC GPIO18, MOSI GPIO17, SCK GPIO16 and LED GPIO15. Rewire before uploading. 更新 TFT 引脚，上传前需重新接线。
