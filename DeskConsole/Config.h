@@ -8,7 +8,7 @@ constexpr int motionSda = 10, motionScl = 11;
 constexpr uint8_t rgbPin = 48;
 constexpr int bootButton = 0;
 constexpr uint8_t rgbBrightness = 1;  // 默认 0% 档对应的 RGB 通道值。
-constexpr char firmwareVersion[] = "v3.1.1";  // 与本次计划发布的 Git 标签对应。
+constexpr char firmwareVersion[] = "v3.1.3";  // 与本次计划发布的 Git 标签对应。
 // 本地填写 2.4 GHz Wi-Fi 信息。仓库中保留占位符。
 constexpr char ssid[] = "YOUR_WIFI_NAME";
 constexpr char password[] = "YOUR_WIFI_PASSWORD";
