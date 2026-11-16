@@ -292,24 +292,31 @@ void MotionPage::draw() {
     return;
   }
 
-  constexpr const char* labels[] = {"Accel X", "Accel Y", "Accel Z", "Gyro X", "Gyro Y", "Gyro Z"};
+  ctx.ui.field(11, 38, 59, 100, 25, showCorrected ? "Accel (g)" : "Accel",
+               0, Interface::accent, true);
+  ctx.ui.field(12, 182, 59, 100, 25, showCorrected ? "Gyro (deg/s)" : "Gyro",
+               0, Interface::accent, true);
+  constexpr const char* labels[] = {"X", "Y", "Z"};
+  for (uint8_t axis = 0; axis < 3; ++axis) {
+    ctx.ui.field(8 + axis, 144, 93 + axis * 28, 32, 24, labels[axis],
+                 0, Interface::accent, true);
+  }
   for (uint8_t i = 0; i < 6; ++i) {
-    const int x = i < 3 ? 37 : 165;
-    const int y = 93 + (i % 3) * 32;
-    // 轴名和数值分别缓存。变化时只擦除对应数值的区域。
-    ctx.ui.field(8 + i, x, y, 51, 23, String(labels[i]), 4);
+    const int x = i < 3 ? 38 : 182;
+    const int y = 93 + (i % 3) * 28;
     String reading("--");
     if (valid && (!showCorrected || calibrated)) {
       if (!showCorrected) {
         reading = String(axes[i]);
       } else {
         char value[32];
-        if (i < 3) snprintf(value, sizeof(value), "%.3f g", (axes[i] - calibration.offset[i]) / calibration.scale[i]);
-        else snprintf(value, sizeof(value), "%.2f deg/s", (axes[i] - calibration.gyro[i - 3]) / 131.0f);
+        if (i < 3) snprintf(value, sizeof(value), "%.3f", (axes[i] - calibration.offset[i]) / calibration.scale[i]);
+        else snprintf(value, sizeof(value), "%.2f", (axes[i] - calibration.gyro[i - 3]) / 131.0f);
         reading = value;
       }
     }
-    ctx.ui.field(i + 1, x + 51, y, 72, 23, reading, 4);
+    // 每个读数独立缓存，标题和轴名保持固定。
+    ctx.ui.field(i + 1, x, y, 100, 24, reading, 0, ILI9341_WHITE, true);
   }
   ctx.ui.field(7, 39, 181, 242, 25,
                *notice ? notice : showCorrected && !calibrated ? "Press CAL to set up" : " ",
