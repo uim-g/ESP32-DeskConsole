@@ -31,6 +31,8 @@ class MotionPage : public Page {
   bool loaded = false, calibrated = false, showCorrected = false;
   enum class Graphic { None, Attitude, Level };
   Graphic graphic = Graphic::None;
+  bool uprightLevel = false;
+  int lastLean = 999;
   int lastRoll = 999, lastPitch = 999;
   bool calibrating = false, sampling = false, valid = false, busReady = false;
   uint8_t address = 0, face = 0, samples = 0;

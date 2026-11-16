@@ -311,15 +311,29 @@ void Interface::motionAttitude(int roll, int pitch) {
   field(9, 171, 188, 100, 24, String("Pitch ") + String(pitch) + " deg", 4, ILI9341_WHITE, true);
 }
 
-void Interface::motionLevel(int roll, int pitch) {
+void Interface::motionLevel(int roll, int pitch, bool upright, int lean) {
   constexpr int radius = 55, size = radius * 2 + 1;
   constexpr float radians = 0.0174532925f;
-  const bool flat = abs(roll) <= 1 && abs(pitch) <= 1;
+  const bool flat = upright ? lean <= 1 : abs(roll) <= 1 && abs(pitch) <= 1;
   const uint16_t color = flat ? 0x57A8 : 0xE73C;
   GFXcanvas16 dial(size, size);
   if (!dial.getBuffer()) return;
   dial.fillScreen(background);
-  dial.fillCircle(radius, radius, radius, flat ? 0x2385 : 0x2126);
+  const uint16_t fill = flat ? 0x2385 : 0x2126;
+  if (upright) {
+    dial.fillRoundRect(37, 1, 37, size - 2, 17, fill);
+    dial.drawRoundRect(37, 1, 37, size - 2, 17, color);
+    dial.drawFastHLine(39, radius - 12, 33, color);
+    dial.drawFastHLine(39, radius + 12, 33, color);
+    const int bubbleY = radius - min(42, lean * 2);
+    dial.fillCircle(radius, bubbleY, 9, color);
+    dial.drawCircle(radius, bubbleY, 9, ILI9341_WHITE);
+    screen.drawRGBBitmap(160 - radius, 73, dial.getBuffer(), size, size);
+    field(8, 49, 188, 100, 24, String("Vertical"), 4, ILI9341_WHITE, true);
+    field(9, 171, 188, 100, 24, String("Tilt ") + String(lean) + " deg", 4, ILI9341_WHITE, true);
+    return;
+  }
+  dial.fillCircle(radius, radius, radius, fill);
   dial.drawCircle(radius, radius, radius, color);
   dial.drawCircle(radius, radius, 12, color);
   dial.drawFastHLine(radius - 17, radius, 35, color);

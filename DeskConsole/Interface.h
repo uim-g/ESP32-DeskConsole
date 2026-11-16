@@ -48,7 +48,7 @@ class Interface {
   void device(const Platform::Device& data);
   void clearMotionBody();
   void motionAttitude(int roll, int pitch);
-  void motionLevel(int roll, int pitch);
+  void motionLevel(int roll, int pitch, bool upright, int lean);
   void motionHint(const String& hint) { scrollingName(0, 34, 218, 252, 22, hint, background, true); }
 
  private:

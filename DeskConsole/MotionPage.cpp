@@ -122,6 +122,7 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
       ctx.ui.clearMotionBody();
     } else if (graphic == Graphic::Attitude) {
       graphic = Graphic::Level;
+      uprightLevel = false;
       lastRoll = lastPitch = 999;
       ctx.ui.clearMotionBody();
     } else if (calibrated && !showCorrected) {
@@ -246,12 +247,24 @@ void MotionPage::draw() {
     constexpr float degrees = 57.2957795f;
     const int roll = lroundf(atan2f(screenY, screenZ) * degrees);
     const int pitch = lroundf(atan2f(-screenX, hypotf(screenY, screenZ)) * degrees);
-    if (roll != lastRoll || pitch != lastPitch) {
-      if (level) ctx.ui.motionLevel(roll, pitch);
-      else ctx.ui.motionAttitude(roll, -pitch);
-      lastRoll = roll;
-      lastPitch = pitch;
+    if (level) {
+        // 测量重力与屏幕平面的夹角，板子立在哪一边都能触发。
+        const float inPlane = hypotf(screenX, screenY);
+        const float inclination = atan2f(inPlane, fabsf(screenZ)) * degrees;
+        const bool upright = inclination >= (uprightLevel ? 55.0f : 65.0f);
+        const float edge = max(fabsf(screenX), fabsf(screenY));
+        const float cross = min(fabsf(screenX), fabsf(screenY));
+        const int lean = lroundf(atan2f(hypotf(cross, screenZ), edge) * degrees);
+        if (upright != uprightLevel || roll != lastRoll || pitch != lastPitch || (upright && lean != lastLean)) {
+          ctx.ui.motionLevel(roll, pitch, upright, lean);
+        }
+        uprightLevel = upright;
+        lastLean = lean;
+    } else if (roll != lastRoll || pitch != lastPitch) {
+      ctx.ui.motionAttitude(roll, -pitch);
     }
+    lastRoll = roll;
+    lastPitch = pitch;
     if (level) ctx.ui.motionHint(calibrated ? "LEVEL  |  Center the bubble" : "LEVEL  |  Uncalibrated");
     else ctx.ui.motionHint(calibrated ? "ATTITUDE  |  Roll and pitch" : "ATTITUDE  |  Uncalibrated");
     return;
