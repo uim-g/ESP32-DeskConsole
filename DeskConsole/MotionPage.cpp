@@ -259,8 +259,11 @@ void MotionPage::draw() {
     const float screenY = -gravity[0];
     const float screenZ = gravity[2];
     constexpr float degrees = 57.2957795f;
-    const int roll = lroundf(atan2f(screenY, screenZ) * degrees);
-    const int pitch = lroundf(atan2f(-screenX, hypotf(screenY, screenZ)) * degrees);
+    // 水平仪以屏幕法线为零位，姿态仪以屏幕上边缘朝上为零位。
+    const int roll = lroundf((level ? atan2f(screenY, screenZ) :
+                                      atan2f(screenX, screenY)) * degrees);
+    const int pitch = lroundf((level ? atan2f(-screenX, hypotf(screenY, screenZ)) :
+                                       atan2f(screenZ, hypotf(screenX, screenY))) * degrees);
     if (level) {
         // 测量重力与屏幕平面的夹角，板子立在哪一边都能触发。
         const float inPlane = hypotf(screenX, screenY);
