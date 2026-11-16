@@ -134,10 +134,11 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
   } else if (key == Key::Up && !calibrating) {
     const bool wasData = graphic == Graphic::None;
     const bool wasCube = cubeView();
+    // Track 的实现保留，因位移漂移暂时停用 Cube → Track 入口。
     graphic = wasData ? lastInstrument :
-        graphic == Graphic::Track ? Graphic::Level :
+        // graphic == Graphic::Cube ? Graphic::Track :
         graphic == Graphic::Level ? Graphic::Attitude :
-        graphic == Graphic::Attitude ? Graphic::Cube : Graphic::Track;
+        graphic == Graphic::Attitude ? Graphic::Cube : Graphic::Level;
     if (cubeView()) {
       centerCube();
       if (!wasCube) ctx.ui.replaceTab(3, "CENTER");
