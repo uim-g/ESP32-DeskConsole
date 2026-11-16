@@ -66,7 +66,7 @@ void Interface::renderLauncher(float progress) {
       ink.fillCircle(x - 5, cy, 5, 1);
       ink.fillCircle(x + 2, cy - 3, 6, 1);
       ink.fillRoundRect(x - 8, cy, 19, 6, 3, 1);
-    } else if (row == 2) {
+    } else if (row == 3) {
       // 三道同心圆弧，圆心在 Wi-Fi 圆点处。
       constexpr int dotY = cy + 7;
       for (int radius : {6, 10, 14}) {
@@ -77,9 +77,9 @@ void Interface::renderLauncher(float progress) {
         }
       }
       ink.fillCircle(x, dotY, 2, 1);
-    } else if (row == 3) {
+    } else if (row == 4) {
       smallIcon(ink, x, cy, 'b', 1);
-    } else if (row == 5) {
+    } else if (row == 2) {
       // 倾斜模块和上方的弧形箭头表示旋转感应。
       ink.drawLine(x - 8, cy + 3, x + 3, cy - 2, 1);
       ink.drawLine(x + 3, cy - 2, x + 6, cy + 4, 1);
