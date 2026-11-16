@@ -270,8 +270,8 @@ void MotionPage::collect() {
 
 void MotionPage::draw() {
   const char* state = valid ? (address == 0x68 ? "Connected 0x68" : "Connected 0x69") :
-                      address ? "Initializing..." : "No sensor";
-  ctx.ui.field(0, 164, 10, 114, 23, String(state), 4, Interface::accent, true);
+                      address ? "Initializing" : "No sensor";
+  ctx.ui.motionConnection(state);
   if (calibrating) {
     drawCalibration();
     return;

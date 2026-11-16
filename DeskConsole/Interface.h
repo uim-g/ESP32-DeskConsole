@@ -54,6 +54,7 @@ class Interface {
   enum class CalibrationTone { Normal, Alert, Success };
   void motionCalibrationPrompt(const char* message, CalibrationTone tone, int offset);
   void motionMode(const char* mode);
+  void motionConnection(const char* state);
   void motionNotice(const char* message);
 
  private:

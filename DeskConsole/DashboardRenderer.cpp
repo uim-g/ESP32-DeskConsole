@@ -342,6 +342,13 @@ void Interface::motionLevel(int roll, int pitch) {
   field(9, 171, 188, 100, 24, String("Pitch ") + String(pitch) + " deg", 4, ILI9341_WHITE, true);
 }
 
+void Interface::motionConnection(const char* state) {
+  if (cache[0] == state) return;
+  constexpr uint16_t frame = 0x630C, label = 0xAD55;
+  screen.drawRoundRect(174, 12, 108, 20, 6, frame);
+  field(0, 180, 14, 96, 16, state, 3, label, true);
+}
+
 void Interface::motionMode(const char* mode) {
   if (motionModeTarget && strcmp(motionModeTarget, mode) == 0) return;
   motionModeTarget = mode;
