@@ -293,8 +293,9 @@ void MotionPage::draw() {
         if (layoutChanged) ctx.ui.clearMotionBody();
         if (upright) {
           // 分别测量两侧平面内的偏斜，避免把 X 和 Z 合成一个角度。
-          const int tiltX = lroundf(atan2f(uprightX, fabsf(uprightY)) * degrees);
-          const int tiltZ = lroundf(atan2f(screenZ, fabsf(uprightY)) * degrees);
+          // 绕 X 转动改变法向重力分量，绕 Z 转动改变屏幕平面内的分量。
+          const int tiltX = lroundf(atan2f(screenZ, fabsf(uprightY)) * degrees);
+          const int tiltZ = lroundf(atan2f(uprightX, fabsf(uprightY)) * degrees);
           if (layoutChanged || lastRoll == 999 || tiltX != lastTiltX) ctx.ui.motionTube(false, tiltX);
           if (layoutChanged || lastRoll == 999 || tiltZ != lastTiltZ) ctx.ui.motionTube(true, tiltZ);
           lastTiltX = tiltX;
