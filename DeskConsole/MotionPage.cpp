@@ -127,7 +127,7 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
 void MotionPage::tick(uint32_t now) {
   if (!due(now, nextRead)) return;
   valid = readSample(axes);
-  nextRead = now + 1000;
+  nextRead = now + 200;
   if (sampling) {
     if (valid) collect();
     else {
@@ -231,5 +231,5 @@ void MotionPage::draw() {
     snprintf(hint, sizeof(hint), "%s  |  %s", showCorrected ? "CALIBRATED" : "RAW",
              *notice ? notice : showCorrected ? "g / deg/s" : "signed 16-bit counts");
   }
-  ctx.ui.field(7, 34, 218, 252, 17, String(hint), 4, Interface::accent, true);
+  ctx.ui.motionHint(hint);
 }

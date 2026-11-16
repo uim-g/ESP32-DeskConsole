@@ -46,6 +46,7 @@ class Interface {
   void wifiPassword(const String& ssid, const String& value, size_t length, int group,
                     const String& previous, const String& selected, const String& next, int direction, const char* footer);
   void device(const Platform::Device& data);
+  void motionHint(const String& hint) { scrollingName(0, 34, 218, 252, 22, hint, background, true); }
 
  private:
   static constexpr uint16_t muted = 0xA69A, cardColor = 0x1928, cardOutline = 0x3A4E;

@@ -64,7 +64,7 @@ See [release history](CHANGELOG.md).
 
 ### Optional MPU6050 (Motion)
 
-On the Motion development branch, connect module VCC to 3V3, GND to the common ground, SDA to GPIO10, and SCL to GPIO11. Leave XDA, XCL, and INT open. Tie AD0 to GND for address `0x68`, or to 3V3 for `0x69`. Open **Apps → Motion** to see raw signed counts for the three accelerometer and three gyroscope axes, refreshed about once a second. The page reports when the sensor is missing. The browser preview has no physical sensor.
+On the Motion development branch, connect module VCC to 3V3, GND to the common ground, SDA to GPIO10, and SCL to GPIO11. Leave XDA, XCL, and INT open. Tie AD0 to GND for address `0x68`, or to 3V3 for `0x69`. Open **Apps → Motion** to see raw signed counts for the three accelerometer and three gyroscope axes, refreshed about five times a second. The page reports when the sensor is missing. The browser preview has no physical sensor.
 
 Press **CAL** to start six-face calibration. Follow the on-screen axis and sign, steady the module, then press **SAMPLE** for each face. **VIEW** switches between raw counts and calibrated g / deg/s. Calibration survives reboot.
 
