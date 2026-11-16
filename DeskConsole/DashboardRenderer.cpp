@@ -481,6 +481,7 @@ void Interface::motionCube(const float (&rotation)[4]) {
     {0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3},
     {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}
   };
+  constexpr uint16_t axisColors[] = {0xFB2C, 0x67AB, 0x655F}; // X 红、Y 绿、Z 蓝。
   // 线框使用估计姿态的逆旋转，保持传感器融合的坐标约定不变。
   const float w = rotation[0], x = -rotation[1], y = -rotation[2], z = -rotation[3];
   int px[8], py[8];
@@ -507,7 +508,10 @@ void Interface::motionCube(const float (&rotation)[4]) {
   cache[13] = key;
   cube.fillScreen(background);
   for (const auto& edge : edges) {
-    cube.drawLine(px[edge[0]], py[edge[0]], px[edge[1]], py[edge[1]], highlight);
+    // 两个顶点编号中唯一不同的位标识这条边的轴向。
+    const uint8_t axisBit = edge[0] ^ edge[1];
+    const uint16_t color = axisColors[axisBit >> 1];
+    cube.drawLine(px[edge[0]], py[edge[0]], px[edge[1]], py[edge[1]], color);
   }
   screen.drawRGBBitmap(160 - size / 2, 63, cube.getBuffer(), size, size);
 }
