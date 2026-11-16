@@ -145,14 +145,14 @@ F1 plays a brief fireworks animation when a valid raw reaction time beats the sa
 
 ## Settings
 
-Open Settings after Device in the App list. Use the right buttons to select a row and EDIT to toggle it or enter value editing. While editing, Up increases and Down decreases. EDIT saves the value, and BACK cancels the edit. Confirmed changes are stored in flash and restored on startup.
+Open Settings after Device in the App list. Use the right buttons to select a row and EDIT to enter value editing. While editing, Up increases and Down decreases. EDIT saves the value, and BACK cancels the edit. Confirmed changes are stored in flash and restored on startup.
 
-- Auto sleep is on by default. Choose 1, 3, 5, or 10 minutes, with 3 minutes as the default.
-- The onboard RGB status LED is on by default. Turn it off or adjust brightness from 0% to 100% in 10% steps. The endpoints use RGB channel values 1 and 255. Use the RGB switch to turn the LED fully off.
+- **Sleep Timer** offers Off, 1, 2, 3, 5, or 10 minutes. The default is 3 minutes.
+- **RGB** offers Off and 10% through 100% in steps of 10%. The default is 10%. An old enabled 0% setting becomes 10%.
 
 Settings selection and value changes use eased animations. Startup now draws Home before wireless setup, and the clock fields do not wait for NTP when drawing. The cause of lag on the first automatic boot after upload has not been confirmed.
 
-Short-press the onboard BOOT button to turn off the display, and press it again to return. **Screen-off RGB** offers Off, Intermittent (3 seconds of rainbow fading followed by 10 seconds dark), and Continuous. It uses the saved RGB brightness and respects the RGB master switch. Manual BOOT screen-off pauses auto sleep until the display is restored. Light sleep turns RGB off; any navigation button wakes the display. BOOT pressed during an active F1 round is ignored.
+Short-press the onboard BOOT button to turn off the display, and press it again to return. **Screen-off RGB** offers Off, Intermittent (3 seconds of rainbow fading followed by 10 seconds dark), and Continuous. It uses the saved RGB brightness and is disabled when RGB is Off. Manual BOOT screen-off pauses auto sleep until the display is restored. Light sleep turns RGB off; any navigation button wakes the display. BOOT pressed during an active F1 round is ignored.
 
 ## Serial Monitor
 

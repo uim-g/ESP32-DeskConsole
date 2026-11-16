@@ -7,15 +7,15 @@ bool SettingsPage::save(const Settings& next) {
     Serial.println("[SETTINGS] Flash save failed");
     return false;
   }
-  ctx.led.configure(next.rgbEnabled, next.brightnessLevel());
+  ctx.led.configure(next.rgbEnabled(), next.brightnessLevel());
   ctx.led.play(StatusLed::Cue::Saved);
   Serial.printf("[SETTINGS] Saved: sleep=%u, after=%u min, RGB=%u, brightness=%u%%\n",
-                static_cast<unsigned>(next.autoSleep), static_cast<unsigned>(next.sleepMinutes()),
-                static_cast<unsigned>(next.rgbEnabled), static_cast<unsigned>(next.brightnessPercent()));
+                static_cast<unsigned>(next.autoSleep()), static_cast<unsigned>(next.sleepMinutes()),
+                static_cast<unsigned>(next.rgbEnabled()), static_cast<unsigned>(next.brightnessPercent()));
   return true;
 }
 
-// 开关直接保存；数值先复制到编辑副本，确认提交，返回取消。
+// 数值先在副本中编辑，确认后写入闪存，返回键取消。
 void SettingsPage::input(Key key, uint32_t us) {
   if (key == Key::Back) {
     if (!editing) { Page::input(key, us); return; }
@@ -24,23 +24,16 @@ void SettingsPage::input(Key key, uint32_t us) {
     if (editing) {
       if (save(draft)) editing = false;
     } else {
-      Settings next = store.current;
-      if (row == 0 || row == 2) {
-        if (row == 0) next.autoSleep = !next.autoSleep;
-        else next.rgbEnabled = !next.rgbEnabled;
-        save(next);
-      } else {
-        if ((row == 1 && !next.autoSleep) || (row >= 3 && !next.rgbEnabled)) return;
-        draft = next;
-        editing = true;
-        saveFailed = false;
-      }
+      if (row == 2 && !store.current.rgbEnabled()) return;
+      draft = store.current;
+      editing = true;
+      saveFailed = false;
     }
   } else if (vertical(key)) {
     const int step = key == Key::Up ? -1 : 1;
     if (!editing) row = (row + step + Settings::rowCount) % Settings::rowCount;
-    else if (row == 1) draft.sleepIndex = constrain(draft.sleepIndex - step, 0, 3);
-    else if (row == 3) draft.brightness = constrain(draft.brightness - step, 0, 10);
+    else if (row == 0) draft.sleepIndex = constrain(draft.sleepIndex - step, 0, Settings::sleepChoices - 1);
+    else if (row == 1) draft.brightness = constrain(draft.brightness - step, 0, Settings::rgbChoices - 1);
     else draft.screenRgb = static_cast<Settings::ScreenRgb>((static_cast<int>(draft.screenRgb) + step + 3) % 3);
   }
   draw();
