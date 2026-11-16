@@ -103,7 +103,7 @@ class Interface {
               char icon, const char* label, const String& value);
   Adafruit_ILI9341 screen{&SPI, Config::dc, Config::cs, Config::reset};
   // 每个字段缓存上次的文字，定时刷新只重绘发生变化的区域。
-  String cache[11];
+  String cache[14];
   int lastLights = -1;
   std::unique_ptr<GFXcanvas16> fireworks;
   uint32_t fireworkStarted = 0;

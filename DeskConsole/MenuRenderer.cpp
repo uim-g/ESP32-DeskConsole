@@ -79,7 +79,7 @@ void Interface::renderLauncher(float progress) {
       ink.fillCircle(x, dotY, 2, 1);
     } else if (row == 3) {
       smallIcon(ink, x, cy, 'b', 1);
-    } else if (row == 5) {
+    } else if (row == 6) {
       smallIcon(ink, x, cy, 'g', 1);
     } else {
       ink.drawRect(x - 6, cy - 6, 13, 13, 1);
