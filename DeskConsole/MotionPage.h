@@ -6,7 +6,7 @@ class MotionPage : public Page {
  public:
   using Page::Page;
   PageStyle style() const override {
-    return {"Motion", 0x18E3, 0xB6B1, {"BACK", "CAL", "VIEW"}};
+    return {"Motion", 0x18E3, 0xB6B1, {"BACK", "DATA", "VIEW", graphic == Graphic::None ? "CAL" : nullptr}};
   }
   void enter() override;
   void leave() override;
@@ -22,6 +22,8 @@ class MotionPage : public Page {
   };
   static bool usable(const Calibration& data);
   void collect();
+  void drawCalibration();
+  bool faceAligned(const float (&accel)[3]) const;
   bool readSample(int16_t (&axes)[6]);
   bool readRegisters(uint8_t address, uint8_t reg, uint8_t* data, size_t length);
   bool initializeSensor();
@@ -30,7 +32,8 @@ class MotionPage : public Page {
   Calibration calibration{};
   bool loaded = false, calibrated = false, showCorrected = false;
   enum class Graphic { None, Attitude, Level };
-  Graphic graphic = Graphic::None;
+  Graphic graphic = Graphic::Attitude;
+  Graphic lastInstrument = Graphic::Attitude;
   bool uprightLevel = false;
   int lastLean = 999;
   int lastRoll = 999, lastPitch = 999;

@@ -49,9 +49,13 @@ class Interface {
   void clearMotionBody();
   void motionAttitude(int roll, int pitch);
   void motionLevel(int roll, int pitch, bool upright, int lean);
-  void motionHint(const String& hint) { scrollingName(0, 34, 218, 252, 22, hint, background, true); }
+  void motionMode(const char* mode);
 
  private:
+  void renderMotionMode(int step);
+  FrameTimeline motionModeAnimation;
+  const char* motionModeShown = nullptr;
+  const char* motionModeTarget = nullptr;
   static constexpr uint16_t muted = 0xA69A, cardColor = 0x1928, cardOutline = 0x3A4E;
   static constexpr char degree = '\x01';
   static void smallIcon(Adafruit_GFX& gfx, int x, int y, char kind, uint16_t color);

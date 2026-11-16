@@ -104,6 +104,8 @@ void Interface::setDisplayOn(bool on, bool holdForSleep) {
 void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   fireworks.reset();
   tabAnimation.stop();
+  motionModeAnimation.stop();
+  motionModeShown = motionModeTarget = nullptr;
   launcherAnimation.stop();
   settingsAnimation.stop();
   wifiListAnimation.stop();
@@ -191,6 +193,7 @@ void Interface::replaceTab(uint8_t index, const char* label) {
 // 用同一个时间点更新活动动画。帧尚未变化时跳过绘制，避免在循环中等待。
 void Interface::advanceAnimations(uint32_t now) {
   int step;
+  if ((step = motionModeAnimation.frame(now)) >= 0) renderMotionMode(step);
   if ((step = tabAnimation.frame(now)) >= 0) {
     constexpr int slideOut[] = {0, 1, 3, 7, 12, 18, 21};
     constexpr int slideIn[] = {21, 15, 8, 2, -2, -1, 0};

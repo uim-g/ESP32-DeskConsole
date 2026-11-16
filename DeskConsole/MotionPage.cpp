@@ -105,35 +105,44 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
       return;
     }
     leave();
-    ctx.ui.replaceTab(3, nullptr);
+    ctx.ui.replaceTab(3, "CAL");
+    ctx.ui.clearMotionBody();
     notice = "Calibration cancelled";
-  } else if (key == Key::Action && valid && !calibrating) {
-    if (graphic != Graphic::None) ctx.ui.clearMotionBody();
-    graphic = Graphic::None;
-    calibrating = true;
-    ctx.ui.replaceTab(3, "SAMPLE");
-    face = 0;
-    pending = {};
-    notice = "";
-  } else if (key == Key::Up && !calibrating) {
-    if (graphic == Graphic::Level) {
+  } else if (key == Key::Action && !calibrating) {
+    if (graphic != Graphic::None) {
+      lastInstrument = graphic;
       graphic = Graphic::None;
-      showCorrected = false;
-      ctx.ui.clearMotionBody();
-    } else if (graphic == Graphic::Attitude) {
-      graphic = Graphic::Level;
-      uprightLevel = false;
-      lastRoll = lastPitch = 999;
-      ctx.ui.clearMotionBody();
-    } else if (calibrated && !showCorrected) {
       showCorrected = true;
-    } else {
-      graphic = Graphic::Attitude;
-      lastRoll = lastPitch = 999;
       ctx.ui.clearMotionBody();
+      ctx.ui.replaceTab(3, "CAL");
+    } else {
+      showCorrected = !showCorrected;
     }
     notice = "";
+  } else if (key == Key::Up && !calibrating) {
+    const bool wasData = graphic == Graphic::None;
+    graphic = wasData ? lastInstrument :
+        graphic == Graphic::Attitude ? Graphic::Level : Graphic::Attitude;
+    if (wasData) ctx.ui.replaceTab(3, nullptr);
+    uprightLevel = false;
+    lastRoll = lastPitch = 999;
+    ctx.ui.clearMotionBody();
+    notice = "";
+  } else if (key == Key::Down && graphic == Graphic::None && !calibrating) {
+    if (!valid) return;
+    calibrating = true;
+    pending = {};
+    face = 0;
+    notice = "";
+    ctx.ui.clearMotionBody();
+    ctx.ui.replaceTab(3, "SAMPLE");
   } else if (key == Key::Down && calibrating && !sampling && valid) {
+    const float current[3] = {float(axes[0]), float(axes[1]), float(axes[2])};
+    if (!faceAligned(current)) {
+      notice = "Align the axis before sampling";
+      draw();
+      return;
+    }
     samples = 0;
     nextRead = millis() + 500;  // 等按键带来的振动消退。
     sampling = true;
@@ -186,8 +195,8 @@ void MotionPage::collect() {
   }
   const int axis = face / 2;
   const bool negative = face % 2;
-  if ((negative ? -mean[axis] : mean[axis]) < 12000 ||
-      fabsf(mean[(axis + 1) % 3]) > 4500 || fabsf(mean[(axis + 2) % 3]) > 4500) {
+  const float accel[3] = {mean[0], mean[1], mean[2]};
+  if (!faceAligned(accel)) {
     notice = "Wrong face. Retry";
     return;
   }
@@ -204,7 +213,8 @@ void MotionPage::collect() {
   if (++face < 6) return;
 
   calibrating = false;
-  ctx.ui.replaceTab(3, nullptr);
+  ctx.ui.replaceTab(3, "CAL");
+  ctx.ui.clearMotionBody();
   notice = "Calibration out of range";
   if (!usable(pending)) return;
   bool saved = false;
@@ -222,15 +232,19 @@ void MotionPage::collect() {
 }
 
 void MotionPage::draw() {
-  const char* state = valid ? (address == 0x68 ? "Connected  /  0x68" : "Connected  /  0x69") :
-                      address ? "Initializing..." : "Sensor not detected";
-  ctx.ui.field(0, 40, 43, 240, 24, String(state), 0, Interface::accent, true);
+  const char* state = valid ? (address == 0x68 ? "Connected 0x68" : "Connected 0x69") :
+                      address ? "Initializing..." : "No sensor";
+  ctx.ui.field(0, 164, 10, 114, 23, String(state), 4, Interface::accent, true);
+  if (calibrating) {
+    drawCalibration();
+    return;
+  }
   if (graphic != Graphic::None) {
     const bool level = graphic == Graphic::Level;
     if (!valid) {
       if (lastRoll != 999) ctx.ui.clearMotionBody();
       lastRoll = lastPitch = 999;
-      ctx.ui.motionHint(level ? "LEVEL  |  Waiting for sensor" : "ATTITUDE  |  Waiting for sensor");
+      ctx.ui.motionMode(level ? "LEVEL" : "ATTITUDE");
       return;
     }
     // 先在模块坐标中校准，再按实物安装方向映射到屏幕坐标。
@@ -265,18 +279,18 @@ void MotionPage::draw() {
     }
     lastRoll = roll;
     lastPitch = pitch;
-    if (level) ctx.ui.motionHint(calibrated ? "LEVEL  |  Center the bubble" : "LEVEL  |  Uncalibrated");
-    else ctx.ui.motionHint(calibrated ? "ATTITUDE  |  Roll and pitch" : "ATTITUDE  |  Uncalibrated");
+    ctx.ui.motionMode(level ? "LEVEL" : "ATTITUDE");
     return;
   }
 
   constexpr const char* labels[] = {"Accel X", "Accel Y", "Accel Z", "Gyro X", "Gyro Y", "Gyro Z"};
   for (uint8_t i = 0; i < 6; ++i) {
-    const int y = 72 + i * 22 + (i >= 3 ? 8 : 0);
+    const int x = i < 3 ? 37 : 165;
+    const int y = 93 + (i % 3) * 32;
     // 轴名和数值分别缓存。变化时只擦除对应数值的区域。
-    ctx.ui.field(8 + i, 48, y, 100, 21, String(labels[i]));
+    ctx.ui.field(8 + i, x, y, 51, 23, String(labels[i]), 4);
     String reading("--");
-    if (valid) {
+    if (valid && (!showCorrected || calibrated)) {
       if (!showCorrected) {
         reading = String(axes[i]);
       } else {
@@ -286,16 +300,40 @@ void MotionPage::draw() {
         reading = value;
       }
     }
-    ctx.ui.field(i + 1, 154, y, 120, 21, reading);
+    ctx.ui.field(i + 1, x + 51, y, 72, 23, reading, 4);
   }
+  ctx.ui.field(7, 39, 181, 242, 25,
+               *notice ? notice : showCorrected && !calibrated ? "Press CAL to set up" : " ",
+               4, Interface::accent, true);
+  ctx.ui.motionMode(showCorrected ? "CALIBRATED" : "RAW");
+}
+
+bool MotionPage::faceAligned(const float (&accel)[3]) const {
+  const int axis = face / 2;
+  return (face % 2 ? -accel[axis] : accel[axis]) >= 12000 &&
+         fabsf(accel[(axis + 1) % 3]) <= 4500 && fabsf(accel[(axis + 2) % 3]) <= 4500;
+}
+
+void MotionPage::drawCalibration() {
   constexpr const char* faces[] = {"+X", "-X", "+Y", "-Y", "+Z", "-Z"};
-  char hint[80];
-  if (calibrating) {
-    snprintf(hint, sizeof(hint), "%u/6  %s up  |  %s", unsigned(face + 1), faces[face],
-             *notice ? notice : "Press SAMPLE");
-  } else {
-    snprintf(hint, sizeof(hint), "%s  |  %s", showCorrected ? "CALIBRATED" : "RAW",
-             *notice ? notice : showCorrected ? "g / deg/s" : "signed 16-bit counts");
-  }
-  ctx.ui.motionHint(hint);
+  const int axis = face / 2;
+  const float current[3] = {float(axes[0]), float(axes[1]), float(axes[2])};
+  const bool aligned = valid && faceAligned(current);
+  ctx.ui.field(1, 36, 47, 248, 23, String("CALIBRATING  ") + String(face + 1) + " / 6",
+               0, Interface::accent, true);
+  ctx.ui.field(2, 36, 73, 248, 48, String(faces[face]) + "  UP", 1, ILI9341_WHITE, true);
+  ctx.ui.field(3, 36, 127, 248, 22,
+               axis == 2 ? (face % 2 ? "Lay module face down" : "Lay module face up") :
+                           "Stand module on its edge",
+               0, ILI9341_WHITE, true);
+  ctx.ui.field(4, 36, 151, 248, 22,
+               String("Aim for ") + faces[face] + (face % 2 ? " near -16000" : " near +16000"),
+               4, ILI9341_WHITE, true);
+  const String readings = valid ? String("X ") + String(axes[0]) + "   Y " + String(axes[1]) +
+                                  "   Z " + String(axes[2]) : String("Waiting for sensor");
+  ctx.ui.field(5, 36, 175, 248, 20, readings, 4, Interface::accent, true);
+  ctx.ui.field(6, 36, 198, 248, 17,
+               sampling ? "Hold still..." : *notice ? notice : aligned ? "Aligned. Press SAMPLE" : "Rotate to match the target",
+               4, ILI9341_WHITE, true);
+  ctx.ui.motionMode("CALIBRATING");
 }

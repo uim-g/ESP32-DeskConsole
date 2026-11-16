@@ -271,7 +271,7 @@ void Interface::device(const Platform::Device& data) {
 }
 
 void Interface::clearMotionBody() {
-  screen.fillRect(34, 70, 252, 146, background);
+  screen.fillRect(34, 43, 252, 173, background);
   for (uint8_t slot = 1; slot < 14; ++slot) cache[slot] = "";
 }
 
@@ -351,4 +351,32 @@ void Interface::motionLevel(int roll, int pitch, bool upright, int lean) {
   screen.drawRGBBitmap(160 - radius, 73, dial.getBuffer(), size, size);
   field(8, 49, 188, 100, 24, String("Roll ") + String(roll) + " deg", 4, ILI9341_WHITE, true);
   field(9, 171, 188, 100, 24, String("Pitch ") + String(pitch) + " deg", 4, ILI9341_WHITE, true);
+}
+
+void Interface::motionMode(const char* mode) {
+  if (motionModeTarget && strcmp(motionModeTarget, mode) == 0) return;
+  motionModeTarget = mode;
+  if (!motionModeShown) {
+    renderMotionMode(12);
+  } else {
+    motionModeAnimation.start(millis(), 240, 12);
+  }
+}
+
+void Interface::renderMotionMode(int step) {
+  constexpr int fullWidth = 124, height = 19, y = 218;
+  if (step >= 6) motionModeShown = motionModeTarget;
+  const float phase = abs(step - 6) / 6.0f;
+  const int width = 14 + lroundf((fullWidth - 14) * smoothStep(phase));
+  screen.fillRect(160 - fullWidth / 2, y, fullWidth, height, background);
+  screen.fillRoundRect(160 - width / 2, y, width, height, min(8, width / 2), 0x3246);
+  screen.drawRoundRect(160 - width / 2, y, width, height, min(8, width / 2), highlight);
+  screen.setFont(&NunitoHint);
+  int16_t x1, y1;
+  uint16_t w, h;
+  screen.getTextBounds(motionModeShown, 0, 0, &x1, &y1, &w, &h);
+  if (w + 10 > width) return;
+  screen.setTextColor(ILI9341_WHITE);
+  screen.setCursor(160 - w / 2 - x1, y + (height - h) / 2 - y1);
+  screen.print(motionModeShown);
 }
