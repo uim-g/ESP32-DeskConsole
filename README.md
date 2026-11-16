@@ -66,7 +66,7 @@ See [release history](CHANGELOG.md).
 
 On the Motion development branch, connect module VCC to 3V3, GND to the common ground, SDA to GPIO10, and SCL to GPIO11. Leave XDA, XCL, and INT open. Tie AD0 to GND for address `0x68`, or to 3V3 for `0x69`. Open **Apps → Motion** to see raw signed counts for the three accelerometer and three gyroscope axes, refreshed about five times a second. The page reports when the sensor is missing. The browser preview has no physical sensor.
 
-Press **CAL** to start six-face calibration. Follow the on-screen axis and sign, steady the module, then press **SAMPLE** for each face. **VIEW** switches between raw counts and calibrated g / deg/s. Calibration survives reboot.
+Press **CAL** to start six-face calibration. Follow the on-screen axis and sign, steady the module, then press **SAMPLE** for each face. **VIEW** cycles through Raw, Calibrated (after calibration), and Attitude. The blue-and-brown attitude indicator estimates roll and pitch from gravity and compensates for the prototype sensor mounted 180 degrees in-plane. Calibration survives reboot.
 
 ### Wiring diagram
 

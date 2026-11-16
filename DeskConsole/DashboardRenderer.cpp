@@ -269,3 +269,44 @@ void Interface::device(const Platform::Device& data) {
   memcpy(uptimeDigits, digits, sizeof(digits));
   panelsReady = true;
 }
+
+void Interface::clearMotionBody() {
+  screen.fillRect(34, 70, 252, 146, background);
+  for (uint8_t slot = 1; slot < 14; ++slot) cache[slot] = "";
+}
+
+void Interface::motionAttitude(int roll, int pitch) {
+  constexpr int radius = 57, diameter = radius * 2 + 1;
+  constexpr float radians = 0.0174532925f;
+  GFXcanvas16 ball(diameter, diameter);
+  if (!ball.getBuffer()) return;
+  ball.fillScreen(background);
+
+  const float sine = sinf(roll * radians);
+  const float cosine = cosf(roll * radians);
+  const float horizon = pitch * 1.2f;
+  for (int y = -radius; y <= radius; ++y) {
+    const int edge = static_cast<int>(sqrtf(radius * radius - y * y));
+    for (int x = -edge; x <= edge; ++x) {
+      const float normal = y * cosine - x * sine - horizon;
+      const float across = x * cosine + y * sine;
+      uint16_t color = normal < 0 ? 0x259B : 0xA3C8;
+      if (fabsf(normal) < 0.8f ||
+          (fabsf(across) < 13 && fabsf(fabsf(normal) - 15) < 0.65f) ||
+          (fabsf(across) < 8 && fabsf(fabsf(normal) - 30) < 0.65f)) {
+        color = ILI9341_WHITE;
+      }
+      ball.drawPixel(x + radius, y + radius, color);
+    }
+  }
+  ball.drawCircle(radius, radius, radius, 0xD69A);
+  constexpr uint16_t marker = 0xFFE0;
+  ball.drawFastHLine(radius - 25, radius, 17, marker);
+  ball.drawFastHLine(radius + 9, radius, 17, marker);
+  ball.drawFastVLine(radius - 9, radius, 5, marker);
+  ball.drawFastVLine(radius + 9, radius, 5, marker);
+  ball.fillCircle(radius, radius, 2, marker);
+  screen.drawRGBBitmap(160 - radius, 72, ball.getBuffer(), diameter, diameter);
+  field(8, 49, 188, 100, 24, String("Roll ") + String(roll) + " deg", 4, ILI9341_WHITE, true);
+  field(9, 171, 188, 100, 24, String("Pitch ") + String(pitch) + " deg", 4, ILI9341_WHITE, true);
+}

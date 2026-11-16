@@ -76,6 +76,7 @@ void MotionPage::enter() {
     showCorrected = calibrated;
   }
   notice = "";
+  lastRoll = lastPitch = 999;
   wake();
 }
 
@@ -106,13 +107,25 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
     leave();
     notice = "Calibration cancelled";
   } else if (key == Key::Action && valid && !calibrating) {
+    if (attitude) ctx.ui.clearMotionBody();
+    attitude = false;
     calibrating = true;
     face = 0;
     pending = {};
     notice = "";
   } else if (key == Key::Up && !calibrating) {
-    showCorrected = calibrated && !showCorrected;
-    notice = calibrated ? "" : "Press CAL to calibrate";
+    if (attitude) {
+      attitude = false;
+      showCorrected = false;
+      ctx.ui.clearMotionBody();
+    } else if (calibrated && !showCorrected) {
+      showCorrected = true;
+    } else {
+      attitude = true;
+      lastRoll = lastPitch = 999;
+      ctx.ui.clearMotionBody();
+    }
+    notice = "";
   } else if (key == Key::Down && calibrating && !sampling && valid) {
     samples = 0;
     nextRead = millis() + 500;  // 等按键带来的振动消退。
@@ -127,7 +140,7 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
 void MotionPage::tick(uint32_t now) {
   if (!due(now, nextRead)) return;
   valid = readSample(axes);
-  nextRead = now + 200;
+  nextRead = now + (attitude ? 100 : 200);
   if (sampling) {
     if (valid) collect();
     else {
@@ -204,6 +217,32 @@ void MotionPage::draw() {
   const char* state = valid ? (address == 0x68 ? "Connected  /  0x68" : "Connected  /  0x69") :
                       address ? "Initializing..." : "Sensor not detected";
   ctx.ui.field(0, 40, 43, 240, 24, String(state), 0, Interface::accent, true);
+  if (attitude) {
+    if (!valid) {
+      if (lastRoll != 999) ctx.ui.clearMotionBody();
+      lastRoll = lastPitch = 999;
+      ctx.ui.motionHint("ATTITUDE  |  Waiting for sensor");
+      return;
+    }
+    // 校准模块坐标后，绕安装面的法线旋转 180 度得到机身坐标。
+    float gravity[3];
+    for (int i = 0; i < 3; ++i) {
+      const float value = calibrated ? (axes[i] - calibration.offset[i]) / calibration.scale[i]
+                                     : axes[i] / 16384.0f;
+      gravity[i] = i < 2 ? -value : value;
+    }
+    constexpr float degrees = 57.2957795f;
+    const int roll = lroundf(atan2f(gravity[1], gravity[2]) * degrees);
+    const int pitch = lroundf(atan2f(-gravity[0], hypotf(gravity[1], gravity[2])) * degrees);
+    if (roll != lastRoll || pitch != lastPitch) {
+      ctx.ui.motionAttitude(roll, pitch);
+      lastRoll = roll;
+      lastPitch = pitch;
+    }
+    ctx.ui.motionHint(calibrated ? "ATTITUDE  |  Roll and pitch" : "ATTITUDE  |  Uncalibrated");
+    return;
+  }
+
   constexpr const char* labels[] = {"Accel X", "Accel Y", "Accel Z", "Gyro X", "Gyro Y", "Gyro Z"};
   for (uint8_t i = 0; i < 6; ++i) {
     const int y = 72 + i * 22 + (i >= 3 ? 8 : 0);

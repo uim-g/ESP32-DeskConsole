@@ -29,6 +29,8 @@ class MotionPage : public Page {
   Preferences storage;
   Calibration calibration{};
   bool loaded = false, calibrated = false, showCorrected = false;
+  bool attitude = false;
+  int lastRoll = 999, lastPitch = 999;
   bool calibrating = false, sampling = false, valid = false, busReady = false;
   uint8_t address = 0, face = 0, samples = 0;
   uint32_t nextRead = 0;
