@@ -38,3 +38,23 @@ void SettingsPage::input(Key key, uint32_t us) {
   }
   draw();
 }
+
+void SettingsPage::tick(uint32_t) {
+  // 侧键共用动画时间轴。每段结束后再检查最新的编辑状态和边界。
+  if (ctx.ui.tabsAnimating()) return;
+  const bool bounded = editing && row < 2;
+  const int value = row == 0 ? draft.sleepIndex : draft.brightness;
+  const int maximum = row == 0 ? Settings::sleepChoices - 1 : Settings::rgbChoices - 1;
+  const bool up = !bounded || value < maximum;
+  const bool down = !bounded || value > 0;
+  if (saveShown != editing) {
+    saveShown = editing;
+    ctx.ui.replaceTab(1, editing ? "SAVE" : "EDIT");
+  } else if (upShown != up) {
+    upShown = up;
+    ctx.ui.replaceTab(2, up ? "^" : nullptr);
+  } else if (downShown != down) {
+    downShown = down;
+    ctx.ui.replaceTab(3, down ? "v" : nullptr);
+  }
+}

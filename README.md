@@ -146,7 +146,7 @@ F1 plays a brief fireworks animation when a valid raw reaction time beats the sa
 
 ## Settings
 
-Open Settings after Device in the App list. Use the right buttons to select a row and EDIT to enter value editing. While editing, Up increases and Down decreases. EDIT saves the value, and BACK cancels the edit. Confirmed changes are stored in flash and restored on startup.
+Open Settings after Device in the App list. Use the right buttons to select a row and EDIT to change its value. While editing, Up increases and Down decreases. Sleep Timer and RGB hide an arrow at its corresponding limit. SAVE stores the value in flash, and BACK cancels the edit.
 
 - **Sleep Timer** offers Off, 1, 2, 3, 5, or 10 minutes. The default is 3 minutes.
 - **RGB** offers Off and 10% through 100% in steps of 10%. The default is 10%. An old enabled 0% setting becomes 10%.
