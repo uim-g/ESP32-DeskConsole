@@ -127,6 +127,7 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   launcherThumbY = -1;
   for (auto& value : settingSwitches) value = -1;
   lastSettingRow = lastBrightness = lastSleepMinutes = -1;
+  lastScreenRgb = screenRgbOffset = -1;
   panelsReady = false;
   uptimeDigits[0] = '\0';
   for (auto& bar : deviceBars) bar = -1;
@@ -212,6 +213,7 @@ void Interface::advanceAnimations(uint32_t now) {
   if (now - nameFrameAt >= 45) {
     nameFrameAt = now;
     renderScrollingNames(now);
+    if (lastSettingRow >= 0 && !settingsAnimation.active()) renderScreenRgbName(now);
     if (wifiRowCount && !wifiListAnimation.active()) renderWifiList(1.0f, true);
   }
 }

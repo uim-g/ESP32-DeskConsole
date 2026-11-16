@@ -150,6 +150,30 @@ void Interface::renderLauncher(float progress) {
 }
 
 // 比较上一次设置快照，根据选中行、开关和数值变化启动对应动画。
+namespace {
+constexpr const char* screenRgbNames[] = {"Off", "Intermittent Rainbow", "Continuous Rainbow"};
+constexpr int modeX = 192, modeY = 181, modeWidth = 71, modeHeight = 31;
+constexpr uint16_t settingsSelection = 0x2A69;
+}
+
+void Interface::renderScreenRgbName(uint32_t now) {
+  const String value = screenRgbNames[static_cast<int>(settingsValues.screenRgb)];
+  screen.setFont(&NunitoSmall);
+  int16_t x, y;
+  uint16_t width, height;
+  screen.getTextBounds(value.c_str(), 0, 0, &x, &y, &width, &height);
+  const int offset = nameOffset(width, modeWidth, now - screenRgbChangedAt);
+  if (offset == screenRgbOffset) return;
+  GFXcanvas16 strip(modeWidth, modeHeight);
+  if (!strip.getBuffer()) return;
+  strip.setTextWrap(false);
+  strip.fillScreen(settingsTarget == 4 ? settingsSelection : background);
+  paintName(strip, value, 0, 0, modeWidth, modeHeight, offset,
+            !settingsValues.rgbEnabled ? muted : settingsEditing ? highlight : ILI9341_WHITE);
+  screen.drawRGBBitmap(modeX, modeY, strip.getBuffer(), modeWidth, modeHeight);
+  screenRgbOffset = offset;
+}
+
 void Interface::settings(const Settings& values, uint8_t selected, bool editing, bool saveFailed) {
   if (settingsAnimation.active()) {
     settingsAnimation.stop();
@@ -166,7 +190,8 @@ void Interface::settings(const Settings& values, uint8_t selected, bool editing,
        settingSwitches[1] != (values.rgbEnabled ? 32 : 12));
   const bool rolled = editing &&
       ((selected == 1 && lastSleepMinutes >= 1 && lastSleepMinutes != values.sleepMinutes()) ||
-       (selected == 3 && lastBrightness >= 1 && lastBrightness != values.brightness));
+       (selected == 3 && lastBrightness >= 1 && lastBrightness != values.brightness) ||
+       (selected == 4 && lastScreenRgb >= 0 && lastScreenRgb != static_cast<int>(values.screenRgb)));
   if (moved || toggled || rolled) {
     settingsAnimation.start(millis(), moved ? 120 : 96, rolled ? 8 : 6);
   } else renderSettings(1.0f);
@@ -212,11 +237,10 @@ void Interface::renderSettings(float progress) {
       gfx.setCursor(ox + 170, oy + 24);
       if (row == 1) gfx.printf("%u min", static_cast<unsigned>(values.sleepMinutes()));
       else if (row == 3) gfx.print(values.brightness);
-      else {
-        constexpr const char* modes[] = {"Off", "Intermittent", "Continuous"};
-        gfx.setFont(&NunitoHint);
-        gfx.setCursor(ox + 155, oy + 24);
-        gfx.print(modes[static_cast<uint8_t>(values.screenRgb)]);
+      else if (strip.getBuffer()) {
+        paintName(gfx, screenRgbNames[static_cast<int>(values.screenRgb)], ox + 155, oy + 2,
+                  modeWidth, modeHeight, 0,
+                  !available[row] ? muted : editing ? highlight : ILI9341_WHITE);
       }
       if (available[row]) {
         gfx.drawLine(ox + 228, oy + 13, ox + 233, oy + 18, highlight);
@@ -242,9 +266,10 @@ void Interface::renderSettings(float progress) {
   }
 
   const bool rollingSleep = selected == 1;
-  const int previousValue = rollingSleep ? lastSleepMinutes : lastBrightness;
-  const int currentValue = rollingSleep ? values.sleepMinutes() : values.brightness;
-  const bool roll = editing && (rollingSleep || selected == 3) && previousValue >= 1 &&
+  const bool rollingMode = selected == 4;
+  const int previousValue = rollingMode ? lastScreenRgb : rollingSleep ? lastSleepMinutes : lastBrightness;
+  const int currentValue = rollingMode ? static_cast<int>(values.screenRgb) : rollingSleep ? values.sleepMinutes() : values.brightness;
+  const bool roll = editing && (rollingMode || rollingSleep || selected == 3) && previousValue >= 0 &&
                     previousValue != currentValue && strip.getBuffer();
   for (int row = 0; row < Settings::rowCount; ++row) {
     if (roll) break;  // 连调时只写数值窗口，保留整行其余内容。
@@ -268,11 +293,11 @@ void Interface::renderSettings(float progress) {
 
   if (roll) {
     // 数字画布独立裁剪，旧数字退出时变淡，新数字从另一端进入。
-    GFXcanvas16 digits(56, 31);
+    GFXcanvas16 digits(rollingMode ? modeWidth : 56, 31);
     if (digits.getBuffer()) {
       digits.setFont(&NunitoSmall);
       digits.setTextWrap(false);
-      const int direction = currentValue < previousValue ? 1 : -1;
+      const int direction = (rollingMode ? (currentValue + 1) % 3 == previousValue : currentValue < previousValue) ? 1 : -1;
       auto tint = [&](int alpha) {
         const int inverse = 8 - alpha;
         const int r = (((highlight >> 11) & 31) * alpha + ((selection >> 11) & 31) * inverse) / 8;
@@ -285,18 +310,24 @@ void Interface::renderSettings(float progress) {
       digits.fillScreen(selection);
       digits.setTextColor(tint(8 - alpha));
       digits.setCursor(0, 21 - direction * offset);
-      digits.print(previousValue);
+      if (rollingMode) paintName(digits, screenRgbNames[previousValue], 0, -direction * offset, modeWidth, 31, 0, tint(8 - alpha));
+      else digits.print(previousValue);
       if (rollingSleep) digits.print(" min");
       digits.setTextColor(tint(alpha));
       digits.setCursor(0, 21 + direction * (27 - offset));
-      digits.print(currentValue);
+      if (rollingMode) paintName(digits, screenRgbNames[currentValue], 0, direction * (27 - offset), modeWidth, 31, 0, tint(alpha));
+      else digits.print(currentValue);
       if (rollingSleep) digits.print(" min");
-      screen.drawRGBBitmap(207, firstY + selected * pitch + 3, digits.getBuffer(), 56, 31);
+      screen.drawRGBBitmap(rollingMode ? modeX : 207, firstY + selected * pitch + (rollingMode ? 2 : 3), digits.getBuffer(), rollingMode ? modeWidth : 56, 31);
     } else {
-      paint(selected, targetY, knobs[selected / 2]);
+      paint(selected, targetY, knobs[selected == 2 ? 1 : 0]);
     }
   }
   if (progress < 1.0f) return;
+  if (lastScreenRgb != static_cast<int>(values.screenRgb)) screenRgbChangedAt = millis();
+  lastScreenRgb = static_cast<int>(values.screenRgb);
+  screenRgbOffset = -1;
+  renderScreenRgbName(millis());
   lastSettingRow = selected;
   lastBrightness = values.brightness;
   lastSleepMinutes = values.sleepMinutes();

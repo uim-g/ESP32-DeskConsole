@@ -55,6 +55,9 @@ class Interface {
   void renderTabs(int offset, uint8_t mask);
   void renderLauncher(float progress);
   void renderSettings(float progress);
+  void renderScreenRgbName(uint32_t now);
+  int lastScreenRgb = -1, screenRgbOffset = -1;
+  uint32_t screenRgbChangedAt = 0;
   void renderWifiList(float progress, bool namesOnly = false);
   static int nameOffset(int width, int viewport, uint32_t elapsed);
   static void paintName(Adafruit_GFX& gfx, const String& value, int x, int y,
