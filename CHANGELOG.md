@@ -4,6 +4,13 @@ Screenshots below were captured from the corresponding [live browser simulator](
 
 下方截图均取自对应版本的[在线网页模拟器](https://uim-g.github.io/ESP32-DeskConsole/)。
 
+## v3.2.1
+
+- Settings animates EDIT into SAVE and hides the corresponding arrow at the limits of Sleep Timer and RGB. 设置页支持 EDIT 与 SAVE 动画切换，休眠和 RGB 到达边界时自动收起对应箭头。
+- Smoothed side-button hint animations. 侧边按键提示使用更平滑的收放动画。
+- Kept the rotating Cube and left experimental translation tracking disabled. 保留可旋转的立方体，实验性的平移追踪继续停用。
+
+
 ## v3.2.0
 
 - Added a gyroscope-driven Cube to Motion with six colored faces, colored axis edges, and a CENTER control. Motion 新增陀螺仪驱动的立方体，提供六面配色、彩色轴线和归中按键。
