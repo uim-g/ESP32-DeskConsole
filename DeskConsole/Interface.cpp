@@ -171,8 +171,9 @@ void Interface::startTabs(bool entering, uint8_t mask) {
   tabAnimation.stop();
   for (uint8_t i = 0; i < 4; ++i) {
     if ((mask & (1U << i)) && tabs[i]) {
-      tabAnimation.start(millis(), 72, 6);
       renderTabs(entering ? 21 : 0, mask);
+      // 首帧传输完再计时，让慢速 TFT 也能完整显示滑入和退场。
+      tabAnimation.start(millis(), 180, 12);
       return;
     }
   }
@@ -204,9 +205,9 @@ void Interface::advanceAnimations(uint32_t now) {
     renderMotionNotice(lroundf(16 * progress * progress));
   }
   if ((step = tabAnimation.frame(now)) >= 0) {
-    constexpr int slideOut[] = {0, 1, 3, 7, 12, 18, 21};
-    constexpr int slideIn[] = {21, 15, 8, 2, -2, -1, 0};
-    renderTabs(tabsEntering ? slideIn[step] : slideOut[step], tabMask);
+    const float eased = smoothStep(tabAnimation.progress(step));
+    const int offset = lroundf(21 * (tabsEntering ? 1.0f - eased : eased));
+    renderTabs(offset, tabMask);
     if (!tabAnimation.active() && !tabsEntering) {
       for (uint8_t i = 0; i < 4; ++i) if (tabMask & (1U << i)) tabs[i] = nullptr;
       if (replacementLabel) {
