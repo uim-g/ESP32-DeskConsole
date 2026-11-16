@@ -258,12 +258,15 @@ void MotionPage::draw() {
     const float screenX = gravity[1];
     const float screenY = -gravity[0];
     const float screenZ = gravity[2];
+    // 实机正常直立时，旧坐标的 +X 朝上。修正两种直立视图的共同零位。
+    const float uprightX = -screenY;
+    const float uprightY = screenX;
     constexpr float degrees = 57.2957795f;
     // 水平仪以屏幕法线为零位，姿态仪以屏幕上边缘朝上为零位。
     const int roll = lroundf((level ? atan2f(screenY, screenZ) :
-                                      atan2f(screenX, screenY)) * degrees);
+                                      atan2f(uprightX, uprightY)) * degrees);
     const int pitch = lroundf((level ? atan2f(-screenX, hypotf(screenY, screenZ)) :
-                                       atan2f(screenZ, hypotf(screenX, screenY))) * degrees);
+                                       atan2f(screenZ, hypotf(uprightX, uprightY))) * degrees);
     if (level) {
         // 测量重力与屏幕平面的夹角，板子立在哪一边都能触发。
         const float inPlane = hypotf(screenX, screenY);
@@ -273,8 +276,8 @@ void MotionPage::draw() {
         if (layoutChanged) ctx.ui.clearMotionBody();
         if (upright) {
           // 分别测量两侧平面内的偏斜，避免把 X 和 Z 合成一个角度。
-          const int tiltX = lroundf(atan2f(screenX, fabsf(screenY)) * degrees);
-          const int tiltZ = lroundf(atan2f(screenZ, fabsf(screenY)) * degrees);
+          const int tiltX = lroundf(atan2f(uprightX, fabsf(uprightY)) * degrees);
+          const int tiltZ = lroundf(atan2f(screenZ, fabsf(uprightY)) * degrees);
           if (layoutChanged || lastRoll == 999 || tiltX != lastTiltX) ctx.ui.motionTube(false, tiltX);
           if (layoutChanged || lastRoll == 999 || tiltZ != lastTiltZ) ctx.ui.motionTube(true, tiltZ);
           lastTiltX = tiltX;
