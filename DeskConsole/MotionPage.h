@@ -23,6 +23,7 @@ class MotionPage : public Page {
   static bool usable(const Calibration& data);
   void collect();
   void drawCalibration();
+  void finishCalibration();
   bool faceAligned(const float (&accel)[3]) const;
   bool readSample(int16_t (&axes)[6]);
   bool readRegisters(uint8_t address, uint8_t reg, uint8_t* data, size_t length);
@@ -34,6 +35,8 @@ class MotionPage : public Page {
   enum class Graphic { None, Attitude, Level };
   Graphic graphic = Graphic::Attitude;
   Graphic lastInstrument = Graphic::Attitude;
+  enum class CalibrationTabs { Idle, ShowSample, RestoreViews };
+  CalibrationTabs calibrationTabs = CalibrationTabs::Idle;
   bool uprightLevel = false;
   int lastTiltX = 999, lastTiltZ = 999;
   int lastRoll = 999, lastPitch = 999;

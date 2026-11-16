@@ -271,6 +271,8 @@ void Interface::device(const Platform::Device& data) {
 }
 
 void Interface::clearMotionBody() {
+  motionCancellationWaiting = false;
+  motionCancellationAnimation.stop();
   screen.fillRect(34, 43, 252, 173, background);
   for (uint8_t slot = 1; slot < 14; ++slot) cache[slot] = "";
 }
@@ -414,4 +416,29 @@ void Interface::motionTube(bool horizontal, int angle) {
   screen.drawRGBBitmap(horizontal ? 149 : 77, horizontal ? 110 : 73, tube.getBuffer(), width, height);
   field(horizontal ? 9 : 8, horizontal ? 149 : 43, 188, 108, 24,
         String(horizontal ? "Z  " : "X  ") + String(angle) + " deg", 4, ILI9341_WHITE, true);
+}
+
+void Interface::motionCancellation() {
+  motionCancellationAnimation.stop();
+  motionCancellationStarted = millis();
+  motionCancellationWaiting = true;
+  renderMotionCancellation(0);
+}
+
+void Interface::renderMotionCancellation(int offset) {
+  constexpr int width = 220, height = 15;
+  // 裁切到状态胶囊上沿，提示滑下时不会覆盖胶囊。
+  GFXcanvas16 strip(width, height);
+  if (!strip.getBuffer()) return;
+  strip.fillScreen(background);
+  strip.setTextWrap(false);
+  strip.setFont(&NunitoHint);
+  strip.setTextColor(ILI9341_WHITE);
+  constexpr const char* message = "Calibration cancelled";
+  int16_t x, y;
+  uint16_t w, h;
+  strip.getTextBounds(message, 0, 0, &x, &y, &w, &h);
+  strip.setCursor((width - w) / 2 - x, (height - h) / 2 - y + offset);
+  strip.print(message);
+  screen.drawRGBBitmap(50, 203, strip.getBuffer(), width, height);
 }

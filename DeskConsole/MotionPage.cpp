@@ -82,6 +82,14 @@ void MotionPage::enter() {
 
 void MotionPage::leave() {
   calibrating = sampling = false;
+  calibrationTabs = CalibrationTabs::Idle;
+}
+
+void MotionPage::finishCalibration() {
+  leave();
+  ctx.ui.clearMotionBody();
+  ctx.ui.replaceTab(3, "CAL");
+  calibrationTabs = CalibrationTabs::RestoreViews;
 }
 
 void MotionPage::wake() {
@@ -99,15 +107,15 @@ bool MotionPage::usable(const Calibration& data) {
 }
 
 void MotionPage::input(Key key, uint32_t pressedUs) {
+  if (calibrationTabs != CalibrationTabs::Idle || ctx.ui.tabsAnimating()) return;
   if (key == Key::Back) {
     if (!calibrating) {
       Page::input(key, pressedUs);
       return;
     }
-    leave();
-    ctx.ui.replaceTab(3, "CAL");
-    ctx.ui.clearMotionBody();
-    notice = "Calibration cancelled";
+    finishCalibration();
+    notice = "";
+    ctx.ui.motionCancellation();
   } else if (key == Key::Action && !calibrating) {
     if (graphic != Graphic::None) {
       lastInstrument = graphic;
@@ -135,7 +143,8 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
     face = 0;
     notice = "";
     ctx.ui.clearMotionBody();
-    ctx.ui.replaceTab(3, "SAMPLE");
+    ctx.ui.startTabs(false, (1U << 1) | (1U << 2));
+    calibrationTabs = CalibrationTabs::ShowSample;
   } else if (key == Key::Down && calibrating && !sampling && valid) {
     const float current[3] = {float(axes[0]), float(axes[1]), float(axes[2])};
     if (!faceAligned(current)) {
@@ -154,6 +163,16 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
 }
 
 void MotionPage::tick(uint32_t now) {
+  if (calibrationTabs != CalibrationTabs::Idle && !ctx.ui.tabsAnimating()) {
+    if (calibrationTabs == CalibrationTabs::ShowSample) {
+      ctx.ui.replaceTab(3, "SAMPLE");
+    } else {
+      ctx.ui.tab(false, true, "DATA");
+      ctx.ui.tab(true, false, "VIEW");
+      ctx.ui.startTabs(true, (1U << 1) | (1U << 2));
+    }
+    calibrationTabs = CalibrationTabs::Idle;
+  }
   if (!due(now, nextRead)) return;
   valid = readSample(axes);
   nextRead = now + (graphic == Graphic::None ? 200 : 100);
@@ -212,9 +231,7 @@ void MotionPage::collect() {
   notice = "";
   if (++face < 6) return;
 
-  calibrating = false;
-  ctx.ui.replaceTab(3, "CAL");
-  ctx.ui.clearMotionBody();
+  finishCalibration();
   notice = "Calibration out of range";
   if (!usable(pending)) return;
   bool saved = false;
@@ -321,7 +338,7 @@ void MotionPage::draw() {
     // 每个读数独立缓存，标题和轴名保持固定。
     ctx.ui.field(i + 1, x, y, 100, 24, reading, 0, ILI9341_WHITE, true);
   }
-  ctx.ui.field(7, 39, 181, 242, 25,
+  ctx.ui.field(7, 39, 181, 242, 20,
                *notice ? notice : showCorrected && !calibrated ? "Press CAL to set up" : " ",
                4, Interface::accent, true);
   ctx.ui.motionMode(showCorrected ? "CALIBRATED" : "RAW");

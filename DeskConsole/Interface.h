@@ -52,9 +52,14 @@ class Interface {
   void motionTube(bool horizontal, int angle);
   void motionCalibrationIcon(uint8_t face);
   void motionMode(const char* mode);
+  void motionCancellation();
 
  private:
   void renderMotionMode(int step);
+  void renderMotionCancellation(int offset);
+  FrameTimeline motionCancellationAnimation;
+  uint32_t motionCancellationStarted = 0;
+  bool motionCancellationWaiting = false;
   FrameTimeline motionModeAnimation;
   const char* motionModeShown = nullptr;
   const char* motionModeTarget = nullptr;
