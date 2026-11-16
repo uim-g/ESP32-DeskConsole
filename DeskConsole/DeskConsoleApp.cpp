@@ -10,6 +10,7 @@ Page& DeskConsoleApp::page(View view) {
     case View::Network: return network;
     case View::Bluetooth: return ble;
     case View::Device: return device;
+    case View::Motion: return motion;
     case View::Settings: return preferences;
     case View::Stats: return stats;
     case View::Calibration: return calibration;

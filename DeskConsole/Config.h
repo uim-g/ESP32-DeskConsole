@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 namespace Config {
+constexpr int motionSda = 10, motionScl = 11;
 constexpr uint8_t rgbPin = 48;
 constexpr int bootButton = 0;
 constexpr uint8_t rgbBrightness = 1;  // 默认 0% 档对应的 RGB 通道值。

@@ -62,6 +62,10 @@ F1 timing uses the TFT lights-out signal and includes hardware-dependent display
 
 See [release history](CHANGELOG.md).
 
+### Optional MPU6050 (Motion)
+
+On the Motion development branch, connect module VCC to 3V3, GND to the common ground, SDA to GPIO10, and SCL to GPIO11. Leave XDA, XCL, and INT open. Tie AD0 to GND for address `0x68`, or to 3V3 for `0x69`. Open **Apps → Motion** to see raw signed counts for the three accelerometer and three gyroscope axes, refreshed about once a second. The page reports when the sensor is missing. The browser preview has no physical sensor.
+
 ### Wiring diagram
 
 **Rewired prototype.** The first photo shows the breadboard jumpers before installation. The second shows the TFT and ESP32-S3 installed. Use the pin table for connections hidden by the boards.
