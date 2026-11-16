@@ -475,7 +475,7 @@ void Interface::motionCalibrationPrompt(const char* message, CalibrationTone ton
   screen.drawRGBBitmap(36, 198, line.getBuffer(), width, height);
 }
 
-void Interface::motionCube(const float (&rotation)[4]) {
+void Interface::motionCube(const float (&rotation)[4], float distance, float offsetX, float offsetY) {
   constexpr int size = 146;
   // 顶点沿各面的外法线逆时针排列。
   constexpr uint8_t faces[][4] = {
@@ -487,7 +487,7 @@ void Interface::motionCube(const float (&rotation)[4]) {
   // 立方体按显示坐标反转 X/Y，保留 Z 的正方向。
   const float w = rotation[0], x = -rotation[1], y = -rotation[2], z = rotation[3];
   int px[8], py[8];
-  char key[17]{};
+  char key[65]{};
   for (int i = 0; i < 8; ++i) {
     const float vx = i & 1 ? 1 : -1;
     const float vy = i & 2 ? 1 : -1;
@@ -499,10 +499,12 @@ void Interface::motionCube(const float (&rotation)[4]) {
     const float ty = vy + 2 * (w * cy + z * cx - x * cz);
     const float tz = vz + 2 * (w * cz + x * cy - y * cx);
     // 从右上方斜视，归中时露出前面、上面和右面。
-    px[i] = size / 2 + lroundf(32 * (tx - 0.34f * tz));
-    py[i] = size / 2 - lroundf(32 * (ty - 0.23f * tz));
-    key[i * 2] = static_cast<char>(px[i] + 1);
-    key[i * 2 + 1] = static_cast<char>(py[i] + 1);
+    const float scale = distance > 0 ? 20.0f / (distance - 0.10f * tz) : 32.0f;
+    px[i] = size / 2 + lroundf(scale * (tx - 0.34f * tz + 10 * offsetX));
+    py[i] = size / 2 - lroundf(scale * (ty - 0.23f * tz + 10 * offsetY));
+    snprintf(key + i * 8, 9, "%04x%04x",
+             static_cast<unsigned>(static_cast<uint16_t>(px[i])),
+             static_cast<unsigned>(static_cast<uint16_t>(py[i])));
   }
   if (cache[13] == key) return;
   GFXcanvas16 cube(size, size);

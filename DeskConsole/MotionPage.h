@@ -37,7 +37,8 @@ class MotionPage : public Page {
   Preferences storage;
   Calibration calibration{};
   bool loaded = false, calibrated = false, showCorrected = false;
-  enum class Graphic { None, Attitude, Level, Cube };
+  enum class Graphic { None, Attitude, Level, Cube, Track };
+  bool cubeView() const { return graphic == Graphic::Cube || graphic == Graphic::Track; }
   Graphic graphic = Graphic::Level;
   Graphic lastInstrument = Graphic::Level;
   enum class CalibrationTabs { Idle, ShowSample, RestoreViews };
@@ -52,6 +53,9 @@ class MotionPage : public Page {
   bool cubeReady = false;
   float cubeRotation[4] = {1, 0, 0, 0};
   float cubeGravity[3]{};
+  float trackTravel[3]{};
+  float trackVelocity[3]{};
+  uint16_t trackQuietMs = 0;
   uint32_t warningStarted = 0;
   uint32_t warningFrameAt = 0;
   bool warningActive = false;

@@ -133,12 +133,14 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
     notice = "";
   } else if (key == Key::Up && !calibrating) {
     const bool wasData = graphic == Graphic::None;
-    const bool wasCube = graphic == Graphic::Cube;
+    const bool wasCube = cubeView();
     graphic = wasData ? lastInstrument :
-        wasCube ? Graphic::Level : graphic == Graphic::Level ? Graphic::Attitude : Graphic::Cube;
-    if (graphic == Graphic::Cube) {
+        graphic == Graphic::Track ? Graphic::Level :
+        graphic == Graphic::Level ? Graphic::Attitude :
+        graphic == Graphic::Attitude ? Graphic::Cube : Graphic::Track;
+    if (cubeView()) {
       centerCube();
-      ctx.ui.replaceTab(3, "CENTER");
+      if (!wasCube) ctx.ui.replaceTab(3, "CENTER");
     } else if (wasData || wasCube) {
       ctx.ui.replaceTab(3, nullptr);
     }
@@ -146,7 +148,7 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
     lastRoll = lastPitch = 999;
     ctx.ui.clearMotionBody();
     notice = "";
-  } else if (key == Key::Down && graphic == Graphic::Cube) {
+  } else if (key == Key::Down && cubeView()) {
     centerCube();
   } else if (key == Key::Down && graphic == Graphic::None && !calibrating) {
     if (!valid) return;
@@ -198,8 +200,8 @@ void MotionPage::tick(uint32_t now) {
   }
   if (!due(now, nextRead)) return;
   valid = readSample(axes);
-  nextRead = now + (graphic == Graphic::None ? 200 : graphic == Graphic::Cube ? 25 : 100);
-  if (graphic == Graphic::Cube) {
+  nextRead = now + (graphic == Graphic::None ? 200 : cubeView() ? 25 : 100);
+  if (cubeView()) {
     if (valid) updateCube(now);
     else if (cubeReady) {
       centerCube();
@@ -292,9 +294,11 @@ void MotionPage::draw() {
     drawCalibration();
     return;
   }
-  if (graphic == Graphic::Cube) {
-    if (valid) ctx.ui.motionCube(cubeRotation);
-    ctx.ui.motionMode("CUBE");
+  if (cubeView()) {
+    const bool depth = graphic == Graphic::Track;
+    if (valid) ctx.ui.motionCube(cubeRotation, depth ? 0.70f + trackTravel[2] : 0,
+                                 depth ? -trackTravel[0] : 0, depth ? -trackTravel[1] : 0);
+    ctx.ui.motionMode(depth ? "TRACK" : "CUBE");
     return;
   }
   if (graphic != Graphic::None) {
@@ -433,6 +437,9 @@ void MotionPage::drawCalibration() {
 
 void MotionPage::centerCube() {
   cubeReady = false;
+  for (float& component : trackTravel) component = 0;
+  for (float& component : trackVelocity) component = 0;
+  trackQuietMs = 0;
   cubeRotation[0] = 1;
   cubeRotation[1] = cubeRotation[2] = cubeRotation[3] = 0;
 }
@@ -453,6 +460,7 @@ void MotionPage::updateCube(uint32_t now) {
     for (float& component : gravity) component /= magnitude;
   }
   if (!cubeReady) {
+    if (graphic == Graphic::Track && !gravityReliable) return;
     for (int axis = 0; axis < 3; ++axis) cubeGravity[axis] = gravityReliable ? gravity[axis] : 0;
     cubeReady = true;
     cubeSampleAt = now;
@@ -461,17 +469,52 @@ void MotionPage::updateCube(uint32_t now) {
 
   const uint32_t elapsed = now - cubeSampleAt;
   cubeSampleAt = now;
-  if (!elapsed || elapsed > 120) return;
+  if (!elapsed || elapsed > 120) {
+    for (float& component : trackVelocity) component = 0;
+    trackQuietMs = 0;
+    return;
+  }
   const float w = cubeRotation[0], x = cubeRotation[1], y = cubeRotation[2], z = cubeRotation[3];
-  if (gravityReliable) {
-    if (cubeGravity[0] || cubeGravity[1] || cubeGravity[2]) {
+  if (cubeGravity[0] || cubeGravity[1] || cubeGravity[2]) {
       // 用逆四元数将参考重力转回板子坐标，再用叉积修正可观测的两个方向。
-      const float cx = z * cubeGravity[1] - y * cubeGravity[2];
-      const float cy = x * cubeGravity[2] - z * cubeGravity[0];
-      const float cz = y * cubeGravity[0] - x * cubeGravity[1];
-      const float gx = cubeGravity[0] + 2 * (w * cx + z * cy - y * cz);
-      const float gy = cubeGravity[1] + 2 * (w * cy + x * cz - z * cx);
-      const float gz = cubeGravity[2] + 2 * (w * cz + y * cx - x * cy);
+    const float cx = z * cubeGravity[1] - y * cubeGravity[2];
+    const float cy = x * cubeGravity[2] - z * cubeGravity[0];
+    const float cz = y * cubeGravity[0] - x * cubeGravity[1];
+    const float gx = cubeGravity[0] + 2 * (w * cx + z * cy - y * cz);
+    const float gy = cubeGravity[1] + 2 * (w * cy + x * cz - z * cx);
+    const float gz = cubeGravity[2] + 2 * (w * cz + y * cx - x * cy);
+    if (graphic == Graphic::Track) {
+      const float ax = gravity[0] * (gravityReliable ? magnitude : 1) - gx;
+      const float ay = gravity[1] * (gravityReliable ? magnitude : 1) - gy;
+      const float az = gravity[2] * (gravityReliable ? magnitude : 1) - gz;
+      // 把去重力后的加速度转到归中时的固定坐标，再逐轴积分。
+      const float cxLinear = y * az - z * ay;
+      const float cyLinear = z * ax - x * az;
+      const float czLinear = x * ay - y * ax;
+      const float linear[] = {
+        ax + 2 * (w * cxLinear + y * czLinear - z * cyLinear),
+        ay + 2 * (w * cyLinear + z * cxLinear - x * czLinear),
+        az + 2 * (w * czLinear + x * cyLinear - y * cxLinear)
+      };
+      const bool quiet = ax * ax + ay * ay + az * az < 0.0025f &&
+                         rate[0] * rate[0] + rate[1] * rate[1] + rate[2] * rate[2] < 0.0144f;
+      trackQuietMs = quiet ? min(uint32_t(200), trackQuietMs + elapsed) : 0;
+      if (trackQuietMs >= 200) {
+        for (float& component : trackVelocity) component = 0;
+      } else {
+        const float seconds = elapsed * 0.001f;
+        for (int axis = 0; axis < 3; ++axis) {
+          const float g = linear[axis];
+          const float acceleration = fabsf(g) < 0.025f ? 0 : constrain(g * 9.80665f, -10.0f, 10.0f);
+          const float nextVelocity = constrain(trackVelocity[axis] + acceleration * seconds, -1.0f, 1.0f);
+          const float nextTravel = trackTravel[axis] + (trackVelocity[axis] + nextVelocity) * 0.5f * seconds;
+          trackTravel[axis] = axis == 2 ? constrain(nextTravel, -0.25f, 0.65f) :
+                                         constrain(nextTravel, -0.45f, 0.45f);
+          trackVelocity[axis] = nextTravel == trackTravel[axis] ? nextVelocity : 0;
+        }
+      }
+    }
+    if (gravityReliable) {
       rate[0] += 0.8f * (gravity[1] * gz - gravity[2] * gy);
       rate[1] += 0.8f * (gravity[2] * gx - gravity[0] * gz);
       rate[2] += 0.8f * (gravity[0] * gy - gravity[1] * gx);
