@@ -248,7 +248,7 @@ void MotionPage::draw() {
     const int pitch = lroundf(atan2f(-screenX, hypotf(screenY, screenZ)) * degrees);
     if (roll != lastRoll || pitch != lastPitch) {
       if (level) ctx.ui.motionLevel(roll, pitch);
-      else ctx.ui.motionAttitude(roll, pitch);
+      else ctx.ui.motionAttitude(roll, -pitch);
       lastRoll = roll;
       lastPitch = pitch;
     }
