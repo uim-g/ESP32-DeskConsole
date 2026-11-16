@@ -103,6 +103,8 @@ void Interface::setDisplayOn(bool on, bool holdForSleep) {
 // 切换页面时清空局部字段缓存并停止旧动画，防止上个页面的中间帧写到新页面。
 void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   fireworks.reset();
+  cubeCanvas.reset();
+  lastCubeBounds = {0, 0, -1, -1};
   tabAnimation.stop();
   motionModeAnimation.stop();
   motionNoticeAnimation.stop();

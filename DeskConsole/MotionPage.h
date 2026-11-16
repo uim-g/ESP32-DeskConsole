@@ -6,7 +6,7 @@ class MotionPage : public Page {
  public:
   using Page::Page;
   PageStyle style() const override {
-    return {"Motion", 0x20A4, theme, {"BACK", "DATA", "VIEW", graphic == Graphic::None ? "CAL" : nullptr}};
+    return {"Motion", 0x20A4, theme, {"BACK"}};
   }
   void enter() override;
   void leave() override;
@@ -25,6 +25,7 @@ class MotionPage : public Page {
   void collect();
   void drawCalibration();
   void drawFrame(bool forceReadings);
+  void syncTabs();
   void updateCube(uint32_t now);
   void centerCube();
   void showCalibrationFeedback(const char* message, bool accepted = false);
@@ -42,8 +43,9 @@ class MotionPage : public Page {
   bool cubeView() const { return graphic == Graphic::Cube || graphic == Graphic::Track; }
   Graphic graphic = Graphic::Level;
   Graphic lastInstrument = Graphic::Level;
-  enum class CalibrationTabs { Idle, ShowSample, RestoreViews };
-  CalibrationTabs calibrationTabs = CalibrationTabs::Idle;
+  enum class LowerHint { Hidden, Cal, Sample, Center };
+  LowerHint lowerHint = LowerHint::Hidden;
+  bool viewsShown = false;
   bool uprightLevel = false;
   int lastTiltX = 999, lastTiltZ = 999;
   int lastRoll = 999, lastPitch = 999;

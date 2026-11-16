@@ -326,6 +326,7 @@ void Interface::renderSettings(float progress) {
   lastBrightness = values.brightnessPercent();
   lastSleepMinutes = values.sleepMinutes();
   field(0, 39, 215, 242, 23, saveFailed ? "Save failed. Press SAVE to retry" :
-        editing ? "SAVE confirms / BACK cancels" : "Press EDIT to change a setting",
+        editing ? "SAVE confirms / BACK cancels" :
+        selected == 2 && !values.rgbEnabled() ? "Turn RGB on to edit" : "Press EDIT to change a setting",
         4, saveFailed ? ILI9341_RED : muted, true);
 }

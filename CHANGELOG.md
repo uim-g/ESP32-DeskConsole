@@ -4,6 +4,15 @@ Screenshots below were captured from the corresponding [live browser simulator](
 
 下方截图均取自对应版本的[在线网页模拟器](https://uim-g.github.io/ESP32-DeskConsole/)。
 
+## v3.3.1
+
+- Reused the Cube canvas and limited TFT transfers to the area covered by the previous and current frames. 复用 Cube 画布，仅传输新旧画面覆盖的区域。
+- Motion retries an unavailable MPU6050 once a second and hides sensor-dependent keys until it reconnects. MPU6050 掉线后每秒重试，重连前隐藏并禁用相关按键。
+- The Motion connection badge uses a filled gray capsule and fits both I²C addresses. Motion 使用灰色填充胶囊，两个 I²C 地址均可完整显示。
+- Settings hides EDIT for Screen-off RGB when RGB is Off. RGB 关闭时，熄屏灯效项收起 EDIT 并提示先开启 RGB。
+- Weather uses the ESP32 core's built-in CA bundle and waits for valid time. Failed requests retain cached weather. 天气请求等待系统时间有效并使用 ESP32 内置 CA 验证，失败时保留缓存。
+
+
 ## v3.3.0
 
 - Added six continuous, zero-centered bars to Motion Data in Raw and Calibrated modes. Motion 的原始和校准读数页均新增六条以零为中心的连续色条。

@@ -47,9 +47,11 @@ void SettingsPage::tick(uint32_t) {
   const int maximum = row == 0 ? Settings::sleepChoices - 1 : Settings::rgbChoices - 1;
   const bool up = !bounded || value < maximum;
   const bool down = !bounded || value > 0;
-  if (saveShown != editing) {
-    saveShown = editing;
-    ctx.ui.replaceTab(1, editing ? "SAVE" : "EDIT");
+  const ActionHint action = editing ? ActionHint::Save :
+      row == 2 && !store.current.rgbEnabled() ? ActionHint::Hidden : ActionHint::Edit;
+  if (actionShown != action) {
+    actionShown = action;
+    ctx.ui.replaceTab(1, action == ActionHint::Save ? "SAVE" : action == ActionHint::Edit ? "EDIT" : nullptr);
   } else if (upShown != up) {
     upShown = up;
     ctx.ui.replaceTab(2, up ? "^" : nullptr);

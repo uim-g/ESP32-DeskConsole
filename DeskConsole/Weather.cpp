@@ -1,5 +1,6 @@
 #include "Weather.h"
 #include "Config.h"
+#include "Platform.h"
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <WiFi.h>
@@ -36,7 +37,7 @@ void Weather::worker(void* context) {
   bool waitingReported = false;
   for (;;) {
     bool ok = false;
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() == WL_CONNECTED && Platform::clockReady()) {
       waitingReported = false;
       Serial.println("[WEATHER] Requesting current conditions and 3-day forecast");
       WeatherData result;
@@ -53,7 +54,7 @@ void Weather::worker(void* context) {
       }
     } else if (!waitingReported) {
       waitingReported = true;
-      Serial.println("[WEATHER] Waiting for Wi-Fi");
+      Serial.println("[WEATHER] Waiting for Wi-Fi and clock synchronization");
     }
     vTaskDelay(pdMS_TO_TICKS(ok ? 900000 : 30000));
   }
@@ -74,7 +75,7 @@ bool Weather::fetch(WeatherData& result) {
          "precipitation_probability_max,sunrise,sunset";
 
   WiFiClientSecure client;
-  client.setInsecure();  // 原型沿用此设置。部署时改用可信 CA 校验服务器。
+  client.useBuiltinCACertBundle();  // Arduino ESP32 内置根证书；验证失败时保留天气缓存。
   client.setHandshakeTimeout(5);
   // 为网络连接和读取设置超时，避免单次请求无限等待。
   HTTPClient http;

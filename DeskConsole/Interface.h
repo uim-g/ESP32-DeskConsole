@@ -129,6 +129,9 @@ class Interface {
   int8_t motionMeterPixels[6];
   int lastLights = -1;
   std::unique_ptr<GFXcanvas16> fireworks;
+  std::unique_ptr<GFXcanvas16> cubeCanvas;
+  struct CubeBounds { int left, top, right, bottom; };
+  CubeBounds lastCubeBounds{0, 0, -1, -1};
   uint32_t fireworkStarted = 0;
   uint32_t lastFireworkFrame = 0;
   int lastSelection = -1;
