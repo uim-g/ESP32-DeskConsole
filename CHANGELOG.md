@@ -4,6 +4,29 @@ Screenshots below were captured from the corresponding [live browser simulator](
 
 下方截图均取自对应版本的[在线网页模拟器](https://uim-g.github.io/ESP32-DeskConsole/)。
 
+## v3.2.0
+
+- Added a gyroscope-driven Cube to Motion with six colored faces, colored axis edges, and a CENTER control. Motion 新增陀螺仪驱动的立方体，提供六面配色、彩色轴线和归中按键。
+- Gave each app its own accent and placed Motion between Weather and Wi-Fi. 各应用使用独立主题色，Motion 移到天气和 Wi-Fi 之间。
+- Combined automatic sleep and RGB settings into Sleep Timer and RGB selectors, with compatibility for existing settings. 自动休眠和灯光分别合并为 Sleep Timer 和 RGB，兼容旧设置。
+
+## v3.1.3
+
+- Redesigned Motion navigation, data layout, calibration guidance and feedback. 重做 Motion 导航、双列数据与校准指引，增加保存成功的 RGB 提示。
+
+## v3.1.2
+
+- Added an artificial horizon and a bubble level that changes layout when held upright. 新增姿态仪和直立时自动切换样式的气泡水平仪。
+
+## v3.1.1
+
+- Added a distinct Motion icon. 为 Motion 加入独立图标。
+
+## v3.1.0
+
+- Added MPU6050 readings, persistent calibration, and BOOT screen-off RGB effects. 新增 MPU6050 读数、可保存的校准数据和 BOOT 熄屏 RGB 灯效。
+
+
 ## v3.0.0
 
 - **Wiring change / 接线变更** — TFT signals use CS GPIO9, RESET GPIO8, DC GPIO18, MOSI GPIO17, SCK GPIO16 and LED GPIO15. Rewire before uploading. 更新 TFT 引脚，上传前需重新接线。
