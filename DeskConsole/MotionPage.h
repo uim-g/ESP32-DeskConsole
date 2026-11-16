@@ -25,6 +25,7 @@ class MotionPage : public Page {
   void drawCalibration();
   void finishCalibration();
   bool faceAligned(const float (&accel)[3]) const;
+  bool targetRawNegative() const { return (face % 2 != 0) != (face < 4); }
   bool readSample(int16_t (&axes)[6]);
   bool readRegisters(uint8_t address, uint8_t reg, uint8_t* data, size_t length);
   bool initializeSensor();
@@ -33,8 +34,8 @@ class MotionPage : public Page {
   Calibration calibration{};
   bool loaded = false, calibrated = false, showCorrected = false;
   enum class Graphic { None, Attitude, Level };
-  Graphic graphic = Graphic::Attitude;
-  Graphic lastInstrument = Graphic::Attitude;
+  Graphic graphic = Graphic::Level;
+  Graphic lastInstrument = Graphic::Level;
   enum class CalibrationTabs { Idle, ShowSample, RestoreViews };
   CalibrationTabs calibrationTabs = CalibrationTabs::Idle;
   bool uprightLevel = false;
@@ -45,7 +46,7 @@ class MotionPage : public Page {
   uint32_t nextRead = 0;
   int16_t axes[6]{}, low[6]{}, high[6]{};
   int32_t sums[6]{};
-  float positive[3]{};
+  float firstFaceReading = 0;
   Calibration pending{};
   const char* notice = "";
 };

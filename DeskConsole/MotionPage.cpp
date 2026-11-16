@@ -66,6 +66,8 @@ bool MotionPage::readSample(int16_t (&reading)[6]) {
 
 
 void MotionPage::enter() {
+  graphic = lastInstrument = Graphic::Level;
+  uprightLevel = false;
   if (!loaded) {
     if (storage.begin("motion", true)) {
       calibrated = storage.getBytes("cal-v1", &calibration, sizeof(calibration)) == sizeof(calibration)
@@ -213,7 +215,6 @@ void MotionPage::collect() {
     }
   }
   const int axis = face / 2;
-  const bool negative = face % 2;
   const float accel[3] = {mean[0], mean[1], mean[2]};
   if (!faceAligned(accel)) {
     notice = "Wrong face. Retry";
@@ -221,11 +222,13 @@ void MotionPage::collect() {
   }
 
   // 正反面求偏移和 1 g 幅值，陀螺仪取六次静置平均。
-  if (negative) {
-    pending.offset[axis] = (positive[axis] + mean[axis]) * 0.5f;
-    pending.scale[axis] = (positive[axis] - mean[axis]) * 0.5f;
+  if (face % 2) {
+    pending.offset[axis] = (firstFaceReading + mean[axis]) * 0.5f;
+    // X/Y 的负原始读数先采样，Z 的正原始读数先采样。
+    pending.scale[axis] = (targetRawNegative() ? firstFaceReading - mean[axis] :
+                                                mean[axis] - firstFaceReading) * 0.5f;
   } else {
-    positive[axis] = mean[axis];
+    firstFaceReading = mean[axis];
   }
   for (int i = 0; i < 3; ++i) pending.gyro[i] += mean[i + 3] / 6.0f;
   notice = "";
@@ -348,7 +351,7 @@ void MotionPage::draw() {
 
 bool MotionPage::faceAligned(const float (&accel)[3]) const {
   const int axis = face / 2;
-  return (face % 2 ? -accel[axis] : accel[axis]) >= 12000 &&
+  return (targetRawNegative() ? -accel[axis] : accel[axis]) >= 12000 &&
          fabsf(accel[(axis + 1) % 3]) <= 4500 && fabsf(accel[(axis + 2) % 3]) <= 4500;
 }
 
@@ -360,13 +363,13 @@ void MotionPage::drawCalibration() {
   ctx.ui.field(1, 36, 47, 248, 23, String("CALIBRATING  ") + String(face + 1) + " / 6",
                0, Interface::accent, true);
   ctx.ui.field(2, 58, 73, 133, 48, String(faces[face]) + "  UP", 1, ILI9341_WHITE, true);
-  ctx.ui.motionCalibrationGuide(face % 2, axes[axis], valid, aligned);
+  ctx.ui.motionCalibrationGuide(targetRawNegative(), axes[axis], valid, aligned);
   ctx.ui.field(3, 36, 127, 248, 22,
                axis == 2 ? (face % 2 ? "Lay module face down" : "Lay module face up") :
                            "Stand module on its edge",
                0, ILI9341_WHITE, true);
   ctx.ui.field(4, 36, 151, 248, 22,
-               String("Aim for ") + faces[face] + (face % 2 ? " near -16000" : " near +16000"),
+               String("Raw ") + faces[face][1] + (targetRawNegative() ? " near -16000" : " near +16000"),
                4, ILI9341_WHITE, true);
   const String readings = valid ? String("X ") + String(axes[0]) + "   Y " + String(axes[1]) +
                                   "   Z " + String(axes[2]) : String("Waiting for sensor");
