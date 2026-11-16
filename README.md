@@ -66,6 +66,12 @@ See [release history](CHANGELOG.md).
 
 ### Wiring diagram
 
+**Rewired prototype.** The first photo shows the breadboard jumpers before installation. The second shows the TFT and ESP32-S3 installed. Use the pin table for connections hidden by the boards.
+
+![Breadboard jumpers before installation](docs/tft-rewire-breadboard.jpg)
+
+![Rewired TFT and ESP32-S3 assembly](docs/tft-rewire-assembled.jpg)
+
 This historical diagram uses the old GPIO mapping. Follow the table above for this branch.
 
 ![DeskConsole Wokwi wiring reference](docs/wokwi-wiring.png)

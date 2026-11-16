@@ -66,6 +66,12 @@ F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气客
 
 ### 接线图
 
+**新版布线实物。** 第一张是安装模块前的面包板跳线，第二张是装上 TFT 和 ESP32-S3 后的样子。被模块盖住的接点请对照上方引脚表。
+
+![安装模块前的面包板跳线](docs/tft-rewire-breadboard.jpg)
+
+![重新布线后的 TFT 和 ESP32-S3](docs/tft-rewire-assembled.jpg)
+
 下图使用旧版引脚，当前分支请以上方接线表为准。
 
 ![DeskConsole Wokwi 接线参考图](docs/wokwi-wiring.png)
