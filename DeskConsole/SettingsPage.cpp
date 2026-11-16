@@ -30,7 +30,7 @@ void SettingsPage::input(Key key, uint32_t us) {
         else next.rgbEnabled = !next.rgbEnabled;
         save(next);
       } else {
-        if ((row == 1 && !next.autoSleep) || (row == 3 && !next.rgbEnabled)) return;
+        if ((row == 1 && !next.autoSleep) || (row >= 3 && !next.rgbEnabled)) return;
         draft = next;
         editing = true;
         saveFailed = false;
@@ -38,9 +38,10 @@ void SettingsPage::input(Key key, uint32_t us) {
     }
   } else if (vertical(key)) {
     const int step = key == Key::Up ? -1 : 1;
-    if (!editing) row = (row + step + 4) % 4;
+    if (!editing) row = (row + step + Settings::rowCount) % Settings::rowCount;
     else if (row == 1) draft.sleepIndex = constrain(draft.sleepIndex - step, 0, 3);
-    else draft.brightness = constrain(draft.brightness - step, 1, 8);
+    else if (row == 3) draft.brightness = constrain(draft.brightness - step, 1, 8);
+    else draft.screenRgb = static_cast<Settings::ScreenRgb>((static_cast<int>(draft.screenRgb) + step + 3) % 3);
   }
   draw();
 }

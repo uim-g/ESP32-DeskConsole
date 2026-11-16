@@ -2,7 +2,7 @@
 
 #pragma once
 #include <Arduino.h>
-#include "Config.h"
+#include "Settings.h"
 
 // 每个提示按时间步推进，不用 delay()，让主循环继续读键。
 class StatusLed {
@@ -32,6 +32,32 @@ class StatusLed {
   void stop() {
     active = false;
     write(0, 0, 0);
+  }
+
+  void screenOff(Settings::ScreenRgb mode, uint32_t elapsed) {
+    const uint32_t phase = elapsed % 13000;
+    if (!enabled || mode == Settings::ScreenRgb::Off ||
+        (mode == Settings::ScreenRgb::Intermittent && phase >= 3000)) {
+      stop();
+      return;
+    }
+    // 间歇模式每轮三秒渐亮渐暗，之后十秒全灭。
+    uint8_t level = brightness;
+    if (mode == Settings::ScreenRgb::Intermittent) {
+      const uint32_t envelope = phase < 1500 ? phase : 3000 - phase;
+      level = (brightness * envelope + 750) / 1500;
+    }
+    const uint32_t hue = (elapsed % 3000) * 6;
+    const uint8_t ramp = (hue % 3000) * level / 3000;
+    const uint8_t down = level - ramp;
+    switch (hue / 3000) {
+      case 0: return write(level, ramp, 0);
+      case 1: return write(down, level, 0);
+      case 2: return write(0, level, ramp);
+      case 3: return write(0, down, level);
+      case 4: return write(ramp, 0, level);
+      default: return write(level, 0, down);
+    }
   }
 
   void update() {

@@ -86,7 +86,7 @@ void Interface::begin() {
   screen.setTextWrap(false);
 }
 
-void Interface::setDisplayOn(bool on) {
+void Interface::setDisplayOn(bool on, bool holdForSleep) {
   // TFT 的 LED 是高有效使能。轻睡期间锁住低电平，唤醒后先恢复画面再开背光。
 #ifndef __EMSCRIPTEN__
   const auto pin = static_cast<gpio_num_t>(Config::backlight);
@@ -96,7 +96,7 @@ void Interface::setDisplayOn(bool on) {
   screen.sendCommand(on ? ILI9341_DISPON : ILI9341_DISPOFF);
 #ifndef __EMSCRIPTEN__
   if (on) digitalWrite(Config::backlight, HIGH);
-  else gpio_hold_en(pin);
+  else if (holdForSleep) gpio_hold_en(pin);
 #endif
 }
 

@@ -178,10 +178,10 @@ void Interface::renderSettings(float progress) {
   const int selected = settingsTarget;
   const bool editing = settingsEditing, saveFailed = settingsFailed;
   const float eased = smoothStep(progress);
-  constexpr int x = 37, firstY = 44, pitch = 39, width = 246, height = 37;
+  constexpr int x = 37, firstY = 39, pitch = 35, width = 246, height = 33;
   constexpr uint16_t selection = 0x2A69;
-  const char* labels[] = {"Auto sleep", "Sleep after", "RGB status LED", "RGB brightness"};
-  const bool available[] = {true, values.autoSleep != 0, true, values.rgbEnabled != 0};
+  const char* labels[] = {"Auto sleep", "Sleep after", "RGB status LED", "RGB brightness", "Screen-off RGB"};
+  const bool available[] = {true, values.autoSleep != 0, true, values.rgbEnabled != 0, values.rgbEnabled != 0};
   GFXcanvas16 strip(width, pitch);
   strip.setTextWrap(false);
 
@@ -190,7 +190,7 @@ void Interface::renderSettings(float progress) {
     if (strip.getBuffer()) {
       strip.fillScreen(background);
       // 分隔线先画，滑动的高亮经过时会覆盖它。
-      strip.drawFastHLine(5, 37, 235, 0x2946);
+      strip.drawFastHLine(5, height, 235, 0x2946);
       strip.fillRoundRect(0, highlightY - y, width, height, 7, selection);
     }
     Adafruit_GFX& gfx = strip.getBuffer() ? static_cast<Adafruit_GFX&>(strip) : screen;
@@ -198,20 +198,26 @@ void Interface::renderSettings(float progress) {
     const int oy = strip.getBuffer() ? 0 : y;
     if (!strip.getBuffer()) {
       screen.fillRect(x, y, width, height, background);
-      screen.drawFastHLine(42, y + 37, 235, 0x2946);
+      screen.drawFastHLine(42, y + height, 235, 0x2946);
       if (row == selected) screen.fillRoundRect(x, y, width, height, 7, selection);
     }
     gfx.setFont(&NunitoSmall);
     gfx.setTextColor(available[row] ? ILI9341_WHITE : muted);
     gfx.setCursor(ox + 10, oy + 24);
     gfx.print(labels[row]);
-    if (row % 2 == 0) {
+    if (row == 0 || row == 2) {
       paintSwitch(gfx, ox + 192, oy + 6, 24, knob, 9);
     } else {
       gfx.setTextColor(!available[row] ? muted : editing && row == selected ? highlight : ILI9341_WHITE);
       gfx.setCursor(ox + 170, oy + 24);
       if (row == 1) gfx.printf("%u min", static_cast<unsigned>(values.sleepMinutes()));
-      else gfx.print(values.brightness);
+      else if (row == 3) gfx.print(values.brightness);
+      else {
+        constexpr const char* modes[] = {"Off", "Intermittent", "Continuous"};
+        gfx.setFont(&NunitoHint);
+        gfx.setCursor(ox + 155, oy + 24);
+        gfx.print(modes[static_cast<uint8_t>(values.screenRgb)]);
+      }
       if (available[row]) {
         gfx.drawLine(ox + 228, oy + 13, ox + 233, oy + 18, highlight);
         gfx.drawLine(ox + 233, oy + 18, ox + 228, oy + 23, highlight);
@@ -223,14 +229,14 @@ void Interface::renderSettings(float progress) {
   const int knobs[] = {values.autoSleep ? 32 : 12, values.rgbEnabled ? 32 : 12};
   const int targetY = firstY + selected * pitch;
   if (strip.getBuffer() && lastSettingRow >= 0 && lastSettingRow != selected) {
-    const int direction = selected == 0 && lastSettingRow == 3 ? 1 :
-                          selected == 3 && lastSettingRow == 0 ? -1 : selected - lastSettingRow;
-    constexpr int cycle = 4 * pitch;
+    const int direction = selected == 0 && lastSettingRow == Settings::rowCount - 1 ? 1 :
+                          selected == Settings::rowCount - 1 && lastSettingRow == 0 ? -1 : selected - lastSettingRow;
+    constexpr int cycle = Settings::rowCount * pitch;
     const int pos = firstY + lastSettingRow * pitch + lroundf(direction * pitch * eased);
     for (int row : {lastSettingRow, selected}) {
       const int y = firstY + row * pitch;
       const int relative = (pos - y + cycle + cycle / 2) % cycle - cycle / 2;
-      paint(row, y + relative, knobs[row / 2]);
+      paint(row, y + relative, knobs[row == 2 ? 1 : 0]);
     }
     if (progress < 1.0f) return;
   }
@@ -240,13 +246,13 @@ void Interface::renderSettings(float progress) {
   const int currentValue = rollingSleep ? values.sleepMinutes() : values.brightness;
   const bool roll = editing && (rollingSleep || selected == 3) && previousValue >= 1 &&
                     previousValue != currentValue && strip.getBuffer();
-  for (int row = 0; row < 4; ++row) {
+  for (int row = 0; row < Settings::rowCount; ++row) {
     if (roll) break;  // 连调时只写数值窗口，保留整行其余内容。
-    const int knob = knobs[row / 2];
-    const int previous = settingSwitches[row / 2];
+    const int knob = knobs[row == 2 ? 1 : 0];
+    const int previous = settingSwitches[row == 2 ? 1 : 0];
     if (progress < 1.0f) {
       // 开关滑动期间只传输拨钮区域。
-      if (row % 2 != 0 || previous < 0 || previous == knob) continue;
+      if ((row != 0 && row != 2) || previous < 0 || previous == knob) continue;
       GFXcanvas16 toggle(44, 24);
       if (toggle.getBuffer()) {
         const int current = previous + lroundf((knob - previous) * eased);
@@ -257,7 +263,7 @@ void Interface::renderSettings(float progress) {
       continue;
     }
     paint(row, targetY, knob);
-    if (row % 2 == 0) settingSwitches[row / 2] = knob;
+    if (row == 0 || row == 2) settingSwitches[row / 2] = knob;
   }
 
   if (roll) {
@@ -294,7 +300,7 @@ void Interface::renderSettings(float progress) {
   lastSettingRow = selected;
   lastBrightness = values.brightness;
   lastSleepMinutes = values.sleepMinutes();
-  field(0, 39, 207, 242, 24, saveFailed ? "Save failed; try again" :
+  field(0, 39, 215, 242, 23, saveFailed ? "Save failed; try again" :
         editing ? "EDIT confirms / BACK cancels" : "Changes saved automatically",
         4, saveFailed ? ILI9341_RED : muted, true);
 }

@@ -16,6 +16,7 @@ class DeskConsoleApp : public Navigation {
   Page& page(View view);
   void show(View next);
   void reportConnectivity();
+  void pollBoot(uint32_t now);
   void sleepIfIdle(uint32_t now);
   void dispatch(Key key, uint32_t pressedUs, uint32_t now);
   uint32_t idleSleepMs() const { return settings.current.sleepMinutes() * 60000UL; }
@@ -46,5 +47,7 @@ class DeskConsoleApp : public Navigation {
   Key repeatKey = Key::None;
   uint32_t repeatAt = 0, lastInput = 0, lastWakeLow = 0;
   int lastWifi = -1;
+  bool screenOff = false, bootRaw = HIGH, bootStable = HIGH;
+  uint32_t bootChanged = 0, screenOffAt = 0;
   bool timeReported = false, wakeConfigured = false, discardWakePress = false;
 };

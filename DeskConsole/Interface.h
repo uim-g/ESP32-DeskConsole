@@ -18,7 +18,7 @@ class Interface {
   static constexpr uint16_t accent = 0x5EFF;
   static constexpr int bluetoothRows = 3;
   void begin();
-  void setDisplayOn(bool on);
+  void setDisplayOn(bool on, bool holdForSleep = false);
   void beginPage(const char* title, uint16_t base, uint16_t highlight);
   void tab(bool right, bool lower, const char* label);
   void startTabs(bool entering, uint8_t mask = 0x0F);

@@ -4,12 +4,16 @@
 #include <Preferences.h>
 #include "Config.h"
 
-// 用单条 NVS 记录保存四项设置。开机读不到有效记录时使用默认值。
+// 用单条 NVS 记录保存设备设置。开机读不到有效记录时使用默认值。
 struct Settings {
+  enum class ScreenRgb : uint8_t { Off, Intermittent, Continuous };
+  static constexpr int rowCount = 5;
   uint8_t autoSleep = 1;
   uint8_t sleepIndex = 1;
   uint8_t rgbEnabled = 1;
   uint8_t brightness = Config::rgbBrightness;
+
+  ScreenRgb screenRgb = ScreenRgb::Off;
 
   uint8_t sleepMinutes() const {
     constexpr uint8_t minutes[] = {1, 3, 5, 10};
@@ -18,7 +22,7 @@ struct Settings {
 
   bool valid() const {
     return autoSleep <= 1 && sleepIndex < 4 && rgbEnabled <= 1 &&
-           brightness >= 1 && brightness <= 8;
+           brightness >= 1 && brightness <= 8 && screenRgb <= ScreenRgb::Continuous;
   }
 };
 
@@ -27,8 +31,12 @@ class SettingsStore {
   void begin() {
     ready = storage.begin("desk-settings", false);
     Settings loaded;
-    if (ready && storage.getBytesLength("options") == sizeof(loaded) &&
-        storage.getBytes("options", &loaded, sizeof(loaded)) == sizeof(loaded) &&
+    if (!ready) return;
+    // 旧固件的四字节记录保留原设置，新灯效使用默认的关闭。
+    constexpr size_t legacySize = 4;
+    const size_t size = storage.getBytesLength("options");
+    if ((size == sizeof(loaded) || size == legacySize) &&
+        storage.getBytes("options", &loaded, size) == size &&
         loaded.valid()) current = loaded;
   }
 
