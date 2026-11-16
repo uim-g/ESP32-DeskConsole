@@ -91,6 +91,8 @@ F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气请
 
 [下载 v3.3.1 网页版 ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.3.1/DeskConsole-v3.3.1-Web.zip) · [在线试玩 v3.3.1](https://uim-g.github.io/ESP32-DeskConsole/v3.3.1/)
 
+在线版 v3.1.0 到 v3.3.1 都提供 **MPU6050 模拟**。打开 **Apps → Motion**，再用屏幕下方的 X、Y、Z 滑块转动虚拟模块。连接复选框可模拟拔掉和重新接入模块。各在线版本保留当时的 Motion 界面，发布页原有 ZIP 仍对应当时打包的网页版。
+
 [![DeskConsole 七个 v1.x 网页版本的实测截图总览](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 
 点击两侧的四个按钮，或使用 **Q**、**A**、**↑** 和 **↓**。F1 中用 **↓** 开始和起跑。成绩保存在浏览器中。实时天气需要联网访问 Open-Meteo，Wi-Fi 和设备读数为模拟值。

@@ -2,6 +2,8 @@
 
 #ifndef __EMSCRIPTEN__
 #include <Wire.h>
+#else
+extern "C" bool readBrowserMotion(int16_t* reading);
 #endif
 
 #ifndef __EMSCRIPTEN__
@@ -43,7 +45,9 @@ bool MotionPage::initializeSensor() {
 
 bool MotionPage::readSample(int16_t (&reading)[6]) {
 #ifdef __EMSCRIPTEN__
-  return false;  // 模拟器没有实体 I²C 模块。
+  const bool connected = readBrowserMotion(reading);
+  address = connected ? 0x68 : 0;
+  return connected;
 #else
   if (!address) {
     initializeSensor();
