@@ -46,9 +46,9 @@ Wi-Fi supports open and personal networks on 2.4 GHz. It stores up to eight netw
 |---|---|
 | VCC | 3V3 (with J1 bridged on the display module shown) |
 | GND | GND |
-| CS, RESET, DC | GPIO10, GPIO8, GPIO9 |
-| MOSI, SCK | GPIO11, GPIO12 |
-| LED (backlight) | 3V3 |
+| CS, RESET, DC | GPIO9, GPIO8, GPIO18 |
+| MOSI, SCK | GPIO17, GPIO16 |
+| LED (active-high backlight control) | GPIO15 |
 | SDO (MISO) | Leave disconnected |
 
 Each button connects its GPIO to common GND when pressed. The firmware enables internal pull-ups.
@@ -65,6 +65,8 @@ F1 timing uses the TFT lights-out signal and includes hardware-dependent display
 See [release history](CHANGELOG.md).
 
 ### Wiring diagram
+
+This historical diagram uses the old GPIO mapping. Follow the table above for this branch.
 
 ![DeskConsole Wokwi wiring reference](docs/wokwi-wiring.png)
 
@@ -127,7 +129,7 @@ The v1.1.0 concept sheet illustrates Home, Apps, F1, Statistics, Calibration, We
 
 ## Idle light sleep and new records
 
-With Auto sleep enabled, after the configured idle interval (three minutes by default), DeskConsole turns off the ILI9341 display output, stops Wi-Fi, and enters light sleep. Active F1 rounds stay awake. Press any button to wake to the same page, then release it before pressing again to perform an action. Wi-Fi reconnects and cached weather stays available. The backlight remains powered when LED is wired directly to 3V3.
+With Auto sleep enabled, after the configured idle interval (three minutes by default), DeskConsole turns off the ILI9341 display output, stops Wi-Fi, and enters light sleep. Active F1 rounds stay awake. Press any button to wake to the same page, then release it before pressing again to perform an action. Wi-Fi reconnects and cached weather stays available. With LED connected to GPIO15, light sleep turns the backlight off and waking restores it.
 
 F1 plays a brief fireworks animation when a valid raw reaction time beats the saved best. The first valid result establishes the baseline. Clearing statistics also resets that baseline.
 
