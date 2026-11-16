@@ -146,7 +146,7 @@ Open Settings after Device in the App list. Use the right buttons to select a ro
 
 Settings selection and value changes use eased animations. Startup now draws Home before wireless setup, and the clock fields do not wait for NTP when drawing. The cause of lag on the first automatic boot after upload has not been confirmed.
 
-Short-press the onboard BOOT button to turn off the display, and press it again to return. **Screen-off RGB** offers Off, Intermittent (3 seconds of rainbow fading followed by 10 seconds dark), and Continuous. It uses the saved RGB brightness and respects the RGB master switch. Light sleep turns RGB off; any navigation button wakes the display. BOOT pressed during an active F1 round is ignored.
+Short-press the onboard BOOT button to turn off the display, and press it again to return. **Screen-off RGB** offers Off, Intermittent (3 seconds of rainbow fading followed by 10 seconds dark), and Continuous. It uses the saved RGB brightness and respects the RGB master switch. Manual BOOT screen-off pauses auto sleep until the display is restored. Light sleep turns RGB off; any navigation button wakes the display. BOOT pressed during an active F1 round is ignored.
 
 ## Serial Monitor
 

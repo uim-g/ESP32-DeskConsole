@@ -91,7 +91,7 @@ void DeskConsoleApp::reportConnectivity() {
 
 // 达到闲置时间且当前页面、无线扫描和按键均允许休眠时，关闭屏幕并轻睡。醒来恢复连接和页面。
 void DeskConsoleApp::sleepIfIdle(uint32_t now) {
-  if (!wakeConfigured || !settings.current.autoSleep || now - lastInput < idleSleepMs() ||
+  if (screenOff || !wakeConfigured || !settings.current.autoSleep || now - lastInput < idleSleepMs() ||
       buttons.anyPressed() || !page(active).canSleep() || bluetooth.busy() || wifi.busy()) return;
 
   Serial.println("[POWER] Idle timeout; entering light sleep");
@@ -178,7 +178,7 @@ void DeskConsoleApp::tick() {
     uint32_t ignored = 0;
     buttons.poll(ignored);
     led.screenOff(settings.current.screenRgb, now - screenOffAt);
-    sleepIfIdle(now);
+    // 手动熄屏期间保持运行，直到再次按 BOOT。
     return;
   }
   Platform::setInputReady(transition == Transition::None);
