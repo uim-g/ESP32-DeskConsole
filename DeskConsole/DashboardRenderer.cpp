@@ -269,3 +269,272 @@ void Interface::device(const Platform::Device& data) {
   memcpy(uptimeDigits, digits, sizeof(digits));
   panelsReady = true;
 }
+
+void Interface::clearMotionBody() {
+  motionNoticeWaiting = false;
+  motionNoticeAnimation.stop();
+  screen.fillRect(34, 43, 252, 173, background);
+  for (uint8_t slot = 1; slot < 14; ++slot) cache[slot] = "";
+}
+
+void Interface::motionAttitude(int roll, int pitch) {
+  constexpr int radius = 57, diameter = radius * 2 + 1;
+  constexpr float radians = 0.0174532925f;
+  GFXcanvas16 ball(diameter, diameter);
+  if (!ball.getBuffer()) return;
+  ball.fillScreen(background);
+
+  const float sine = sinf(roll * radians);
+  const float cosine = cosf(roll * radians);
+  const float horizon = pitch * 1.2f;
+  for (int y = -radius; y <= radius; ++y) {
+    const int edge = static_cast<int>(sqrtf(radius * radius - y * y));
+    for (int x = -edge; x <= edge; ++x) {
+      const float normal = y * cosine - x * sine - horizon;
+      const float across = x * cosine + y * sine;
+      uint16_t color = normal < 0 ? 0x259B : 0xA3C8;
+      if (fabsf(normal) < 0.8f ||
+          (fabsf(across) < 13 && fabsf(fabsf(normal) - 15) < 0.65f) ||
+          (fabsf(across) < 8 && fabsf(fabsf(normal) - 30) < 0.65f)) {
+        color = ILI9341_WHITE;
+      }
+      ball.drawPixel(x + radius, y + radius, color);
+    }
+  }
+  ball.drawCircle(radius, radius, radius, 0xD69A);
+  constexpr uint16_t marker = 0xFFE0;
+  ball.drawFastHLine(radius - 25, radius, 17, marker);
+  ball.drawFastHLine(radius + 9, radius, 17, marker);
+  ball.drawFastVLine(radius - 9, radius, 5, marker);
+  ball.drawFastVLine(radius + 9, radius, 5, marker);
+  ball.fillCircle(radius, radius, 2, marker);
+  screen.drawRGBBitmap(160 - radius, 72, ball.getBuffer(), diameter, diameter);
+  field(8, 49, 188, 100, 24, String("Roll ") + String(roll) + " deg", 4, ILI9341_WHITE, true);
+  field(9, 171, 188, 100, 24, String("Pitch ") + String(pitch) + " deg", 4, ILI9341_WHITE, true);
+}
+
+void Interface::motionLevel(int roll, int pitch) {
+  constexpr int radius = 55, size = radius * 2 + 1;
+  constexpr float radians = 0.0174532925f;
+  const bool flat = abs(roll) <= 1 && abs(pitch) <= 1;
+  const uint16_t color = flat ? 0x57A8 : 0xE73C;
+  GFXcanvas16 dial(size, size);
+  if (!dial.getBuffer()) return;
+  dial.fillScreen(background);
+  const uint16_t fill = flat ? 0x2385 : 0x2126;
+  dial.fillCircle(radius, radius, radius, fill);
+  dial.drawCircle(radius, radius, radius, color);
+  dial.drawCircle(radius, radius, 12, color);
+  dial.drawFastHLine(radius - 17, radius, 35, color);
+  dial.drawFastVLine(radius, radius - 17, 35, color);
+
+  // 倾角越大，气泡越靠外；将气泡限制在圆盘内。
+  const float x = sinf(roll * radians) * cosf(pitch * radians);
+  const float y = -sinf(pitch * radians);
+  constexpr float travel = radius - 12;
+  const float scale = travel / max(0.5f, hypotf(x, y));
+  const int bubbleX = radius + lroundf(x * scale);
+  const int bubbleY = radius + lroundf(y * scale);
+  dial.fillCircle(bubbleX, bubbleY, 9, color);
+  dial.drawCircle(bubbleX, bubbleY, 9, ILI9341_WHITE);
+  screen.drawRGBBitmap(160 - radius, 73, dial.getBuffer(), size, size);
+  field(8, 49, 188, 100, 24, String("Roll ") + String(roll) + " deg", 4, ILI9341_WHITE, true);
+  field(9, 171, 188, 100, 24, String("Pitch ") + String(pitch) + " deg", 4, ILI9341_WHITE, true);
+}
+
+void Interface::motionConnection(const char* state) {
+  if (cache[0] == state) return;
+  constexpr uint16_t frame = 0x630C, label = 0xAD55;
+  screen.drawRoundRect(174, 12, 108, 20, 6, frame);
+  field(0, 180, 14, 96, 16, state, 3, label, true);
+}
+
+void Interface::motionMode(const char* mode) {
+  if (motionModeTarget && strcmp(motionModeTarget, mode) == 0) return;
+  motionModeTarget = mode;
+  if (!motionModeShown) {
+    renderMotionMode(12);
+  } else {
+    motionModeAnimation.start(millis(), 240, 12);
+  }
+}
+
+void Interface::renderMotionMode(int step) {
+  constexpr int fullWidth = 124, height = 19, y = 218;
+  if (step >= 6) motionModeShown = motionModeTarget;
+  const float phase = abs(step - 6) / 6.0f;
+  const int width = 14 + lroundf((fullWidth - 14) * smoothStep(phase));
+  screen.fillRect(160 - fullWidth / 2, y, fullWidth, height, background);
+  screen.fillRoundRect(160 - width / 2, y, width, height, min(8, width / 2), 0x4168);
+  screen.drawRoundRect(160 - width / 2, y, width, height, min(8, width / 2), highlight);
+  screen.setFont(&NunitoHint);
+  int16_t x1, y1;
+  uint16_t w, h;
+  screen.getTextBounds(motionModeShown, 0, 0, &x1, &y1, &w, &h);
+  if (w + 10 > width) return;
+  screen.setTextColor(ILI9341_WHITE);
+  screen.setCursor(160 - w / 2 - x1, y + (height - h) / 2 - y1);
+  screen.print(motionModeShown);
+}
+
+void Interface::motionCalibrationGuide(bool negative, int reading, bool valid, bool aligned) {
+  constexpr int x = 196, y = 81, width = 80, height = 32;
+  const int position = valid ? 5 + (constrain(reading, -20000, 20000) + 20000) * 69 / 40000 : -1;
+  const String key = String(negative) + "/" + String(position) + "/" + String(aligned);
+  if (cache[13] == key) return;
+  GFXcanvas16 guide(width, height);
+  if (!guide.getBuffer()) return;
+  cache[13] = key;
+  guide.fillScreen(background);
+  guide.fillRoundRect(3, 9, 74, 12, 6, 0x3246);
+  // 目标区对应校准判定的 ±12000 门槛，圆点显示当前目标轴读数。
+  guide.fillRoundRect(negative ? 3 : 60, 9, 17, 12, 6, 0x2385);
+  guide.drawFastVLine(40, 8, 14, highlight);
+  if (valid) guide.fillCircle(position, 15, 4, aligned ? 0x57A8 : ILI9341_WHITE);
+  guide.drawFastHLine(4, 27, 5, ILI9341_WHITE);
+  guide.drawFastHLine(70, 27, 5, ILI9341_WHITE);
+  guide.drawFastVLine(72, 25, 5, ILI9341_WHITE);
+  screen.drawRGBBitmap(x, y, guide.getBuffer(), width, height);
+}
+
+void Interface::motionTube(bool horizontal, int angle) {
+  constexpr int length = 108, thickness = 33;
+  const int width = horizontal ? length : thickness;
+  const int height = horizontal ? thickness : length;
+  const bool centered = abs(angle) <= 1;
+  const uint16_t color = centered ? 0x57A8 : 0xE73C;
+  GFXcanvas16 tube(width, height);
+  if (!tube.getBuffer()) return;
+  tube.fillScreen(background);
+  tube.fillRoundRect(0, 0, width, height, 16, centered ? 0x2385 : 0x2126);
+  tube.drawRoundRect(0, 0, width, height, 16, color);
+  for (int offset : {-12, 12}) {
+    if (horizontal) tube.drawFastVLine(width / 2 + offset, 2, height - 4, color);
+    else tube.drawFastHLine(2, height / 2 + offset, width - 4, color);
+  }
+  const int travel = constrain(angle * 2, -42, 42);
+  const int x = width / 2 + (horizontal ? travel : 0);
+  const int y = height / 2 - (horizontal ? 0 : travel);
+  tube.fillCircle(x, y, 9, color);
+  tube.drawCircle(x, y, 9, ILI9341_WHITE);
+  screen.drawRGBBitmap(horizontal ? 149 : 77, horizontal ? 110 : 73, tube.getBuffer(), width, height);
+  field(horizontal ? 9 : 8, horizontal ? 149 : 43, 188, 108, 24,
+        String(horizontal ? "Z  " : "X  ") + String(angle) + " deg", 4, ILI9341_WHITE, true);
+}
+
+void Interface::motionNotice(const char* message) {
+  motionNoticeAnimation.stop();
+  motionNoticeText = message;
+  motionNoticeStarted = millis();
+  motionNoticeWaiting = true;
+  renderMotionNotice(0);
+}
+
+void Interface::renderMotionNotice(int offset) {
+  constexpr int width = 220, height = 15;
+  // 裁切到状态胶囊上沿，提示滑下时不会覆盖胶囊。
+  GFXcanvas16 strip(width, height);
+  if (!strip.getBuffer()) return;
+  strip.fillScreen(background);
+  strip.setTextWrap(false);
+  strip.setFont(&NunitoHint);
+  strip.setTextColor(ILI9341_WHITE);
+  const char* message = motionNoticeText;
+  int16_t x, y;
+  uint16_t w, h;
+  strip.getTextBounds(message, 0, 0, &x, &y, &w, &h);
+  strip.setCursor((width - w) / 2 - x, (height - h) / 2 - y + offset);
+  strip.print(message);
+  screen.drawRGBBitmap(50, 201, strip.getBuffer(), width, height);
+}
+
+void Interface::motionCalibrationPrompt(const char* message, CalibrationTone tone, int offset) {
+  const bool bold = tone != CalibrationTone::Normal;
+  const String key = String(message) + '/' + String(static_cast<int>(tone)) + '/' + String(offset);
+  if (cache[6] == key) return;
+  constexpr int width = 248, height = 17;
+  GFXcanvas16 line(width, height);
+  if (!line.getBuffer()) return;
+  cache[6] = key;
+  line.fillScreen(background);
+  line.setTextWrap(false);
+  line.setFont(&NunitoHint);
+  line.setTextColor(tone == CalibrationTone::Alert ? 0xF986 :
+                    tone == CalibrationTone::Success ? 0x57A8 : ILI9341_WHITE);
+  int16_t x, y;
+  uint16_t w, h;
+  line.getTextBounds(message, 0, 0, &x, &y, &w, &h);
+  const int left = (width - w - (bold ? 1 : 0)) / 2 - x + offset;
+  const int baseline = (height - h) / 2 - y;
+  line.setCursor(left, baseline);
+  line.print(message);
+  if (bold) {
+    line.setCursor(left + 1, baseline);
+    line.print(message);
+  }
+  screen.drawRGBBitmap(36, 198, line.getBuffer(), width, height);
+}
+
+void Interface::motionCube(const float (&rotation)[4], float distance, float offsetX, float offsetY) {
+  constexpr int size = 146;
+  // 顶点沿各面的外法线逆时针排列。
+  constexpr uint8_t faces[][4] = {
+    {0, 4, 6, 2}, {1, 3, 7, 5}, {0, 1, 5, 4},
+    {2, 6, 7, 3}, {0, 2, 3, 1}, {4, 5, 7, 6}
+  };
+  constexpr uint16_t faceColors[] = {0xA1E6, 0xD38A, 0x2469, 0x35AC, 0x232F, 0x449B};
+  constexpr uint16_t axisColors[] = {0xFB2C, 0x67AB, 0x655F}; // X 红、Y 绿、Z 蓝。
+  // 立方体按显示坐标反转 X/Y，保留 Z 的正方向。
+  const float w = rotation[0], x = -rotation[1], y = -rotation[2], z = rotation[3];
+  int px[8], py[8];
+  char key[65]{};
+  for (int i = 0; i < 8; ++i) {
+    const float vx = i & 1 ? 1 : -1;
+    const float vy = i & 2 ? 1 : -1;
+    const float vz = i & 4 ? 1 : -1;
+    const float cx = y * vz - z * vy;
+    const float cy = z * vx - x * vz;
+    const float cz = x * vy - y * vx;
+    const float tx = vx + 2 * (w * cx + y * cz - z * cy);
+    const float ty = vy + 2 * (w * cy + z * cx - x * cz);
+    const float tz = vz + 2 * (w * cz + x * cy - y * cx);
+    // 从右上方斜视，归中时露出前面、上面和右面。
+    const float scale = distance > 0 ? 20.0f / (distance - 0.10f * tz) : 32.0f;
+    px[i] = size / 2 + lroundf(scale * (tx - 0.34f * tz + 10 * offsetX));
+    py[i] = size / 2 - lroundf(scale * (ty - 0.23f * tz + 10 * offsetY));
+    snprintf(key + i * 8, 9, "%04x%04x",
+             static_cast<unsigned>(static_cast<uint16_t>(px[i])),
+             static_cast<unsigned>(static_cast<uint16_t>(py[i])));
+  }
+  if (cache[13] == key) return;
+  GFXcanvas16 cube(size, size);
+  if (!cube.getBuffer()) return;
+  cache[13] = key;
+  cube.fillScreen(background);
+  bool visible[6]{};
+  for (int face = 0; face < 6; ++face) {
+    const auto& vertices = faces[face];
+    const int a = vertices[0], b = vertices[1], c = vertices[2], d = vertices[3];
+    // 屏幕 Y 朝下，所以顺序对应负的投影面积时面朝观众。
+    const int area = (px[b] - px[a]) * (py[d] - py[a]) - (py[b] - py[a]) * (px[d] - px[a]);
+    if (area >= 0) continue;
+    visible[face] = true;
+    cube.fillTriangle(px[a], py[a], px[b], py[b], px[c], py[c], faceColors[face]);
+    cube.fillTriangle(px[a], py[a], px[c], py[c], px[d], py[d], faceColors[face]);
+  }
+  for (int face = 0; face < 6; ++face) {
+    if (!visible[face]) continue;
+    const auto& vertices = faces[face];
+    for (int i = 0; i < 4; ++i) {
+      const int a = vertices[i], b = vertices[(i + 1) % 4];
+      const uint16_t color = axisColors[(a ^ b) >> 1];
+      const bool mostlyHorizontal = abs(px[b] - px[a]) >= abs(py[b] - py[a]);
+      for (int offset = -1; offset <= 1; ++offset) {
+        const int dx = mostlyHorizontal ? 0 : offset;
+        const int dy = mostlyHorizontal ? offset : 0;
+        cube.drawLine(px[a] + dx, py[a] + dy, px[b] + dx, py[b] + dy, color);
+      }
+    }
+  }
+  screen.drawRGBBitmap(160 - size / 2, 63, cube.getBuffer(), size, size);
+}

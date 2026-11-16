@@ -46,8 +46,28 @@ class Interface {
   void wifiPassword(const String& ssid, const String& value, size_t length, int group,
                     const String& previous, const String& selected, const String& next, int direction, const char* footer);
   void device(const Platform::Device& data);
+  void clearMotionBody();
+  void motionAttitude(int roll, int pitch);
+  void motionCube(const float (&rotation)[4], float distance, float offsetX, float offsetY);
+  void motionLevel(int roll, int pitch);
+  void motionTube(bool horizontal, int angle);
+  void motionCalibrationGuide(bool negative, int reading, bool valid, bool aligned);
+  enum class CalibrationTone { Normal, Alert, Success };
+  void motionCalibrationPrompt(const char* message, CalibrationTone tone, int offset);
+  void motionMode(const char* mode);
+  void motionConnection(const char* state);
+  void motionNotice(const char* message);
 
  private:
+  void renderMotionMode(int step);
+  void renderMotionNotice(int offset);
+  FrameTimeline motionNoticeAnimation;
+  uint32_t motionNoticeStarted = 0;
+  const char* motionNoticeText = nullptr;
+  bool motionNoticeWaiting = false;
+  FrameTimeline motionModeAnimation;
+  const char* motionModeShown = nullptr;
+  const char* motionModeTarget = nullptr;
   static constexpr uint16_t muted = 0xA69A, cardColor = 0x1928, cardOutline = 0x3A4E;
   static constexpr char degree = '\x01';
   static void smallIcon(Adafruit_GFX& gfx, int x, int y, char kind, uint16_t color);
@@ -103,7 +123,7 @@ class Interface {
               char icon, const char* label, const String& value);
   Adafruit_ILI9341 screen{&SPI, Config::dc, Config::cs, Config::reset};
   // 每个字段缓存上次的文字，定时刷新只重绘发生变化的区域。
-  String cache[11];
+  String cache[14];
   int lastLights = -1;
   std::unique_ptr<GFXcanvas16> fireworks;
   uint32_t fireworkStarted = 0;
@@ -111,7 +131,6 @@ class Interface {
   int lastSelection = -1;
   int launcherTop = 0;
   int launcherThumbY = -1;
-  int settingSwitches[2] = {-1, -1};
   int lastSettingRow = -1;
   int lastBrightness = -1;
   int lastSleepMinutes = -1;

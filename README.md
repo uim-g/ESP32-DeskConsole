@@ -10,6 +10,7 @@ DeskConsole is a desktop console for the ESP32-S3 and a 320×240 ILI9341 SPI dis
 
 - **F1 Reaction** — five two-row lamp housings, random lights-out, false starts, timeouts, Normal and Debug modes. The last result, personal best, and total completed rounds are saved in flash.
 - **Weather** — current conditions and a three-day forecast from [Open-Meteo](https://open-meteo.com/en/docs).
+- **Motion** — optional MPU6050 with an attitude indicator, bubble level, and gyroscope-driven 3D cube.
 - **Wi-Fi** — connection status, network scanning, on-device password entry, and saved networks.
 - **Bluetooth** — scans nearby BLE broadcasts. See the controls below.
 - **Device** — temperature, memory and firmware usage, flash capacity and version.
@@ -35,7 +36,7 @@ You will need an ESP32-S3 N16R8 dev board, a 2.8-inch ILI9341 SPI display, four 
 
 1. In Arduino IDE 2, install **esp32 by Espressif Systems**. Select **ESP32S3 Dev Module** and your board's serial port. For N16R8, set Flash Size to 16 MB, choose a partition scheme with a 3 MiB APP slot (such as 16M Flash, 3MB APP/9.9MB FATFS), and enable OPI PSRAM if you want to use the onboard 8 MiB. BLE uses the ESP32 core library.
 2. Install **Adafruit ILI9341** and its dependencies, plus **ArduinoJson 7**.
-3. Download **Source code (zip)** from the [v3.0.0 Release](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v3.0.0), extract it, and open `DeskConsole/DeskConsole.ino`.
+3. Download **Source code (zip)** from the [v3.2.1 Release](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v3.2.1), extract it, and open `DeskConsole/DeskConsole.ino`.
 4. Disconnect USB before wiring the screen and buttons as shown below. Reconnect USB, select the serial port and upload. When Home appears, press the upper-left button to open Apps and select Wi-Fi.
 
 Wi-Fi supports open and personal networks on 2.4 GHz. It stores up to eight networks and tries the most recently connected saved network at startup when the radio is enabled. If it fails, scan again or select another saved network. If all eight slots are full, a new network can connect without being saved. Forget an old entry and reconnect to save the new network. WPA-Enterprise campus networks are unsupported. Saved credentials are stored in NVS without application-configured encryption.
@@ -62,6 +63,12 @@ F1 timing uses the TFT lights-out signal and includes hardware-dependent display
 
 See [release history](CHANGELOG.md).
 
+### Optional MPU6050 (Motion)
+
+For the optional Motion app, connect module VCC to 3V3, GND to the common ground, SDA to GPIO10, and SCL to GPIO11. Leave XDA, XCL, and INT open. Tie AD0 to GND for address `0x68`, or to 3V3 for `0x69`. Open **Apps → Motion** to see raw signed counts for the three accelerometer and three gyroscope axes, refreshed about five times a second. The page reports when the sensor is missing. The browser preview has no physical sensor.
+
+Press **CAL** to start six-face calibration. Follow the on-screen axis and sign, steady the module, then press **SAMPLE** for each face. **VIEW** cycles through Level, Attitude, and Cube. The Cube follows gyroscope motion and uses distinct colors for each face and axis. Press **CENTER** to reset its reference pose. Heading may drift over time. Experimental translation tracking is disabled because position drifts without an external reference. **DATA** opens and toggles Calibrated and Raw readings. The data view provides **CAL** to open the guided six-face calibration screen. The bubble level turns green when both displayed tilt angles are within 1 degree. SAMPLE is shown during calibration. The blue-and-brown attitude indicator estimates roll and pitch from gravity and compensates for the prototype sensor mounted 180 degrees in-plane. Calibration survives reboot.
+
 ### Wiring diagram
 
 **Rewired prototype.** The first photo shows the breadboard jumpers before installation. The second shows the TFT and ESP32-S3 installed. Use the pin table for connections hidden by the boards.
@@ -80,7 +87,7 @@ The black wire immediately below the red VCC lead connects TFT GND to the same b
 
 [Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all twelve versions from v1.0.0 through v3.0.0. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
 
-[Play the latest browser version (v3.0.0)](https://uim-g.github.io/ESP32-DeskConsole/v3.0.0/)
+[Download the v3.2.1 browser ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.2.1/DeskConsole-v3.2.1-Web.zip) · [Play v3.0.0 online](https://uim-g.github.io/ESP32-DeskConsole/v3.0.0/)
 
 [![Live browser screenshots of the seven DeskConsole v1.x versions](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 
@@ -139,14 +146,14 @@ F1 plays a brief fireworks animation when a valid raw reaction time beats the sa
 
 ## Settings
 
-Open Settings after Device in the App list. Use the right buttons to select a row and EDIT to toggle it or enter value editing. While editing, Up increases and Down decreases. EDIT saves the value, and BACK cancels the edit. Confirmed changes are stored in flash and restored on startup.
+Open Settings after Device in the App list. Use the right buttons to select a row and EDIT to change its value. While editing, Up increases and Down decreases. Sleep Timer and RGB hide an arrow at its corresponding limit. SAVE stores the value in flash, and BACK cancels the edit.
 
-- Auto sleep is on by default. Choose 1, 3, 5, or 10 minutes, with 3 minutes as the default.
-- The onboard RGB status LED is on by default. Turn it off or adjust brightness from 0% to 100% in 10% steps. The endpoints use RGB channel values 1 and 255. Use the RGB switch to turn the LED fully off.
+- **Sleep Timer** offers Off, 1, 2, 3, 5, or 10 minutes. The default is 3 minutes.
+- **RGB** offers Off and 10% through 100% in steps of 10%. The default is 10%. An old enabled 0% setting becomes 10%.
 
 Settings selection and value changes use eased animations. Startup now draws Home before wireless setup, and the clock fields do not wait for NTP when drawing. The cause of lag on the first automatic boot after upload has not been confirmed.
 
-Short-press the onboard BOOT button to turn off the display, and press it again to return. **Screen-off RGB** offers Off, Intermittent (3 seconds of rainbow fading followed by 10 seconds dark), and Continuous. It uses the saved RGB brightness and respects the RGB master switch. Manual BOOT screen-off pauses auto sleep until the display is restored. Light sleep turns RGB off; any navigation button wakes the display. BOOT pressed during an active F1 round is ignored.
+Short-press the onboard BOOT button to turn off the display, and press it again to return. **Screen-off RGB** offers Off, Intermittent (3 seconds of rainbow fading followed by 10 seconds dark), and Continuous. It uses the saved RGB brightness and is disabled when RGB is Off. Manual BOOT screen-off pauses auto sleep until the display is restored. Light sleep turns RGB off; any navigation button wakes the display. BOOT pressed during an active F1 round is ignored.
 
 ## Serial Monitor
 

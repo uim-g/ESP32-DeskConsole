@@ -1,4 +1,4 @@
-// 设置页维护选中项、编辑副本和保存错误。直接开关即时保存，数值先编辑再确认。
+// 设置页维护选中项、编辑副本和保存错误。选项先编辑再确认。
 
 #pragma once
 #include "Page.h"
@@ -6,10 +6,15 @@
 class SettingsPage : public Page {
  public:
   SettingsPage(PageContext& context, SettingsStore& store) : Page(context), store(store) {}
-  PageStyle style() const override { return {"Settings",0x10A4,0x97D4,{"BACK","EDIT","^","v"}}; }
-  void enter() override { row = 0; editing = saveFailed = false; }
+  PageStyle style() const override { return {"Settings",0x10E2,0xB70D,{"BACK","EDIT","^","v"}}; }
+  void enter() override {
+    row = 0;
+    editing = saveFailed = saveShown = false;
+    upShown = downShown = true;
+  }
   void draw() override { ctx.ui.settings(editing ? draft : store.current, row, editing, saveFailed); }
   void input(Key key, uint32_t us) override;
+  void tick(uint32_t) override;
   bool repeats() const override { return true; }
 
  private:
@@ -18,4 +23,5 @@ class SettingsPage : public Page {
   Settings draft;
   uint8_t row = 0;
   bool editing = false, saveFailed = false;
+  bool saveShown = false, upShown = true, downShown = true;
 };

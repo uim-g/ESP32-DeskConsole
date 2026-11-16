@@ -10,6 +10,7 @@ Page& DeskConsoleApp::page(View view) {
     case View::Network: return network;
     case View::Bluetooth: return ble;
     case View::Device: return device;
+    case View::Motion: return motion;
     case View::Settings: return preferences;
     case View::Stats: return stats;
     case View::Calibration: return calibration;
@@ -50,9 +51,9 @@ void DeskConsoleApp::begin() {
   bootRaw = bootStable = digitalRead(Config::bootButton);
 #endif
   settings.begin();
-  led.configure(settings.current.rgbEnabled, settings.current.brightnessLevel());
+  led.configure(settings.current.rgbEnabled(), settings.current.brightnessLevel());
   wakeConfigured = buttons.enableWakeup();
-  if (wakeConfigured && settings.current.autoSleep) {
+  if (wakeConfigured && settings.current.autoSleep()) {
     Serial.printf("[POWER] Light sleep after %lu s idle\n", static_cast<unsigned long>(idleSleepMs() / 1000));
   } else if (wakeConfigured) Serial.println("[POWER] Auto sleep disabled in Settings");
   else Serial.println("[POWER] GPIO wake setup failed; sleep disabled");
@@ -91,7 +92,7 @@ void DeskConsoleApp::reportConnectivity() {
 
 // 达到闲置时间且当前页面、无线扫描和按键均允许休眠时，关闭屏幕并轻睡。醒来恢复连接和页面。
 void DeskConsoleApp::sleepIfIdle(uint32_t now) {
-  if (screenOff || !wakeConfigured || !settings.current.autoSleep || now - lastInput < idleSleepMs() ||
+  if (screenOff || !wakeConfigured || !settings.current.autoSleep() || now - lastInput < idleSleepMs() ||
       buttons.anyPressed() || !page(active).canSleep() || bluetooth.busy() || wifi.busy()) return;
 
   Serial.println("[POWER] Idle timeout; entering light sleep");

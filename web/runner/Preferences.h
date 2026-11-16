@@ -6,6 +6,7 @@ class Preferences {
   const char* group="";
  public:
   bool begin(const char* name,bool) { group=name; return true; }
+  void end() {}
   size_t getBytesLength(const char* key) { return readPreference(group,key,nullptr,0); }
   size_t getBytes(const char* key,void* dst,size_t size) { return readPreference(group,key,dst,size); }
   size_t putBytes(const char* key,const void* src,size_t size) { return writePreference(group,key,src,size); }

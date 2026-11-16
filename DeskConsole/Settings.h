@@ -1,33 +1,31 @@
-// 设备设置与闪存读写。完整的一组设置通过单个键保存，读取时校验范围以防旧记录或损坏记录被误用。
-
+// 设备设置以单条 NVS 记录保存，旧版记录保留供旧固件读取。
 #pragma once
 #include <Preferences.h>
 #include "Config.h"
 
-// 用单条 NVS 记录保存设备设置。开机读不到有效记录时使用默认值。
 struct Settings {
   enum class ScreenRgb : uint8_t { Off, Intermittent, Continuous };
-  static constexpr int rowCount = 5;
-  uint8_t autoSleep = 1;
-  uint8_t sleepIndex = 1;
-  uint8_t rgbEnabled = 1;
-  uint8_t brightness = 0;  // 0–10 档，每档相差 10%。
+  static constexpr int rowCount = 3;
+  static constexpr int sleepChoices = 6;
+  static constexpr int rgbChoices = 11;
 
+  uint8_t sleepIndex = 3;
+  uint8_t brightness = 1;
   ScreenRgb screenRgb = ScreenRgb::Off;
 
+  bool autoSleep() const { return sleepIndex != 0; }
+  bool rgbEnabled() const { return brightness != 0; }
+
   uint8_t sleepMinutes() const {
-    constexpr uint8_t minutes[] = {1, 3, 5, 10};
+    constexpr uint8_t minutes[] = {0, 1, 2, 3, 5, 10};
     return minutes[sleepIndex];
   }
 
   uint8_t brightnessPercent() const { return brightness * 10; }
-
-  // 将 0–10 档线性映射到 1–255，四舍五入到最近的通道值。
   uint8_t brightnessLevel() const { return 1 + (254 * brightness + 5) / 10; }
 
   bool valid() const {
-    return autoSleep <= 1 && sleepIndex < 4 && rgbEnabled <= 1 &&
-           brightness <= 10 && screenRgb <= ScreenRgb::Continuous;
+    return sleepIndex < sleepChoices && brightness < rgbChoices && screenRgb <= ScreenRgb::Continuous;
   }
 };
 
@@ -35,30 +33,22 @@ class SettingsStore {
  public:
   void begin() {
     ready = storage.begin("desk-settings", false);
-    Settings loaded;
     if (!ready) return;
-    if (storage.getBytesLength("options-v2") == sizeof(loaded) &&
-        storage.getBytes("options-v2", &loaded, sizeof(loaded)) == sizeof(loaded) &&
+    Settings loaded;
+    if (storage.getBytesLength("options-v3") == sizeof(loaded) &&
+        storage.getBytes("options-v3", &loaded, sizeof(loaded)) == sizeof(loaded) &&
         loaded.valid()) {
       current = loaded;
       return;
     }
 
-    // 旧记录里的 1–8 都最接近新刻度的 0% 档。保留其他设置和旧记录。
-    loaded = Settings{};
-    constexpr size_t legacySize = 4;
-    const size_t size = storage.getBytesLength("options");
-    if ((size == sizeof(loaded) || size == legacySize) &&
-        storage.getBytes("options", &loaded, size) == size &&
-        loaded.brightness >= 1 && loaded.brightness <= 8) {
-      loaded.brightness = 0;
-      if (loaded.valid()) current = loaded;
-    }
+    if (loadLegacy("options-v2", false)) return;
+    loadLegacy("options", true);
   }
 
   bool save(const Settings& next) {
     if (!ready || !next.valid() ||
-        storage.putBytes("options-v2", &next, sizeof(next)) != sizeof(next)) return false;
+        storage.putBytes("options-v3", &next, sizeof(next)) != sizeof(next)) return false;
     current = next;
     return true;
   }
@@ -66,6 +56,22 @@ class SettingsStore {
   Settings current;
 
  private:
+  bool loadLegacy(const char* key, bool original) {
+    // 旧布局依次保存开关、时长索引、RGB 开关、亮度和可选的熄屏灯效。
+    uint8_t record[5]{};
+    const size_t size = storage.getBytesLength(key);
+    if ((size != sizeof(record) && !(original && size == 4)) ||
+        storage.getBytes(key, record, size) != size ||
+        record[0] > 1 || record[1] >= 4 || record[2] > 1 ||
+        (original ? record[3] < 1 || record[3] > 8 : record[3] > 10) ||
+        record[4] > static_cast<uint8_t>(Settings::ScreenRgb::Continuous)) return false;
+    constexpr uint8_t migratedSleep[] = {1, 3, 4, 5};
+    current.sleepIndex = record[0] ? migratedSleep[record[1]] : 0;
+    current.brightness = record[2] ? (original || record[3] == 0 ? 1 : record[3]) : 0;
+    current.screenRgb = static_cast<Settings::ScreenRgb>(record[4]);
+    return true;
+  }
+
   Preferences storage;
   bool ready = false;
 };

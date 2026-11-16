@@ -2,6 +2,7 @@
 
 #pragma once
 #include "DashboardPages.h"
+#include "MotionPage.h"
 #include "F1Pages.h"
 #include "SettingsPage.h"
 #include "WifiPage.h"
@@ -37,6 +38,7 @@ class DeskConsoleApp : public Navigation {
   NetworkPage network{context, wifi};
   BluetoothPage ble{context, bluetooth};
   DevicePage device{context};
+  MotionPage motion{context};
   SettingsPage preferences{context, settings};
   StatsPage stats{context, game};
   CalibrationPage calibration{context, game};

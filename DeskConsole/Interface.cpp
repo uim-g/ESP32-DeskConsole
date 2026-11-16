@@ -104,6 +104,10 @@ void Interface::setDisplayOn(bool on, bool holdForSleep) {
 void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   fireworks.reset();
   tabAnimation.stop();
+  motionModeAnimation.stop();
+  motionNoticeAnimation.stop();
+  motionNoticeWaiting = false;
+  motionModeShown = motionModeTarget = nullptr;
   launcherAnimation.stop();
   settingsAnimation.stop();
   wifiListAnimation.stop();
@@ -125,7 +129,6 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   lastSelection = -1;
   launcherTop = 0;
   launcherThumbY = -1;
-  for (auto& value : settingSwitches) value = -1;
   lastSettingRow = lastBrightness = lastSleepMinutes = -1;
   lastScreenRgb = screenRgbOffset = -1;
   panelsReady = false;
@@ -168,8 +171,9 @@ void Interface::startTabs(bool entering, uint8_t mask) {
   tabAnimation.stop();
   for (uint8_t i = 0; i < 4; ++i) {
     if ((mask & (1U << i)) && tabs[i]) {
-      tabAnimation.start(millis(), 72, 6);
       renderTabs(entering ? 21 : 0, mask);
+      // 首帧传输完再计时，让慢速 TFT 也能完整显示滑入和退场。
+      tabAnimation.start(millis(), 180, 12);
       return;
     }
   }
@@ -191,10 +195,19 @@ void Interface::replaceTab(uint8_t index, const char* label) {
 // 用同一个时间点更新活动动画。帧尚未变化时跳过绘制，避免在循环中等待。
 void Interface::advanceAnimations(uint32_t now) {
   int step;
+  if ((step = motionModeAnimation.frame(now)) >= 0) renderMotionMode(step);
+  if (motionNoticeWaiting && now - motionNoticeStarted >= 1400) {
+    motionNoticeWaiting = false;
+    motionNoticeAnimation.start(now, 220, 12);
+  }
+  if ((step = motionNoticeAnimation.frame(now)) >= 0) {
+    const float progress = motionNoticeAnimation.progress(step);
+    renderMotionNotice(lroundf(16 * progress * progress));
+  }
   if ((step = tabAnimation.frame(now)) >= 0) {
-    constexpr int slideOut[] = {0, 1, 3, 7, 12, 18, 21};
-    constexpr int slideIn[] = {21, 15, 8, 2, -2, -1, 0};
-    renderTabs(tabsEntering ? slideIn[step] : slideOut[step], tabMask);
+    const float eased = smoothStep(tabAnimation.progress(step));
+    const int offset = lroundf(21 * (tabsEntering ? 1.0f - eased : eased));
+    renderTabs(offset, tabMask);
     if (!tabAnimation.active() && !tabsEntering) {
       for (uint8_t i = 0; i < 4; ++i) if (tabMask & (1U << i)) tabs[i] = nullptr;
       if (replacementLabel) {
