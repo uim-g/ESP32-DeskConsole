@@ -48,7 +48,8 @@ class Interface {
   void device(const Platform::Device& data);
   void clearMotionBody();
   void motionAttitude(int roll, int pitch);
-  void motionLevel(int roll, int pitch, bool upright, int lean);
+  void motionLevel(int roll, int pitch);
+  void motionTube(bool horizontal, int angle);
   void motionMode(const char* mode);
 
  private:

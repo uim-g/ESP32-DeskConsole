@@ -311,28 +311,15 @@ void Interface::motionAttitude(int roll, int pitch) {
   field(9, 171, 188, 100, 24, String("Pitch ") + String(pitch) + " deg", 4, ILI9341_WHITE, true);
 }
 
-void Interface::motionLevel(int roll, int pitch, bool upright, int lean) {
+void Interface::motionLevel(int roll, int pitch) {
   constexpr int radius = 55, size = radius * 2 + 1;
   constexpr float radians = 0.0174532925f;
-  const bool flat = upright ? lean <= 1 : abs(roll) <= 1 && abs(pitch) <= 1;
+  const bool flat = abs(roll) <= 1 && abs(pitch) <= 1;
   const uint16_t color = flat ? 0x57A8 : 0xE73C;
   GFXcanvas16 dial(size, size);
   if (!dial.getBuffer()) return;
   dial.fillScreen(background);
   const uint16_t fill = flat ? 0x2385 : 0x2126;
-  if (upright) {
-    dial.fillRoundRect(37, 1, 37, size - 2, 17, fill);
-    dial.drawRoundRect(37, 1, 37, size - 2, 17, color);
-    dial.drawFastHLine(39, radius - 12, 33, color);
-    dial.drawFastHLine(39, radius + 12, 33, color);
-    const int bubbleY = radius - min(42, lean * 2);
-    dial.fillCircle(radius, bubbleY, 9, color);
-    dial.drawCircle(radius, bubbleY, 9, ILI9341_WHITE);
-    screen.drawRGBBitmap(160 - radius, 73, dial.getBuffer(), size, size);
-    field(8, 49, 188, 100, 24, String("Vertical"), 4, ILI9341_WHITE, true);
-    field(9, 171, 188, 100, 24, String("Tilt ") + String(lean) + " deg", 4, ILI9341_WHITE, true);
-    return;
-  }
   dial.fillCircle(radius, radius, radius, fill);
   dial.drawCircle(radius, radius, radius, color);
   dial.drawCircle(radius, radius, 12, color);
@@ -379,4 +366,29 @@ void Interface::renderMotionMode(int step) {
   screen.setTextColor(ILI9341_WHITE);
   screen.setCursor(160 - w / 2 - x1, y + (height - h) / 2 - y1);
   screen.print(motionModeShown);
+}
+
+void Interface::motionTube(bool horizontal, int angle) {
+  constexpr int length = 108, thickness = 33;
+  const int width = horizontal ? length : thickness;
+  const int height = horizontal ? thickness : length;
+  const bool centered = abs(angle) <= 1;
+  const uint16_t color = centered ? 0x57A8 : 0xE73C;
+  GFXcanvas16 tube(width, height);
+  if (!tube.getBuffer()) return;
+  tube.fillScreen(background);
+  tube.fillRoundRect(0, 0, width, height, 16, centered ? 0x2385 : 0x2126);
+  tube.drawRoundRect(0, 0, width, height, 16, color);
+  for (int offset : {-12, 12}) {
+    if (horizontal) tube.drawFastVLine(width / 2 + offset, 2, height - 4, color);
+    else tube.drawFastHLine(2, height / 2 + offset, width - 4, color);
+  }
+  const int travel = constrain(angle * 2, -42, 42);
+  const int x = width / 2 + (horizontal ? travel : 0);
+  const int y = height / 2 - (horizontal ? 0 : travel);
+  tube.fillCircle(x, y, 9, color);
+  tube.drawCircle(x, y, 9, ILI9341_WHITE);
+  screen.drawRGBBitmap(horizontal ? 149 : 77, horizontal ? 110 : 73, tube.getBuffer(), width, height);
+  field(horizontal ? 9 : 8, horizontal ? 149 : 43, 188, 108, 24,
+        String(horizontal ? "Z  " : "X  ") + String(angle) + " deg", 4, ILI9341_WHITE, true);
 }

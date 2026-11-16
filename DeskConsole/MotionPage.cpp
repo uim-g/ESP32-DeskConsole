@@ -269,14 +269,20 @@ void MotionPage::draw() {
         const float inPlane = hypotf(screenX, screenY);
         const float inclination = atan2f(inPlane, fabsf(screenZ)) * degrees;
         const bool upright = inclination >= (uprightLevel ? 55.0f : 65.0f);
-        const float edge = max(fabsf(screenX), fabsf(screenY));
-        const float cross = min(fabsf(screenX), fabsf(screenY));
-        const int lean = lroundf(atan2f(hypotf(cross, screenZ), edge) * degrees);
-        if (upright != uprightLevel || roll != lastRoll || pitch != lastPitch || (upright && lean != lastLean)) {
-          ctx.ui.motionLevel(roll, pitch, upright, lean);
+        const bool layoutChanged = upright != uprightLevel;
+        if (layoutChanged) ctx.ui.clearMotionBody();
+        if (upright) {
+          // 分别测量两侧平面内的偏斜，避免把 X 和 Z 合成一个角度。
+          const int tiltX = lroundf(atan2f(screenX, fabsf(screenY)) * degrees);
+          const int tiltZ = lroundf(atan2f(screenZ, fabsf(screenY)) * degrees);
+          if (layoutChanged || lastRoll == 999 || tiltX != lastTiltX) ctx.ui.motionTube(false, tiltX);
+          if (layoutChanged || lastRoll == 999 || tiltZ != lastTiltZ) ctx.ui.motionTube(true, tiltZ);
+          lastTiltX = tiltX;
+          lastTiltZ = tiltZ;
+        } else if (layoutChanged || roll != lastRoll || pitch != lastPitch) {
+          ctx.ui.motionLevel(roll, pitch);
         }
         uprightLevel = upright;
-        lastLean = lean;
     } else if (roll != lastRoll || pitch != lastPitch) {
       ctx.ui.motionAttitude(roll, -pitch);
     }

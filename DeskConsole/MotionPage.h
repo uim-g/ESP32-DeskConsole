@@ -35,7 +35,7 @@ class MotionPage : public Page {
   Graphic graphic = Graphic::Attitude;
   Graphic lastInstrument = Graphic::Attitude;
   bool uprightLevel = false;
-  int lastLean = 999;
+  int lastTiltX = 999, lastTiltZ = 999;
   int lastRoll = 999, lastPitch = 999;
   bool calibrating = false, sampling = false, valid = false, busReady = false;
   uint8_t address = 0, face = 0, samples = 0;
