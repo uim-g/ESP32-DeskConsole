@@ -190,7 +190,7 @@ void Interface::settings(const Settings& values, uint8_t selected, bool editing,
        settingSwitches[1] != (values.rgbEnabled ? 32 : 12));
   const bool rolled = editing &&
       ((selected == 1 && lastSleepMinutes >= 1 && lastSleepMinutes != values.sleepMinutes()) ||
-       (selected == 3 && lastBrightness >= 1 && lastBrightness != values.brightness) ||
+       (selected == 3 && lastBrightness >= 0 && lastBrightness != values.brightnessPercent()) ||
        (selected == 4 && lastScreenRgb >= 0 && lastScreenRgb != static_cast<int>(values.screenRgb)));
   if (moved || toggled || rolled) {
     settingsAnimation.start(millis(), moved ? 120 : 96, rolled ? 8 : 6);
@@ -236,7 +236,7 @@ void Interface::renderSettings(float progress) {
       gfx.setTextColor(!available[row] ? muted : editing && row == selected ? highlight : ILI9341_WHITE);
       gfx.setCursor(ox + 170, oy + 24);
       if (row == 1) gfx.printf("%u min", static_cast<unsigned>(values.sleepMinutes()));
-      else if (row == 3) gfx.print(values.brightness);
+      else if (row == 3) gfx.printf("%u%%", static_cast<unsigned>(values.brightnessPercent()));
       else if (strip.getBuffer()) {
         paintName(gfx, screenRgbNames[static_cast<int>(values.screenRgb)], ox + 155, oy + 2,
                   modeWidth, modeHeight, 0,
@@ -268,7 +268,7 @@ void Interface::renderSettings(float progress) {
   const bool rollingSleep = selected == 1;
   const bool rollingMode = selected == 4;
   const int previousValue = rollingMode ? lastScreenRgb : rollingSleep ? lastSleepMinutes : lastBrightness;
-  const int currentValue = rollingMode ? static_cast<int>(values.screenRgb) : rollingSleep ? values.sleepMinutes() : values.brightness;
+  const int currentValue = rollingMode ? static_cast<int>(values.screenRgb) : rollingSleep ? values.sleepMinutes() : values.brightnessPercent();
   const bool roll = editing && (rollingMode || rollingSleep || selected == 3) && previousValue >= 0 &&
                     previousValue != currentValue && strip.getBuffer();
   for (int row = 0; row < Settings::rowCount; ++row) {
@@ -313,11 +313,13 @@ void Interface::renderSettings(float progress) {
       if (rollingMode) paintName(digits, screenRgbNames[previousValue], 0, -direction * offset, modeWidth, 31, 0, tint(8 - alpha));
       else digits.print(previousValue);
       if (rollingSleep) digits.print(" min");
+      else if (!rollingMode) digits.print('%');
       digits.setTextColor(tint(alpha));
       digits.setCursor(0, 21 + direction * (27 - offset));
       if (rollingMode) paintName(digits, screenRgbNames[currentValue], 0, direction * (27 - offset), modeWidth, 31, 0, tint(alpha));
       else digits.print(currentValue);
       if (rollingSleep) digits.print(" min");
+      else if (!rollingMode) digits.print('%');
       screen.drawRGBBitmap(rollingMode ? modeX : 207, firstY + selected * pitch + (rollingMode ? 2 : 3), digits.getBuffer(), rollingMode ? modeWidth : 56, 31);
     } else {
       paint(selected, targetY, knobs[selected == 2 ? 1 : 0]);
@@ -329,7 +331,7 @@ void Interface::renderSettings(float progress) {
   screenRgbOffset = -1;
   renderScreenRgbName(millis());
   lastSettingRow = selected;
-  lastBrightness = values.brightness;
+  lastBrightness = values.brightnessPercent();
   lastSleepMinutes = values.sleepMinutes();
   field(0, 39, 215, 242, 23, saveFailed ? "Save failed; try again" :
         editing ? "EDIT confirms / BACK cancels" : "Changes saved automatically",

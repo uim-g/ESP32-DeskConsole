@@ -50,7 +50,7 @@ void DeskConsoleApp::begin() {
   bootRaw = bootStable = digitalRead(Config::bootButton);
 #endif
   settings.begin();
-  led.configure(settings.current.rgbEnabled, settings.current.brightness);
+  led.configure(settings.current.rgbEnabled, settings.current.brightnessLevel());
   wakeConfigured = buttons.enableWakeup();
   if (wakeConfigured && settings.current.autoSleep) {
     Serial.printf("[POWER] Light sleep after %lu s idle\n", static_cast<unsigned long>(idleSleepMs() / 1000));

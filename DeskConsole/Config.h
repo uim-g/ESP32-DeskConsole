@@ -6,7 +6,7 @@
 namespace Config {
 constexpr uint8_t rgbPin = 48;
 constexpr int bootButton = 0;
-constexpr uint8_t rgbBrightness = 8;  // 每个颜色通道的最大亮度。
+constexpr uint8_t rgbBrightness = 1;  // 默认 0% 档对应的 RGB 通道值。
 constexpr char firmwareVersion[] = "v3.0.0";  // 正式发布时改成对应的 Git 标签。
 // 本地填写 2.4 GHz Wi-Fi 信息。仓库中保留占位符。
 constexpr char ssid[] = "YOUR_WIFI_NAME";

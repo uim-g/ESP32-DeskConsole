@@ -142,7 +142,7 @@ F1 plays a brief fireworks animation when a valid raw reaction time beats the sa
 Open Settings after Device in the App list. Use the right buttons to select a row and EDIT to toggle it or enter value editing. While editing, Up increases and Down decreases. EDIT saves the value, and BACK cancels the edit. Confirmed changes are stored in flash and restored on startup.
 
 - Auto sleep is on by default. Choose 1, 3, 5, or 10 minutes, with 3 minutes as the default.
-- The onboard RGB status LED is on by default. Turn it off or adjust brightness from 1 to 8.
+- The onboard RGB status LED is on by default. Turn it off or adjust brightness from 0% to 100% in 10% steps. The endpoints use RGB channel values 1 and 255. Use the RGB switch to turn the LED fully off.
 
 Settings selection and value changes use eased animations. Startup now draws Home before wireless setup, and the clock fields do not wait for NTP when drawing. The cause of lag on the first automatic boot after upload has not been confirmed.
 
@@ -154,7 +154,7 @@ Use **115200 baud**. For native USB, enable **USB CDC On Boot** and re-upload if
 
 ## Onboard RGB status LED
 
-This build uses the onboard addressable LED on GPIO48, with each color channel adjustable up to 8 in Settings. Blue indicates startup, a reconnect request or a scan start. Green indicates Wi-Fi connected, BLE scan completed or a valid F1 time. Cyan confirms a saved calibration or cleared statistics. False starts flash red, timeouts and failed scans use amber, and a new F1 record cycles colors with the fireworks. The LED turns off during F1 countdown and reaction timing and before light sleep.
+This build uses the onboard addressable LED on GPIO48, with brightness adjustable in Settings. Blue indicates startup, a reconnect request or a scan start. Green indicates Wi-Fi connected, BLE scan completed or a valid F1 time. Cyan confirms a saved calibration or cleared statistics. False starts flash red, timeouts and failed scans use amber, and a new F1 record cycles colors with the fireworks. The LED turns off during F1 countdown and reaction timing and before light sleep.
 
 ## License
 
