@@ -56,6 +56,8 @@ class Interface {
   void motionCalibrationPrompt(const char* message, CalibrationTone tone, int offset);
   void motionMode(const char* mode);
   void motionConnection(const char* state);
+  static constexpr int motionMeterHalfWidth = 42;
+  void motionMeter(uint8_t axis, int8_t pixels);
   void motionNotice(const char* message);
 
  private:
@@ -124,6 +126,7 @@ class Interface {
   Adafruit_ILI9341 screen{&SPI, Config::dc, Config::cs, Config::reset};
   // 每个字段缓存上次的文字，定时刷新只重绘发生变化的区域。
   String cache[14];
+  int8_t motionMeterPixels[6];
   int lastLights = -1;
   std::unique_ptr<GFXcanvas16> fireworks;
   uint32_t fireworkStarted = 0;

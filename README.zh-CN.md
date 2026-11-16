@@ -36,7 +36,7 @@ DeskConsole 从两个 ESP32-S3 小实验发展而来。每个实验都有自己�
 
 1. 在 Arduino IDE 2 中安装 **esp32 by Espressif Systems**，选择 **ESP32S3 Dev Module** 和开发板串口。N16R8 的 Flash Size 设为 16 MB，选择带 3 MiB APP 槽的分区方案（如 16M Flash，3MB APP/9.9MB FATFS）。若要使用板载 8 MiB PSRAM，可启用 OPI PSRAM。BLE 使用 ESP32 核心自带库。
 2. 安装 **Adafruit ILI9341** 及其依赖，以及 **ArduinoJson 7**。
-3. 到 [v3.2.1 发布页](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v3.2.1) 下载 **Source code (zip)**，解压后打开 `DeskConsole/DeskConsole.ino`。
+3. 到 [v3.3.0 发布页](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v3.3.0) 下载 **Source code (zip)**，解压后打开 `DeskConsole/DeskConsole.ino`。
 4. 拔掉 USB 后按下表接线，再接回 USB、选择串口并上传。屏幕进入桌面后，按左上键打开应用菜单，再选择 Wi-Fi 联网。
 
 Wi-Fi 支持 2.4 GHz 开放网络和个人网络，最多保存八个网络。无线功能开启时，开机会尝试最近连接成功的已保存网络。连接失败时，可以重新扫描或手动选择其他已保存网络。八条记录存满后，新网络仍能连接。删除一条旧记录并重新连接后，才能保存新网络。暂不支持 WPA-Enterprise 校园网。密码保存在 NVS，项目未配置加密存储。
@@ -65,9 +65,11 @@ F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气客
 
 ### 可选 MPU6050（Motion）
 
-使用可选的 Motion 应用时，模块 VCC 接 3V3，GND 接公共地，SDA 接 GPIO10，SCL 接 GPIO11。XDA、XCL、INT 留空。AD0 接 GND 时地址为 `0x68`，接 3V3 时为 `0x69`。打开 **Apps → Motion**，可查看三轴加速度计和三轴陀螺仪的有符号原始计数，约每秒更新五次。未接传感器时页面会提示，网页版预览也没有实体传感器。
+使用可选的 Motion 应用时，模块 VCC 接 3V3，GND 接公共地，SDA 接 GPIO10，SCL 接 GPIO11。XDA、XCL、INT 留空。AD0 接 GND 时地址为 `0x68`，接 3V3 时为 `0x69`。打开 **Apps → Motion**，可查看三轴加速度计和三轴陀螺仪的有符号原始计数。未接传感器时页面会提示，网页版预览也没有实体传感器。
 
 按 **CAL** 开始六面校准。按照屏幕提示把对应轴朝上，放稳后按 **SAMPLE** 采样。**VIEW** 在气泡水平仪、姿态仪和彩色立方体之间循环。立方体跟随陀螺仪转动，按 **CENTER** 可将当前姿势设为正面。航向可能随时间漂移。实验性的平移追踪因位置漂移暂时停用。**DATA** 打开读数页，并切换校准值和原始计数。读数页的 **CAL** 打开六面校准指引。两轴显示角度均在 ±1° 内时，水平仪变绿。SAMPLE 仅在校准期间显示。蓝天棕地的姿态仪根据重力估算横滚角和俯仰角，并补偿原型传感器在板面内旋转 180° 的安装方向。校准参数在重启后保留。
+
+**Motion 数据条。** Raw 和 Calibrated 的六个读数下方各有一条连续色条。较长的暖灰线标记零点，负值向左填充，正值向右填充。浅青色加速度条的显示范围为 ±1.5 g，浅紫色陀螺仪条为 ±50°/s，Raw 分别使用等效的 ±24,576 和 ±6,550 个计数。超出范围时色条填满，数字继续显示实际读数。色条约每秒更新 25 次，数字约每秒更新 3 次。
 
 ### 接线图
 
@@ -87,7 +89,7 @@ F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气客
 
 [打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v3.0.0 的全部十二个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
 
-[下载 v3.2.1 网页版 ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.2.1/DeskConsole-v3.2.1-Web.zip) · [在线试玩 v3.0.0](https://uim-g.github.io/ESP32-DeskConsole/v3.0.0/)
+[下载 v3.3.0 网页版 ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.3.0/DeskConsole-v3.3.0-Web.zip) · [在线试玩 v3.0.0](https://uim-g.github.io/ESP32-DeskConsole/v3.0.0/)
 
 [![DeskConsole 七个 v1.x 网页版本的实测截图总览](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 

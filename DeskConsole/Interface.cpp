@@ -125,6 +125,7 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   background = base;
   highlight = color;
   for (auto& text : cache) text = "";
+  for (auto& pixels : motionMeterPixels) pixels = 127;
   lastLights = -1;
   lastSelection = -1;
   launcherTop = 0;
