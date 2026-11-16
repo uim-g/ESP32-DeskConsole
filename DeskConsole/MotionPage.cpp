@@ -84,6 +84,7 @@ void MotionPage::enter() {
 
 void MotionPage::leave() {
   calibrating = sampling = false;
+  warningActive = false;
   calibrationTabs = CalibrationTabs::Idle;
 }
 
@@ -150,11 +151,12 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
   } else if (key == Key::Down && calibrating && !sampling && valid) {
     const float current[3] = {float(axes[0]), float(axes[1]), float(axes[2])};
     if (!faceAligned(current)) {
-      notice = "Align the axis before sampling";
+      warnCalibration("Align the axis before sampling");
       draw();
       return;
     }
     samples = 0;
+    warningActive = false;
     nextRead = millis() + 500;  // 等按键带来的振动消退。
     sampling = true;
     notice = "Hold still...";
@@ -174,6 +176,16 @@ void MotionPage::tick(uint32_t now) {
       ctx.ui.startTabs(true, (1U << 1) | (1U << 2));
     }
     calibrationTabs = CalibrationTabs::Idle;
+  }
+  if (warningActive && due(now, warningFrameAt)) {
+    if (now - warningStarted >= 1400) {
+      warningActive = false;
+      notice = "";
+    } else {
+      const uint32_t elapsed = now - warningStarted;
+      warningFrameAt = elapsed < 280 ? now + 40 : warningStarted + 1400;
+    }
+    drawCalibration();
   }
   if (!due(now, nextRead)) return;
   valid = readSample(axes);
@@ -210,14 +222,14 @@ void MotionPage::collect() {
   for (int i = 0; i < 6; ++i) {
     mean[i] = sums[i] / static_cast<float>(sampleCount);
     if (static_cast<int32_t>(high[i]) - low[i] > (i < 3 ? 800 : 350)) {
-      notice = "Movement detected. Retry";
+      warnCalibration("Movement detected. Retry");
       return;
     }
   }
   const int axis = face / 2;
   const float accel[3] = {mean[0], mean[1], mean[2]};
   if (!faceAligned(accel)) {
-    notice = "Wrong face. Retry";
+    warnCalibration("Align the axis before sampling");
     return;
   }
 
@@ -355,6 +367,13 @@ bool MotionPage::faceAligned(const float (&accel)[3]) const {
          fabsf(accel[(axis + 1) % 3]) <= 4500 && fabsf(accel[(axis + 2) % 3]) <= 4500;
 }
 
+void MotionPage::warnCalibration(const char* message) {
+  notice = message;
+  warningStarted = millis();
+  warningFrameAt = warningStarted + 40;
+  warningActive = true;
+}
+
 void MotionPage::drawCalibration() {
   constexpr const char* faces[] = {"+X", "-X", "+Y", "-Y", "+Z", "-Z"};
   const int axis = face / 2;
@@ -374,8 +393,11 @@ void MotionPage::drawCalibration() {
   const String readings = valid ? String("X ") + String(axes[0]) + "   Y " + String(axes[1]) +
                                   "   Z " + String(axes[2]) : String("Waiting for sensor");
   ctx.ui.field(5, 36, 175, 248, 20, readings, 4, Interface::accent, true);
-  ctx.ui.field(6, 36, 198, 248, 17,
-               sampling ? "Hold still..." : *notice ? notice : aligned ? "Aligned. Press SAMPLE" : "Rotate to match the target",
-               4, ILI9341_WHITE, true);
+  constexpr int shake[] = {0, -5, 5, -4, 4, -2, 2};
+  const uint32_t frame = (millis() - warningStarted) / 40;
+  const int offset = warningActive && frame < sizeof(shake) / sizeof(shake[0]) ? shake[frame] : 0;
+  const char* prompt = sampling ? "Hold still..." : *notice ? notice :
+                       aligned ? "Aligned. Press SAMPLE" : "Rotate to match the target";
+  ctx.ui.motionCalibrationPrompt(prompt, warningActive || (!sampling && !aligned), offset);
   ctx.ui.motionMode("CALIBRATING");
 }

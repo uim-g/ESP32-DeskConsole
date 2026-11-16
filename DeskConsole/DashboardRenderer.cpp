@@ -440,3 +440,28 @@ void Interface::renderMotionNotice(int offset) {
   strip.print(message);
   screen.drawRGBBitmap(50, 203, strip.getBuffer(), width, height);
 }
+
+void Interface::motionCalibrationPrompt(const char* message, bool alert, int offset) {
+  const String key = String(message) + '/' + String(alert) + '/' + String(offset);
+  if (cache[6] == key) return;
+  constexpr int width = 248, height = 17;
+  GFXcanvas16 line(width, height);
+  if (!line.getBuffer()) return;
+  cache[6] = key;
+  line.fillScreen(background);
+  line.setTextWrap(false);
+  line.setFont(&NunitoHint);
+  line.setTextColor(alert ? 0xF986 : ILI9341_WHITE);
+  int16_t x, y;
+  uint16_t w, h;
+  line.getTextBounds(message, 0, 0, &x, &y, &w, &h);
+  const int left = (width - w - (alert ? 1 : 0)) / 2 - x + offset;
+  const int baseline = (height - h) / 2 - y;
+  line.setCursor(left, baseline);
+  line.print(message);
+  if (alert) {
+    line.setCursor(left + 1, baseline);
+    line.print(message);
+  }
+  screen.drawRGBBitmap(36, 198, line.getBuffer(), width, height);
+}

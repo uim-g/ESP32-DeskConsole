@@ -23,6 +23,7 @@ class MotionPage : public Page {
   static bool usable(const Calibration& data);
   void collect();
   void drawCalibration();
+  void warnCalibration(const char* message);
   void finishCalibration();
   bool faceAligned(const float (&accel)[3]) const;
   bool targetRawNegative() const { return (face % 2 != 0) != (face < 4); }
@@ -44,6 +45,9 @@ class MotionPage : public Page {
   bool calibrating = false, sampling = false, valid = false, busReady = false;
   uint8_t address = 0, face = 0, samples = 0;
   uint32_t nextRead = 0;
+  uint32_t warningStarted = 0;
+  uint32_t warningFrameAt = 0;
+  bool warningActive = false;
   int16_t axes[6]{}, low[6]{}, high[6]{};
   int32_t sums[6]{};
   float firstFaceReading = 0;
