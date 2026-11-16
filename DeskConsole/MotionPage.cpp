@@ -67,6 +67,8 @@ bool MotionPage::readSample(int16_t (&reading)[6]) {
 
 void MotionPage::enter() {
   graphic = lastInstrument = Graphic::Level;
+  viewsShown = false;
+  lowerHint = LowerHint::Hidden;
   uprightLevel = false;
   if (!loaded) {
     if (storage.begin("motion", true)) {
@@ -85,14 +87,11 @@ void MotionPage::enter() {
 void MotionPage::leave() {
   calibrating = sampling = false;
   warningActive = false;
-  calibrationTabs = CalibrationTabs::Idle;
 }
 
 void MotionPage::finishCalibration() {
   leave();
   ctx.ui.clearMotionBody();
-  ctx.ui.replaceTab(3, "CAL");
-  calibrationTabs = CalibrationTabs::RestoreViews;
 }
 
 void MotionPage::wake() {
@@ -111,7 +110,7 @@ bool MotionPage::usable(const Calibration& data) {
 }
 
 void MotionPage::input(Key key, uint32_t pressedUs) {
-  if (calibrationTabs != CalibrationTabs::Idle || ctx.ui.tabsAnimating()) return;
+  if (ctx.ui.tabsAnimating() || (!valid && key != Key::Back)) return;
   if (key == Key::Back) {
     if (!calibrating) {
       Page::input(key, pressedUs);
@@ -126,25 +125,18 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
       graphic = Graphic::None;
       showCorrected = true;
       ctx.ui.clearMotionBody();
-      ctx.ui.replaceTab(3, "CAL");
     } else {
       showCorrected = !showCorrected;
     }
     notice = "";
   } else if (key == Key::Up && !calibrating) {
     const bool wasData = graphic == Graphic::None;
-    const bool wasCube = cubeView();
     // Track 的实现保留，因位移漂移暂时停用 Cube → Track 入口。
     graphic = wasData ? lastInstrument :
         // graphic == Graphic::Cube ? Graphic::Track :
         graphic == Graphic::Level ? Graphic::Attitude :
         graphic == Graphic::Attitude ? Graphic::Cube : Graphic::Level;
-    if (cubeView()) {
-      centerCube();
-      if (!wasCube) ctx.ui.replaceTab(3, "CENTER");
-    } else if (wasData || wasCube) {
-      ctx.ui.replaceTab(3, nullptr);
-    }
+    if (cubeView()) centerCube();
     uprightLevel = false;
     lastRoll = lastPitch = 999;
     ctx.ui.clearMotionBody();
@@ -158,8 +150,6 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
     face = 0;
     notice = "";
     ctx.ui.clearMotionBody();
-    ctx.ui.startTabs(false, (1U << 1) | (1U << 2));
-    calibrationTabs = CalibrationTabs::ShowSample;
   } else if (key == Key::Down && calibrating && !sampling && valid) {
     const float current[3] = {float(axes[0]), float(axes[1]), float(axes[2])};
     if (!faceAligned(current)) {
@@ -178,17 +168,31 @@ void MotionPage::input(Key key, uint32_t pressedUs) {
   draw();
 }
 
-void MotionPage::tick(uint32_t now) {
-  if (calibrationTabs != CalibrationTabs::Idle && !ctx.ui.tabsAnimating()) {
-    if (calibrationTabs == CalibrationTabs::ShowSample) {
-      ctx.ui.replaceTab(3, "SAMPLE");
-    } else {
+void MotionPage::syncTabs() {
+  if (ctx.ui.tabsAnimating()) return;
+  constexpr uint8_t viewMask = (1U << 1) | (1U << 2);
+  const bool showViews = valid && !calibrating;
+  if (viewsShown != showViews) {
+    viewsShown = showViews;
+    if (viewsShown) {
       ctx.ui.tab(false, true, "DATA");
       ctx.ui.tab(true, false, "VIEW");
-      ctx.ui.startTabs(true, (1U << 1) | (1U << 2));
     }
-    calibrationTabs = CalibrationTabs::Idle;
+    ctx.ui.startTabs(viewsShown, viewMask);
+    return;
   }
+
+  const LowerHint next = !valid ? LowerHint::Hidden : calibrating ? LowerHint::Sample :
+      graphic == Graphic::None ? LowerHint::Cal : cubeView() ? LowerHint::Center : LowerHint::Hidden;
+  if (lowerHint != next) {
+    lowerHint = next;
+    constexpr const char* labels[] = {nullptr, "CAL", "SAMPLE", "CENTER"};
+    ctx.ui.replaceTab(3, labels[static_cast<uint8_t>(lowerHint)]);
+  }
+}
+
+void MotionPage::tick(uint32_t now) {
+  syncTabs();
   if (warningActive && due(now, warningFrameAt)) {
     if (now - warningStarted >= 1400) {
       warningActive = false;
@@ -203,7 +207,8 @@ void MotionPage::tick(uint32_t now) {
   const bool wasValid = valid;
   const bool wasCalibrating = calibrating;
   valid = readSample(axes);
-  nextRead = now + (calibrating ? 200 : graphic == Graphic::None ? 40 : cubeView() ? 25 : 100);
+  // 离线时每秒探测一次；检测到地址后恢复当前视图的采样节奏。
+  nextRead = now + (!address ? 1000 : calibrating ? 200 : graphic == Graphic::None ? 40 : cubeView() ? 25 : 100);
   if (cubeView()) {
     if (valid) updateCube(now);
     else if (cubeReady) {

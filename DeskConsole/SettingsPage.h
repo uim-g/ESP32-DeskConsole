@@ -9,7 +9,8 @@ class SettingsPage : public Page {
   PageStyle style() const override { return {"Settings",0x10E2,0xB70D,{"BACK","EDIT","^","v"}}; }
   void enter() override {
     row = 0;
-    editing = saveFailed = saveShown = false;
+    editing = saveFailed = false;
+    actionShown = ActionHint::Edit;
     upShown = downShown = true;
   }
   void draw() override { ctx.ui.settings(editing ? draft : store.current, row, editing, saveFailed); }
@@ -23,5 +24,7 @@ class SettingsPage : public Page {
   Settings draft;
   uint8_t row = 0;
   bool editing = false, saveFailed = false;
-  bool saveShown = false, upShown = true, downShown = true;
+  enum class ActionHint { Edit, Save, Hidden };
+  ActionHint actionShown = ActionHint::Edit;
+  bool upShown = true, downShown = true;
 };

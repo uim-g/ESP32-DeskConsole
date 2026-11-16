@@ -1,5 +1,6 @@
 #include "Interface.h"
 #include "NunitoFonts.h"
+#include <cstring>
 
 namespace {
 constexpr uint16_t sunColor = 0xFDC0, rainColor = 0x54FF;
@@ -271,6 +272,8 @@ void Interface::device(const Platform::Device& data) {
 }
 
 void Interface::clearMotionBody() {
+  cubeCanvas.reset();
+  lastCubeBounds = {0, 0, -1, -1};
   motionNoticeWaiting = false;
   motionNoticeAnimation.stop();
   screen.fillRect(34, 43, 252, 173, background);
@@ -367,9 +370,16 @@ void Interface::motionLevel(int roll, int pitch) {
 
 void Interface::motionConnection(const char* state) {
   if (cache[0] == state) return;
-  constexpr uint16_t frame = 0x630C, label = 0xAD55;
-  screen.drawRoundRect(174, 12, 108, 20, 6, frame);
-  field(0, 180, 14, 96, 16, state, 3, label, true);
+  constexpr uint16_t fill = 0x3186, label = 0xBDF7;
+  screen.fillRoundRect(174, 9, 106, 24, 9, fill);
+  cache[0] = state;
+  screen.setFont(&NunitoTab);
+  int16_t x, y;
+  uint16_t w, h;
+  screen.getTextBounds(state, 0, 0, &x, &y, &w, &h);
+  screen.setTextColor(label);
+  screen.setCursor(227 - w / 2 - x, 21 - h / 2 - y);
+  screen.print(state);
 }
 
 void Interface::motionMode(const char* mode) {
@@ -511,6 +521,7 @@ void Interface::motionCube(const float (&rotation)[4], float distance, float off
   const float w = rotation[0], x = -rotation[1], y = -rotation[2], z = rotation[3];
   int px[8], py[8];
   char key[65]{};
+  CubeBounds bounds{size, size, -1, -1};
   for (int i = 0; i < 8; ++i) {
     const float vx = i & 1 ? 1 : -1;
     const float vy = i & 2 ? 1 : -1;
@@ -525,15 +536,35 @@ void Interface::motionCube(const float (&rotation)[4], float distance, float off
     const float scale = distance > 0 ? 20.0f / (distance - 0.10f * tz) : 32.0f;
     px[i] = size / 2 + lroundf(scale * (tx - 0.34f * tz + 10 * offsetX));
     py[i] = size / 2 - lroundf(scale * (ty - 0.23f * tz + 10 * offsetY));
+    bounds.left = min(bounds.left, px[i] - 1);
+    bounds.top = min(bounds.top, py[i] - 1);
+    bounds.right = max(bounds.right, px[i] + 1);
+    bounds.bottom = max(bounds.bottom, py[i] + 1);
     snprintf(key + i * 8, 9, "%04x%04x",
              static_cast<unsigned>(static_cast<uint16_t>(px[i])),
              static_cast<unsigned>(static_cast<uint16_t>(py[i])));
   }
   if (cache[13] == key) return;
-  GFXcanvas16 cube(size, size);
-  if (!cube.getBuffer()) return;
+  if (!cubeCanvas) cubeCanvas.reset(new (std::nothrow) GFXcanvas16(size, size));
+  if (!cubeCanvas || !cubeCanvas->getBuffer()) {
+    cubeCanvas.reset();
+    return;
+  }
+  auto& cube = *cubeCanvas;
+  bounds = {max(0, bounds.left), max(0, bounds.top), min(size - 1, bounds.right), min(size - 1, bounds.bottom)};
+  const auto old = lastCubeBounds;
+  lastCubeBounds = bounds;
+  auto dirty = bounds;
+  if (old.left <= old.right && old.top <= old.bottom) {
+    dirty = {min(dirty.left, old.left), min(dirty.top, old.top),
+             max(dirty.right, old.right), max(dirty.bottom, old.bottom)};
+    dirty = {max(0, dirty.left), max(0, dirty.top), min(size - 1, dirty.right), min(size - 1, dirty.bottom)};
+  }
+  const int width = dirty.right - dirty.left + 1;
+  const int height = dirty.bottom - dirty.top + 1;
   cache[13] = key;
-  cube.fillScreen(background);
+  if (width <= 0 || height <= 0) return;
+  cube.fillRect(dirty.left, dirty.top, width, height, background);
   bool visible[6]{};
   for (int face = 0; face < 6; ++face) {
     const auto& vertices = faces[face];
@@ -559,5 +590,11 @@ void Interface::motionCube(const float (&rotation)[4], float distance, float off
       }
     }
   }
-  screen.drawRGBBitmap(160 - size / 2, 63, cube.getBuffer(), size, size);
+  // 把新旧边界并集里的像素原地压紧，单次向 TFT 传输这一块区域。
+  uint16_t* pixels = cube.getBuffer();
+  for (int row = 0; row < height; ++row) {
+    std::memmove(pixels + row * width, pixels + (dirty.top + row) * size + dirty.left,
+                 width * sizeof(*pixels));
+  }
+  screen.drawRGBBitmap(160 - size / 2 + dirty.left, 63 + dirty.top, pixels, width, height);
 }
