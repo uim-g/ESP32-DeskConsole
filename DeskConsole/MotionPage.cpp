@@ -340,7 +340,8 @@ void MotionPage::drawCalibration() {
   const bool aligned = valid && faceAligned(current);
   ctx.ui.field(1, 36, 47, 248, 23, String("CALIBRATING  ") + String(face + 1) + " / 6",
                0, Interface::accent, true);
-  ctx.ui.field(2, 36, 73, 248, 48, String(faces[face]) + "  UP", 1, ILI9341_WHITE, true);
+  ctx.ui.field(2, 58, 73, 133, 48, String(faces[face]) + "  UP", 1, ILI9341_WHITE, true);
+  ctx.ui.motionCalibrationIcon(face);
   ctx.ui.field(3, 36, 127, 248, 22,
                axis == 2 ? (face % 2 ? "Lay module face down" : "Lay module face up") :
                            "Stand module on its edge",

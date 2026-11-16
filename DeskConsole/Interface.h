@@ -50,6 +50,7 @@ class Interface {
   void motionAttitude(int roll, int pitch);
   void motionLevel(int roll, int pitch);
   void motionTube(bool horizontal, int angle);
+  void motionCalibrationIcon(uint8_t face);
   void motionMode(const char* mode);
 
  private:

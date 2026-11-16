@@ -368,6 +368,29 @@ void Interface::renderMotionMode(int step) {
   screen.print(motionModeShown);
 }
 
+void Interface::motionCalibrationIcon(uint8_t face) {
+  const String key(face);
+  if (cache[13] == key) return;
+  cache[13] = key;
+  constexpr int x = 219, top = 76;
+  screen.fillRect(x - 24, top, 48, 44, background);
+  const bool negative = face % 2;
+  const int axis = face / 2;
+  const int width = axis == 0 ? 15 : 36;
+  const int height = axis == 1 ? 13 : 23;
+  const int y = top + 15;
+  screen.fillRoundRect(x - width / 2, y, width, height, 3, 0x2385);
+  screen.drawRoundRect(x - width / 2, y, width, height, 3, highlight);
+  if (axis != 2 || !negative) {
+    const int pinsX = negative ? x + width / 2 - 4 : x - width / 2 + 3;
+    screen.drawFastVLine(pinsX, y + 4, height - 8, ILI9341_WHITE);
+    screen.fillRect(x - 3, y + height / 2 - 3, 6, 6, ILI9341_WHITE);
+  }
+  screen.drawFastVLine(x, top + 1, 12, highlight);
+  screen.drawLine(x - 4, top + 5, x, top + 1, highlight);
+  screen.drawLine(x + 4, top + 5, x, top + 1, highlight);
+}
+
 void Interface::motionTube(bool horizontal, int angle) {
   constexpr int length = 108, thickness = 33;
   const int width = horizontal ? length : thickness;
