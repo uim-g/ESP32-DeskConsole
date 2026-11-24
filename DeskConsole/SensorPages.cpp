@@ -43,8 +43,11 @@ void EnvironmentPage::draw() {
 }
 
 void MicrophonePage::enter() {
-  level = -1;
-  sampledAt = millis();
+  hasSamples = false;
+  sampledAt = waveAt = millis();
+  waveNext = 0;
+  pendingAmplitude = 0;
+  for (auto& amplitude : wave) amplitude = 0;
 #ifndef __EMSCRIPTEN__
   digitalWrite(Config::micSelect, LOW);
   pinMode(Config::micSelect, OUTPUT);
@@ -67,7 +70,7 @@ void MicrophonePage::tick(uint32_t now) {
   sampledAt = now;
   int32_t samples[320];  // 20 ms at 16 kHz.
   const size_t count = i2s.readBytes(reinterpret_cast<char*>(samples), sizeof(samples)) / sizeof(samples[0]);
-  level = -1;
+  hasSamples = false;
   if (count) {
     // 去除采样窗口内的直流偏移。满量程值是数字参考，不代表声压级。
     float mean = 0;
@@ -78,9 +81,20 @@ void MicrophonePage::tick(uint32_t now) {
       const float centered = samples[i] / 2147483648.0f - mean;
       energy += centered * centered;
     }
-    level = constrain(static_cast<int>(lroundf(100 * sqrtf(energy / count))), 0, 100);
+    const float rms = sqrtf(energy / count);
+    hasSamples = true;
+    // Logarithmic scaling makes quiet sounds visible.
+    const float normalized = (20.0f * log10f(max(rms, 0.0001f)) + 72.0f) / 60.0f;
+    const auto amplitude = static_cast<uint8_t>(lroundf(33 * constrain(normalized, 0.0f, 1.0f)));
+    pendingAmplitude = max(pendingAmplitude, amplitude);
   }
-  draw();
+  if (now - waveAt >= 40) {
+    waveAt = now;
+    wave[waveNext] = pendingAmplitude;
+    waveNext = (waveNext + 1) % waveColumns;
+    pendingAmplitude = 0;
+    draw();
+  }
 #endif
 }
 
@@ -88,13 +102,9 @@ void MicrophonePage::draw() {
 #ifdef __EMSCRIPTEN__
   const char* status = "Hardware required";
 #else
-  const char* status = started ? (level < 0 ? "Waiting for samples" : "I2S - Left channel") : "I2S unavailable";
+  const char* status = started ? (!hasSamples ? "Waiting for samples" : "I2S - Left channel") : "I2S unavailable";
 #endif
   ctx.ui.field(0, 54, 64, 212, 24, status, 0, style().accent, true);
-  ctx.ui.field(1, 54, 105, 212, 24, "Input level (RMS)", 0, ILI9341_WHITE, true);
-  const int bars = level <= 0 ? 0 : (level + 4) / 5;
-  String meter;
-  for (int i = 0; i < 20; ++i) meter += i < bars ? '|' : '.';
-  ctx.ui.field(2, 54, 138, 212, 25, meter, 0, style().accent, true);
-  ctx.ui.field(3, 54, 176, 212, 24, level < 0 ? String("--") : String(level) + " %", 0, ILI9341_WHITE, true);
+  ctx.ui.microphoneWave(wave, waveColumns, waveNext);
+  ctx.ui.field(1, 54, 195, 212, 22, "Input waveform", 4, 0xA69A, true);
 }

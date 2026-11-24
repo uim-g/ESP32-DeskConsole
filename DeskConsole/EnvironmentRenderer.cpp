@@ -37,5 +37,21 @@ void Interface::environmentGauge(uint8_t index, float value) {
   const uint8_t slot = index * 3;
   field(slot, cx - 45, 106, 90, 27, valid ? String(value, 1) : String("--"), 1, ILI9341_WHITE, true);
   field(slot + 1, cx - 34, 136, 68, 18, temperature ? "\x01" "C" : "hPa", 0, activeColor, true);
-  field(slot + 2, cx - 35, 153, 70, 16, temperature ? "Temperature" : "Pressure", 4, muted, true);
+  field(slot + 2, cx - 35, 153, 70, 16, temperature ? "Temp" : "Pressure", 4, muted, true);
+}
+
+void Interface::microphoneWave(const uint8_t* history, size_t count, size_t next) {
+  constexpr int pitch = 3, height = 70, middle = height / 2;
+  const int width = count * pitch;
+  GFXcanvas16 canvas(width, height);
+  if (!canvas.getBuffer()) return;
+  canvas.fillScreen(background);
+  canvas.drawFastHLine(0, middle, width, cardOutline);
+  for (size_t column = 0; column < count; ++column) {
+    const int amplitude = history[(next + column) % count];
+    if (amplitude > 0) {
+      canvas.fillRect(column * pitch, middle - amplitude, 2, amplitude * 2 + 1, highlight);
+    }
+  }
+  screen.drawRGBBitmap((320 - width) / 2, 104, canvas.getBuffer(), width, height);
 }

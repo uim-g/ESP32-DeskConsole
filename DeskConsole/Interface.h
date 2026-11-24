@@ -45,6 +45,7 @@ class Interface {
   void wifiMessage(const String& title, const String& detail, const String& footer);
   void wifiPassword(const String& ssid, const String& value, size_t length, int group,
                     const String& previous, const String& selected, const String& next, int direction, const char* footer);
+  void microphoneWave(const uint8_t* history, size_t count, size_t next);
   void environmentGauge(uint8_t index, float value);
   void device(const Platform::Device& data);
   void clearMotionBody();

@@ -110,7 +110,14 @@ void Interface::renderLauncher(float progress) {
       }
     }
     ink.setFont(&NunitoMedium);
-    ink.setCursor(47, 25);
+    int16_t textX, textY;
+    uint16_t textWidth, textHeight;
+    ink.getTextBounds(labels[row], 0, 0, &textX, &textY, &textWidth, &textHeight);
+    if (47 + textX + textWidth > width - 8) {
+      ink.setFont(&NunitoSmall);
+      ink.getTextBounds(labels[row], 0, 0, &textX, &textY, &textWidth, &textHeight);
+    }
+    ink.setCursor(47, (height - textHeight) / 2 - textY);
     ink.print(labels[row]);
 
     // 高亮在整条列表上移动，卡片形状充当遮罩。字和图标用同一个遮罩反色。

@@ -37,6 +37,10 @@ class MicrophonePage : public Page {
   I2SClass i2s;
   bool started = false;
 #endif
-  uint32_t sampledAt = 0;
-  int level = -1;
+  static constexpr size_t waveColumns = 72;
+  uint8_t wave[waveColumns] = {};
+  size_t waveNext = 0;
+  uint8_t pendingAmplitude = 0;
+  uint32_t sampledAt = 0, waveAt = 0;
+  bool hasSamples = false;
 };
