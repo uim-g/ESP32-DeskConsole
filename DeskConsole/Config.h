@@ -9,7 +9,7 @@ constexpr int micClock = 40, micWordSelect = 39, micSelect = 38, micData = 42;
 constexpr uint8_t rgbPin = 48;
 constexpr int bootButton = 0;
 constexpr uint8_t rgbBrightness = 1;  // 默认 0% 档对应的 RGB 通道值。
-constexpr char firmwareVersion[] = "v3.3.1";  // Device 页面显示的固件版本。
+constexpr char firmwareVersion[] = "v3.4.0";  // Device 页面显示的固件版本。
 // 本地填写 2.4 GHz Wi-Fi 信息。仓库中保留占位符。
 constexpr char ssid[] = "YOUR_WIFI_NAME";
 constexpr char password[] = "YOUR_WIFI_PASSWORD";

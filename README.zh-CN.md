@@ -39,7 +39,7 @@ DeskConsole 从两个 ESP32-S3 小实验发展而来。每个实验都有自己�
 
 1. 在 Arduino IDE 2 中安装 **esp32 by Espressif Systems**，选择 **ESP32S3 Dev Module** 和开发板串口。N16R8 的 Flash Size 设为 16 MB，选择带 3 MiB APP 槽的分区方案（如 16M Flash，3MB APP/9.9MB FATFS）。若要使用板载 8 MiB PSRAM，可启用 OPI PSRAM。BLE 使用 ESP32 核心自带库。
 2. 安装 **Adafruit ILI9341** 及其依赖，以及 **ArduinoJson 7**、**Adafruit BMP280 Library** 和 **Adafruit BME280 Library**（含依赖）。
-3. 到 [v3.3.1 发布页](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v3.3.1) 下载 **Source code (zip)**，解压后打开 `DeskConsole/DeskConsole.ino`。
+3. 到 [v3.4.0 发布页](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v3.4.0) 下载 **Source code (zip)**，解压后打开 `DeskConsole/DeskConsole.ino`。
 4. 拔掉 USB 后按下表接线，再接回 USB、选择串口并上传。屏幕进入桌面后，按左上键打开应用菜单，再选择 Wi-Fi 联网。
 
 Wi-Fi 支持 2.4 GHz 开放网络和个人网络，最多保存八个网络。无线功能开启时，开机会尝试最近连接成功的已保存网络。连接失败时，可以重新扫描或手动选择其他已保存网络。八条记录存满后，新网络仍能连接。删除一条旧记录并重新连接后，才能保存新网络。暂不支持 WPA-Enterprise 校园网。密码保存在 NVS，项目未配置加密存储。
@@ -76,7 +76,7 @@ F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气请
 
 ### 可选温度气压传感器与 I²S 麦克风
 
-这两个应用可使用 [main 分支源码 ZIP](https://github.com/uim-g/ESP32-DeskConsole/archive/refs/heads/main.zip) 编译，入口都在 Motion 下方。接线前拔掉 USB，所有模块共地。
+这两个应用可使用 [v3.4.0 源码 ZIP](https://github.com/uim-g/ESP32-DeskConsole/archive/refs/tags/v3.4.0.zip) 编译，入口都在 Motion 下方。接线前拔掉 USB，所有模块共地。
 
 | BMP280 或 BME280 | ESP32-S3 |
 |---|---|
@@ -112,11 +112,11 @@ F1 以 TFT 熄灯为信号，成绩会受显示和输入延迟影响。天气请
 
 ## 网页模拟器
 
-[打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v3.3.1 的全部 20 个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
+[打开在线版本选择页](https://uim-g.github.io/ESP32-DeskConsole/)，试玩 v1.0.0 至 v3.4.0 的全部 21 个版本。各版本的 [GitHub Release](https://github.com/uim-g/ESP32-DeskConsole/releases) 也提供网页 ZIP 下载。
 
-[下载 v3.3.1 网页版 ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.3.1/DeskConsole-v3.3.1-Web.zip) · [在线试玩 v3.3.1](https://uim-g.github.io/ESP32-DeskConsole/v3.3.1/)
+[下载 v3.4.0 网页版 ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.4.0/DeskConsole-v3.4.0-Web.zip) · [在线试玩 v3.4.0](https://uim-g.github.io/ESP32-DeskConsole/v3.4.0/)
 
-在线版 v3.1.0 到 v3.3.1 都提供 **MPU6050 模拟**。打开 **Apps → Motion**，再用屏幕下方的 X、Y、Z 滑块转动虚拟模块。连接复选框可模拟拔掉和重新接入模块。各在线版本保留当时的 Motion 界面，发布页原有 ZIP 仍对应当时打包的网页版。
+在线版 v3.1.0 到 v3.4.0 都提供 **MPU6050 模拟**。打开 **Apps → Motion**，再用屏幕下方的 X、Y、Z 滑块转动虚拟模块。连接复选框可模拟拔掉和重新接入模块。各在线版本保留当时的 Motion 界面，发布页原有 ZIP 仍对应当时打包的网页版。
 
 [![DeskConsole 七个 v1.x 网页版本的实测截图总览](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 

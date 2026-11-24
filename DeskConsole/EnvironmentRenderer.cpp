@@ -18,7 +18,7 @@ void Interface::environmentGauge(uint8_t index, float value) {
   const int first = previous < 0 ? 0 : min(previous, progress);
   const int end = previous < 0 ? segments : max(previous, progress);
   auto point = [&](int step, int radius, int& x, int& y) {
-    const float angle = (135 + step * 3) * (PI / 180.0f);
+    const float angle = (135 + step * 3) * 0.01745329252f;
     x = cx + lroundf(radius * cosf(angle));
     y = cy + lroundf(radius * sinf(angle));
   };

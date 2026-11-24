@@ -39,7 +39,7 @@ You will need an ESP32-S3 N16R8 dev board, a 2.8-inch ILI9341 SPI display, four 
 
 1. In Arduino IDE 2, install **esp32 by Espressif Systems**. Select **ESP32S3 Dev Module** and your board's serial port. For N16R8, set Flash Size to 16 MB, choose a partition scheme with a 3 MiB APP slot (such as 16M Flash, 3MB APP/9.9MB FATFS), and enable OPI PSRAM if you want to use the onboard 8 MiB. BLE uses the ESP32 core library.
 2. Install **Adafruit ILI9341** and its dependencies, plus **ArduinoJson 7**, **Adafruit BMP280 Library**, and **Adafruit BME280 Library** with their dependencies.
-3. Download **Source code (zip)** from the [v3.3.1 Release](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v3.3.1), extract it, and open `DeskConsole/DeskConsole.ino`.
+3. Download **Source code (zip)** from the [v3.4.0 Release](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v3.4.0), extract it, and open `DeskConsole/DeskConsole.ino`.
 4. Disconnect USB before wiring the screen and buttons as shown below. Reconnect USB, select the serial port and upload. When Home appears, press the upper-left button to open Apps and select Wi-Fi.
 
 Wi-Fi supports open and personal networks on 2.4 GHz. It stores up to eight networks and tries the most recently connected saved network at startup when the radio is enabled. If it fails, scan again or select another saved network. If all eight slots are full, a new network can connect without being saved. Forget an old entry and reconnect to save the new network. WPA-Enterprise campus networks are unsupported. Saved credentials are stored in NVS without application-configured encryption.
@@ -76,7 +76,7 @@ Press **CAL** to start six-face calibration. Follow the on-screen axis and sign,
 
 ### Optional temperature and pressure sensor and I²S microphone
 
-Use the [current main source ZIP](https://github.com/uim-g/ESP32-DeskConsole/archive/refs/heads/main.zip) for these two apps. Both appear immediately below Motion. Disconnect USB before wiring the modules and use a common ground.
+Use the [v3.4.0 source ZIP](https://github.com/uim-g/ESP32-DeskConsole/archive/refs/tags/v3.4.0.zip) for these two apps. Both appear immediately below Motion. Disconnect USB before wiring the modules and use a common ground.
 
 | BMP280 or BME280 | ESP32-S3 |
 |---|---|
@@ -112,11 +112,11 @@ The black wire immediately below the red VCC lead connects TFT GND to the same b
 
 ## Browser simulators
 
-[Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all 20 versions from v1.0.0 through v3.3.1. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
+[Choose a firmware version online](https://uim-g.github.io/ESP32-DeskConsole/) to play all 21 versions from v1.0.0 through v3.4.0. The matching [GitHub Releases](https://github.com/uim-g/ESP32-DeskConsole/releases) include standalone browser ZIPs.
 
-[Download the v3.3.1 browser ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.3.1/DeskConsole-v3.3.1-Web.zip) · [Play v3.3.1 online](https://uim-g.github.io/ESP32-DeskConsole/v3.3.1/)
+[Download the v3.4.0 browser ZIP](https://github.com/uim-g/ESP32-DeskConsole/releases/download/v3.4.0/DeskConsole-v3.4.0-Web.zip) · [Play v3.4.0 online](https://uim-g.github.io/ESP32-DeskConsole/v3.4.0/)
 
-Online versions v3.1.0 through v3.3.1 include an **MPU6050 simulator**. Open **Apps → Motion**, then use the X/Y/Z sliders below the screen. The connection checkbox simulates unplugging and reconnecting the module. Each online version keeps its original Motion views. The original release ZIPs still contain the browser builds packaged at release time.
+Online versions v3.1.0 through v3.4.0 include an **MPU6050 simulator**. Open **Apps → Motion**, then use the X/Y/Z sliders below the screen. The connection checkbox simulates unplugging and reconnecting the module. Each online version keeps its original Motion views. The original release ZIPs still contain the browser builds packaged at release time.
 
 [![Live browser screenshots of the seven DeskConsole v1.x versions](docs/browser-releases/overview.jpg)](CHANGELOG.md)
 

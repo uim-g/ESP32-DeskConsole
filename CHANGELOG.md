@@ -4,6 +4,13 @@ Screenshots below were captured from the corresponding [live browser simulator](
 
 下方截图均取自对应版本的[在线网页模拟器](https://uim-g.github.io/ESP32-DeskConsole/)。
 
+## v3.4.0
+
+- Added Temp & Pressure and Microphone below Motion. 在 Motion 下方新增温度气压与麦克风应用。
+- BMP280/BME280 shares the MPU6050 I²C bus and displays temperature and pressure on continuous arc gauges. BMP280/BME280 与 MPU6050 共用 I²C，以连续弧线显示温度和气压。
+- The microphone shows a rolling three-second amplitude history. 麦克风显示最近约三秒的声音幅度。
+- Added browser Motion controls across the supported MPU6050 releases. 支持 MPU6050 的历史在线版本已补齐 Motion 模拟操作。
+
 ## v3.3.1
 
 - Reused the Cube canvas and limited TFT transfers to the area covered by the previous and current frames. 复用 Cube 画布，仅传输新旧画面覆盖的区域。
