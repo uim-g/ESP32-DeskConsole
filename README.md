@@ -11,6 +11,9 @@ DeskConsole is a desktop console for the ESP32-S3 and a 320×240 ILI9341 SPI dis
 - **F1 Reaction** — five two-row lamp housings, random lights-out, false starts, timeouts, Normal and Debug modes. The last result, personal best, and total completed rounds are saved in flash.
 - **Weather** — current conditions and a three-day forecast from [Open-Meteo](https://open-meteo.com/en/docs).
 - **Motion** — optional MPU6050 with an attitude indicator, bubble level, and gyroscope-driven 3D cube.
+- **Temp & Pressure** shows local readings on two continuous arc gauges.
+- **Microphone** shows a scrolling sound amplitude history of about three seconds.
+
 - **Wi-Fi** — connection status, network scanning, on-device password entry, and saved networks.
 - **Bluetooth** — scans nearby BLE broadcasts. See the controls below.
 - **Device** — temperature, memory and firmware usage, flash capacity and version.
@@ -70,6 +73,28 @@ For the optional Motion app, connect module VCC to 3V3, GND to the common ground
 Press **CAL** to start six-face calibration. Follow the on-screen axis and sign, steady the module, then press **SAMPLE** for each face. **VIEW** cycles through Level, Attitude, and Cube. The Cube follows gyroscope motion and uses distinct colors for each face and axis. Press **CENTER** to reset its reference pose. Heading may drift over time. Experimental translation tracking is disabled because position drifts without an external reference. **DATA** opens and toggles Calibrated and Raw readings. The data view provides **CAL** to open the guided six-face calibration screen. The bubble level turns green when both displayed tilt angles are within 1 degree. SAMPLE is shown during calibration. The blue-and-brown attitude indicator estimates roll and pitch from gravity and compensates for the prototype sensor mounted 180 degrees in-plane. Calibration survives reboot.
 
 **Motion Data meters.** Raw and Calibrated each show a continuous bar below every reading. The tall warm-gray tick marks zero. Negative values fill to the left and positive values fill to the right. Cyan acceleration bars cover ±1.5 g and lavender gyroscope bars cover ±50°/s. Raw uses the equivalent ranges of ±24,576 and ±6,550 counts. Bars clamp at these limits while the numbers continue to show the readings. Bars update about 25 times per second and numbers about 3 times per second.
+
+### Optional temperature and pressure sensor and I²S microphone
+
+Use the [current main source ZIP](https://github.com/uim-g/ESP32-DeskConsole/archive/refs/heads/main.zip) for these two apps. Both appear immediately below Motion. Disconnect USB before wiring the modules and use a common ground.
+
+| BMP280 or BME280 | ESP32-S3 |
+|---|---|
+| VCC, CSB | 3V3 on a compatible module |
+| GND, SDO | GND (selects I²C address `0x76`) |
+| SDA, SCL | GPIO10, GPIO11 (shared with MPU6050) |
+
+The two gauges show °C and hPa. The temperature arc covers 0–50 °C and the pressure arc covers 950–1050 hPa. Numeric readings show the measured values even outside the arc ranges.
+
+| 3.3 V I²S microphone | ESP32-S3 |
+|---|---|
+| SCK, WS, L/R (top to bottom on the tested module) | GPIO40, GPIO39, GPIO38 |
+| SD | GPIO42 |
+| VDD, GND | 3V3, common GND |
+
+The firmware drives L/R low on GPIO38 when opening the microphone app. Use the module’s pin labels to verify its orientation and leave GPIO38 connected only to L/R. Open **Apps → Microphone** and clap or speak to see the new amplitude enter from the right.
+
+The project owner verified both apps on the ESP32-S3 prototype. See [PR #23](https://github.com/uim-g/ESP32-DeskConsole/pull/23).
 
 ### Wiring diagram
 
