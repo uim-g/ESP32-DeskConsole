@@ -11,6 +11,8 @@ Page& DeskConsoleApp::page(View view) {
     case View::Bluetooth: return ble;
     case View::Device: return device;
     case View::Motion: return motion;
+    case View::Environment: return environment;
+    case View::Microphone: return microphone;
     case View::Settings: return preferences;
     case View::Stats: return stats;
     case View::Calibration: return calibration;

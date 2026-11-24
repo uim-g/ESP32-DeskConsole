@@ -1,8 +1,8 @@
 #include "DashboardPages.h"
 
 namespace {
-constexpr View apps[] = {View::F1, View::Weather, View::Motion, View::Network, View::Bluetooth, View::Device, View::Settings};
-constexpr const char* names[] = {"F1 Reaction", "Weather", "Motion", "Wi-Fi", "Bluetooth", "Device", "Settings"};
+constexpr View apps[] = {View::F1, View::Weather, View::Motion, View::Environment, View::Microphone, View::Network, View::Bluetooth, View::Device, View::Settings};
+constexpr const char* names[] = {"F1 Reaction", "Weather", "Motion", "Temp & Humidity", "Microphone", "Wi-Fi", "Bluetooth", "Device", "Settings"};
 constexpr int count = sizeof(apps) / sizeof(apps[0]);
 static_assert(count == sizeof(names) / sizeof(names[0]));
 }
