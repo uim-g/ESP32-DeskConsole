@@ -10,7 +10,7 @@
 class EnvironmentPage : public RefreshPage {
  public:
   using RefreshPage::RefreshPage;
-  PageStyle style() const override { return {"Temp & Humidity", 0x20C5, 0xFD68, {"BACK", "", "", ""}}; }
+  PageStyle style() const override { return {"Temp & Pressure", 0x20C5, 0xFD68, {"BACK", nullptr, nullptr, nullptr}}; }
   void draw() override;
 
  private:
@@ -26,7 +26,7 @@ class EnvironmentPage : public RefreshPage {
 class MicrophonePage : public Page {
  public:
   using Page::Page;
-  PageStyle style() const override { return {"Microphone", 0x18CA, 0xCF5F, {"BACK", "", "", ""}}; }
+  PageStyle style() const override { return {"Microphone", 0x18CA, 0xCF5F, {"BACK", nullptr, nullptr, nullptr}}; }
   void enter() override;
   void leave() override;
   void tick(uint32_t now) override;

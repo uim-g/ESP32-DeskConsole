@@ -124,6 +124,7 @@ void Interface::beginPage(const char* title, uint16_t base, uint16_t color) {
   for (auto& token : wifiWheel) token = "";
   replacementLabel = nullptr;
   // 真正切页才清屏。换页后所有绘制缓存需要重新建立。
+  environmentProgress[0] = environmentProgress[1] = -1;
   background = base;
   highlight = color;
   for (auto& text : cache) text = "";

@@ -45,6 +45,7 @@ class Interface {
   void wifiMessage(const String& title, const String& detail, const String& footer);
   void wifiPassword(const String& ssid, const String& value, size_t length, int group,
                     const String& previous, const String& selected, const String& next, int direction, const char* footer);
+  void environmentGauge(uint8_t index, float value);
   void device(const Platform::Device& data);
   void clearMotionBody();
   void motionAttitude(int roll, int pitch);
@@ -142,6 +143,7 @@ class Interface {
   int lastSleepMinutes = -1;
   bool panelsReady = false;
   char uptimeDigits[11] = {};
+  int environmentProgress[2] = {-1, -1};
   int deviceBars[3] = {-1, -1, -1};
   int lastWeatherCode = -100;
   int forecastIcons[3] = {-100, -100, -100};

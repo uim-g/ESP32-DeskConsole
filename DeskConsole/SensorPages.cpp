@@ -20,38 +20,26 @@ void EnvironmentPage::detect() {
 
 void EnvironmentPage::draw() {
   String status = "Hardware required";
-  String temperature = "--", humidity = "--", pressure = "--";
+  float temperature = NAN, pressure = NAN;
 #ifndef __EMSCRIPTEN__
   if (sensor == Sensor::None) detect();
   status = "No sensor";
   if (sensor != Sensor::None) {
-    const bool hasHumidity = sensor == Sensor::Bme280;
-    const float degrees = hasHumidity ? bme.readTemperature() : bmp.readTemperature();
-    const float pascals = hasHumidity ? bme.readPressure() : bmp.readPressure();
-    if (isfinite(degrees) && isfinite(pascals) && pascals > 0) {
-      status = hasHumidity ? "BME280" : "BMP280";
-      temperature = String(degrees, 1) + " \x01" "C";
-      pressure = String(pascals / 100.0f, 1) + " hPa";
-      if (hasHumidity) {
-        const float percent = bme.readHumidity();
-        if (isfinite(percent)) humidity = String(percent, 1) + " %";
-      } else {
-        humidity = "Unavailable";
-      }
+    const bool isBme = sensor == Sensor::Bme280;
+    temperature = isBme ? bme.readTemperature() : bmp.readTemperature();
+    pressure = (isBme ? bme.readPressure() : bmp.readPressure()) / 100.0f;
+    if (isfinite(temperature) && isfinite(pressure) && pressure > 0) {
+      status = isBme ? "BME280" : "BMP280";
     } else {
+      temperature = pressure = NAN;
       status = "Read failed";
       sensor = Sensor::None;
     }
   }
 #endif
-  const char* labels[] = {"Temperature", "Humidity", "Pressure"};
-  const String values[] = {temperature, humidity, pressure};
-  for (uint8_t row = 0; row < 3; ++row) {
-    const int y = 66 + row * 43;
-    ctx.ui.field(row * 2, 46, y, 112, 24, labels[row]);
-    ctx.ui.field(row * 2 + 1, 161, y, 116, 24, values[row], 0, style().accent, true);
-  }
-  ctx.ui.field(6, 54, 201, 212, 24, status, 0, style().accent, true);
+  ctx.ui.environmentGauge(0, temperature);
+  ctx.ui.environmentGauge(1, pressure);
+  ctx.ui.field(6, 46, 211, 228, 18, status, 4, 0xA69A, true);
 }
 
 void MicrophonePage::enter() {
