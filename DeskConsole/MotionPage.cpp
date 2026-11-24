@@ -1,7 +1,7 @@
 #include "MotionPage.h"
 
 #ifndef __EMSCRIPTEN__
-#include <Wire.h>
+#include "SensorBus.h"
 #else
 extern "C" bool readBrowserMotion(int16_t* reading);
 #endif
@@ -16,11 +16,7 @@ bool MotionPage::readRegisters(uint8_t target, uint8_t reg, uint8_t* data, size_
 }
 
 bool MotionPage::initializeSensor() {
-  if (!busReady) {
-    busReady = Wire.begin(Config::motionSda, Config::motionScl, 100000);
-    if (!busReady) return false;
-    Wire.setTimeOut(10);
-  }
+  if (!beginSensorBus()) return false;
 
   for (uint8_t candidate : {0x68, 0x69}) {
     uint8_t identity = 0;

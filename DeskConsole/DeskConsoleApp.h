@@ -3,6 +3,7 @@
 #pragma once
 #include "DashboardPages.h"
 #include "MotionPage.h"
+#include "SensorPages.h"
 #include "F1Pages.h"
 #include "SettingsPage.h"
 #include "WifiPage.h"
@@ -39,6 +40,8 @@ class DeskConsoleApp : public Navigation {
   BluetoothPage ble{context, bluetooth};
   DevicePage device{context};
   MotionPage motion{context};
+  EnvironmentPage environment{context};
+  MicrophonePage microphone{context};
   SettingsPage preferences{context, settings};
   StatsPage stats{context, game};
   CalibrationPage calibration{context, game};

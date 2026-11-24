@@ -5,7 +5,7 @@
 #include "Interface.h"
 #include "StatusLed.h"
 
-enum class View { Home, Launcher, F1, Weather, Network, Bluetooth, Device, Settings, Motion, Stats, Calibration };
+enum class View { Home, Launcher, F1, Weather, Network, Bluetooth, Device, Settings, Motion, Environment, Microphone, Stats, Calibration };
 struct PageStyle {
   const char* title;
   uint16_t background;

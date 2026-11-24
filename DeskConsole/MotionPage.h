@@ -49,7 +49,7 @@ class MotionPage : public Page {
   bool uprightLevel = false;
   int lastTiltX = 999, lastTiltZ = 999;
   int lastRoll = 999, lastPitch = 999;
-  bool calibrating = false, sampling = false, valid = false, busReady = false;
+  bool calibrating = false, sampling = false, valid = false;
   uint8_t address = 0, face = 0, samples = 0;
   uint32_t nextRead = 0;
   uint32_t nextReadingText = 0;

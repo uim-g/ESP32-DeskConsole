@@ -5,6 +5,7 @@
 
 namespace Config {
 constexpr int motionSda = 10, motionScl = 11;
+constexpr int micClock = 40, micWordSelect = 39, micSelect = 38, micData = 42;
 constexpr uint8_t rgbPin = 48;
 constexpr int bootButton = 0;
 constexpr uint8_t rgbBrightness = 1;  // 默认 0% 档对应的 RGB 通道值。
