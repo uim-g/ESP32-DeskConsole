@@ -37,7 +37,7 @@ DeskConsole grew out of two standalone ESP32-S3 experiments, each with its own s
 
 You will need an ESP32-S3 N16R8 dev board, a 2.8-inch ILI9341 SPI display, four normally open push buttons, a breadboard, jumper wires, and a USB data cable.
 
-1. In Arduino IDE 2, install **esp32 by Espressif Systems**. Select **ESP32S3 Dev Module** and your board's serial port. For N16R8, set Flash Size to 16 MB, choose a partition scheme with a 3 MiB APP slot (such as 16M Flash, 3MB APP/9.9MB FATFS), and enable OPI PSRAM if you want to use the onboard 8 MiB. BLE uses the ESP32 core library.
+1. In Arduino IDE 2, install **esp32 by Espressif Systems**. Select **ESP32S3 Dev Module** and your board's serial port. For N16R8, set Flash Size to 16 MB, choose a partition scheme with a 3 MiB APP slot (such as 16M Flash, 3MB APP/9.9MB FATFS), and enable OPI PSRAM if you want to use the onboard 8 MiB. BLE uses the bundled library. The v3.4.0 release was built with Arduino ESP32 3.3.12. The v3.4.1 source also selects the new BLE API on Arduino ESP32 4.x. Match Flash Size and PSRAM to the full module suffix.
 2. Install **Adafruit ILI9341** and its dependencies, plus **ArduinoJson 7**, **Adafruit BMP280 Library**, and **Adafruit BME280 Library** with their dependencies.
 3. Download **Source code (zip)** from the [v3.4.0 Release](https://github.com/uim-g/ESP32-DeskConsole/releases/tag/v3.4.0), extract it, and open `DeskConsole/DeskConsole.ino`.
 4. Disconnect USB before wiring the screen and buttons as shown below. Reconnect USB, select the serial port and upload. When Home appears, press the upper-left button to open Apps and select Wi-Fi.

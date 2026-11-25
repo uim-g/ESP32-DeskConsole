@@ -4,6 +4,10 @@ Screenshots below were captured from the corresponding [live browser simulator](
 
 下方截图均取自对应版本的[在线网页模拟器](https://uim-g.github.io/ESP32-DeskConsole/)。
 
+## v3.4.1 (unreleased / 未发布)
+
+- Select the bundled BLE API for Arduino ESP32 core 3.x or 4.x. 根据 Arduino ESP32 核心主版本选择对应的 BLE 扫描 API。
+
 ## v3.4.0
 
 - Added Temp & Pressure and Microphone below Motion. 在 Motion 下方新增温度气压与麦克风应用。
