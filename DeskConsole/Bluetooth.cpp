@@ -1,6 +1,11 @@
 #include "Bluetooth.h"
+#include <esp_arduino_version.h>
+#if ESP_ARDUINO_VERSION_MAJOR >= 4
+#include <BLE.h>
+#else
 #include <BLEDevice.h>
 #include <BLEScan.h>
+#endif
 
 // 在临界区标记扫描已启动，随后创建后台任务。创建失败时恢复可再次扫描的状态。
 bool BluetoothScanner::start(bool filterUnnamed) {
@@ -43,6 +48,43 @@ void BluetoothScanner::worker(void* context) {
   BluetoothSnapshot found;
   found.state = BluetoothSnapshot::State::Failed;
   Serial.println("[BLE] Active scan started (4 s)");
+  auto retain = [&](auto&& device) {
+    const auto name = device.getName();
+    if (namedOnly && !name.length()) return;
+    BluetoothResult entry;
+    entry.rssi = device.getRSSI();
+    int pos = found.count;
+    while (pos > 0 && found.devices[pos - 1].rssi < entry.rssi) --pos;
+    if (pos >= BluetoothSnapshot::limit) return;
+    const auto address = device.getAddress().toString();
+    snprintf(entry.name, sizeof(entry.name), "%s", name.length() ? name.c_str() : "Unnamed");
+    snprintf(entry.address, sizeof(entry.address), "%s", address.c_str());
+    if (device.haveServiceUUID()) {
+      const auto uuid = device.getServiceUUID().toString();
+      snprintf(entry.service, sizeof(entry.service), "%s", uuid.c_str());
+    }
+    if (found.count < BluetoothSnapshot::limit) ++found.count;
+    for (int j = found.count - 1; j > pos; --j) found.devices[j] = found.devices[j - 1];
+    found.devices[pos] = entry;
+  };
+
+#if ESP_ARDUINO_VERSION_MAJOR >= 4
+  if (const auto status = BLE.begin("")) {
+    if (auto scan = BLE.getScan()) {
+      scan.setActiveScan(true);
+      scan.setInterval(100);
+      scan.setWindow(60);
+      const auto devices = scan.startBlocking(4000);
+      found.state = BluetoothSnapshot::State::Ready;
+      found.detected = devices.size();
+      for (const auto& device : devices) retain(device);
+      scan.clearResults();
+    }
+    BLE.end(false);
+  } else {
+    Serial.printf("[BLE] Initialization failed: %s\n", status.toString());
+  }
+#else
   const bool initialized = BLEDevice::init("");
   BLEScan* scan = initialized ? BLEDevice::getScan() : nullptr;
   if (scan) {
@@ -52,31 +94,13 @@ void BluetoothScanner::worker(void* context) {
     if (BLEScanResults* devices = scan->start(4, false)) {
       found.state = BluetoothSnapshot::State::Ready;
       found.detected = devices->getCount();
-      for (int i = 0; i < found.detected; ++i) {
-        auto device = devices->getDevice(i);
-        const auto name = device.getName();
-        if (namedOnly && !name.length()) continue;
-        BluetoothResult entry;
-        entry.rssi = device.getRSSI();
-        int pos = found.count;
-        while (pos > 0 && found.devices[pos - 1].rssi < entry.rssi) --pos;
-        if (pos >= BluetoothSnapshot::limit) continue;
-        const auto address = device.getAddress().toString();
-        snprintf(entry.name, sizeof(entry.name), "%s", name.length() ? name.c_str() : "Unnamed");
-        snprintf(entry.address, sizeof(entry.address), "%s", address.c_str());
-        if (device.haveServiceUUID()) {
-          const auto uuid = device.getServiceUUID().toString();
-          snprintf(entry.service, sizeof(entry.service), "%s", uuid.c_str());
-        }
-        if (found.count < BluetoothSnapshot::limit) ++found.count;
-        for (int j = found.count - 1; j > pos; --j) found.devices[j] = found.devices[j - 1];
-        found.devices[pos] = entry;
-      }
+      for (int i = 0; i < found.detected; ++i) retain(devices->getDevice(i));
     }
     scan->clearResults();
   }
   // 关闭控制器但保留再次初始化的能力，方便下一次扫描和轻度休眠。
   if (initialized) BLEDevice::deinit(false);
+#endif
   Serial.printf("[BLE] Scan %s; detected=%d retained=%d\n",
                 found.state == BluetoothSnapshot::State::Ready ? "complete" : "failed",
                 found.detected, found.count);
